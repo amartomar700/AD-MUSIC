@@ -242,7 +242,6 @@
       color: var(--accent-1);
     }
 
-    /* Playlist Box */
     .ad-playlist-box {
       max-width: 420px;
       width: 100%;
@@ -404,6 +403,7 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxPBqalX_xM8xz7XSxtSGbyW72vyZn1lXz085X3Bd2MEY665dDrMdBk2syCDRi9pCVz/exec";
 
     const audio = new Audio();
+    audio.preload = "auto";
     let tracks = [];
     let currentIndex = 0;
     let isPlaying = false;
@@ -437,16 +437,64 @@
       return `${m}:${s < 10 ? "0" : ""}${s}`;
     }
 
+    // Converts old Drive URLs to direct usercontent stream URLs
+    function getDirectStreamUrls(rawUrl) {
+      const match = rawUrl.match(/[-\w]{25,}/);
+      if (!match) return [rawUrl];
+      const id = match[0];
+      return [
+        `https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t`,
+        `https://docs.google.com/uc?export=open&id=${id}`,
+        `https://docs.google.com/uc?export=download&id=${id}`
+      ];
+    }
+
+    function loadViaJsonp(url) {
+      return new Promise((resolve, reject) => {
+        const callbackName = "adMusicCb_" + Date.now();
+        const script = document.createElement("script");
+        const timeout = setTimeout(() => {
+          cleanup();
+          reject(new Error("Request timed out."));
+        }, 12000);
+
+        function cleanup() {
+          clearTimeout(timeout);
+          delete window[callbackName];
+          if (script.parentNode) script.parentNode.removeChild(script);
+        }
+
+        window[callbackName] = (data) => {
+          cleanup();
+          resolve(data);
+        };
+
+        script.onerror = () => {
+          cleanup();
+          reject(new Error("Apps Script connection failed."));
+        };
+
+        const sep = url.includes("?") ? "&" : "?";
+        script.src = `${url}${sep}callback=${callbackName}`;
+        document.body.appendChild(script);
+      });
+    }
+
     async function fetchDriveSongs() {
       statusMsg.textContent = "";
       trackCount.textContent = "Fetching from Drive...";
       playlistEl.innerHTML = `<li class="ad-track-item" style="justify-content:center; color:#8e8e93;">Loading playlist...</li>`;
 
       try {
-        const res = await fetch(SCRIPT_URL);
-        const data = await res.json();
+        let data;
+        try {
+          const res = await fetch(SCRIPT_URL, { redirect: "follow" });
+          data = await res.json();
+        } catch (fetchErr) {
+          data = await loadViaJsonp(SCRIPT_URL);
+        }
 
-        if (data.error) throw new Error(data.error);
+        if (data && data.error) throw new Error(data.error);
 
         if (!Array.isArray(data) || data.length === 0) {
           trackTitle.textContent = "Folder Empty";
@@ -458,7 +506,7 @@
         tracks = data;
         loadTrack(0);
       } catch (err) {
-        statusMsg.textContent = "Error: " + err.message;
+        statusMsg.textContent = err.message;
         trackTitle.textContent = "Connection Failed";
         trackCount.textContent = "0 Tracks";
         playlistEl.innerHTML = "";
@@ -493,7 +541,12 @@
       const track = tracks[currentIndex];
       trackTitle.textContent = track.title;
       artistName.textContent = track.artist;
-      audio.src = track.url;
+      
+      const urls = getDirectStreamUrls(track.url);
+      audio.dataset.fallbackUrls = JSON.stringify(urls);
+      audio.dataset.urlIndex = "0";
+      audio.src = urls[0];
+
       progressFill.style.width = "0%";
       progressHandle.style.left = "0%";
       currentTimeEl.textContent = "0:00";
@@ -501,10 +554,28 @@
       renderPlaylist();
     }
 
+    // Try fallback stream URLs automatically if primary fails
+    audio.addEventListener("error", () => {
+      try {
+        const urls = JSON.parse(audio.dataset.fallbackUrls || "[]");
+        let nextIdx = parseInt(audio.dataset.urlIndex || "0", 10) + 1;
+        if (nextIdx < urls.length) {
+          audio.dataset.urlIndex = String(nextIdx);
+          audio.src = urls[nextIdx];
+          if (isPlaying) audio.play().catch(() => {});
+        } else {
+          pauseTrack();
+          statusMsg.textContent = "Stream block ho raha hai. Drive folder ko 'Anyone with the link' par share karein.";
+        }
+      } catch (e) {}
+    });
+
     function playTrack() {
       if (tracks.length === 0) return;
+      statusMsg.textContent = "Loading audio...";
       audio.play()
         .then(() => {
+          statusMsg.textContent = "";
           isPlaying = true;
           musicCard.classList.add("is-playing");
           iconPlay.style.display = "none";
@@ -512,7 +583,7 @@
           renderPlaylist();
         })
         .catch(() => {
-          statusMsg.textContent = "Audio play nahi hua. Check karein ki Drive folder 'Anyone with the link' par share hai.";
+          statusMsg.textContent = "Audio play nahi hua. Drive folder ko 'Anyone with the link' par share karein.";
         });
     }
 
