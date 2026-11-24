@@ -152,7 +152,6 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* Interactive Seek Bar */
     .uiverse-progress-wrapper {
       padding: 8px 0;
       cursor: pointer;
@@ -402,10 +401,7 @@
   </div>
 
   <script>
-    // =================================================================
-    // APNA DEPLOY KIYA HUA GOOGLE APPS SCRIPT WEB APP URL YAHAN DALEIN
-    // =================================================================
-    const SCRIPT_URL = "YAHAN_APNA_GOOGLE_APPS_SCRIPT_URL_DALEIN";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxPBqalX_xM8xz7XSxtSGbyW72vyZn1lXz085X3Bd2MEY665dDrMdBk2syCDRi9pCVz/exec";
 
     const audio = new Audio();
     let tracks = [];
@@ -445,14 +441,6 @@
       statusMsg.textContent = "";
       trackCount.textContent = "Fetching from Drive...";
       playlistEl.innerHTML = `<li class="ad-track-item" style="justify-content:center; color:#8e8e93;">Loading playlist...</li>`;
-
-      if (!SCRIPT_URL || SCRIPT_URL.includes("YAHAN_APNA")) {
-        statusMsg.textContent = "Pehle code me SCRIPT_URL paste karein.";
-        trackTitle.textContent = "Setup Required";
-        trackCount.textContent = "0 Tracks";
-        playlistEl.innerHTML = "";
-        return;
-      }
 
       try {
         const res = await fetch(SCRIPT_URL);
@@ -524,7 +512,7 @@
           renderPlaylist();
         })
         .catch(() => {
-          statusMsg.textContent = "Audio play nahi hua. Drive folder ko 'Anyone with the link' par share karein.";
+          statusMsg.textContent = "Audio play nahi hua. Check karein ki Drive folder 'Anyone with the link' par share hai.";
         });
     }
 
@@ -583,7 +571,6 @@
       }
     });
 
-    // Smooth Click & Drag Seeking (Mouse + Touch)
     function updateSeekPosition(clientX) {
       if (!audio.duration) return;
       const rect = progressBar.getBoundingClientRect();
