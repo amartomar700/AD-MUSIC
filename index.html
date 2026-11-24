@@ -3,11 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AD MUSIC — Online Audio Player</title>
+  <title>AD MUSIC — Cloud Audio Player</title>
   <style>
     :root {
       --bg-color: #0b0d13;
-      --card-bg: #11141d;
       --accent-1: #00c6ff;
       --accent-2: #0072ff;
       --text-main: #ffffff;
@@ -32,7 +31,6 @@
       padding: 24px 16px;
     }
 
-    /* Brand Header */
     .ad-brand-header {
       text-align: center;
       margin-bottom: 22px;
@@ -57,7 +55,6 @@
     /*
       From Uiverse.io by Vosoone - https://uiverse.io/Vosoone/orange-dog-20
       MIT License, Copyright (c) Vosoone (Vosoone)
-      Adapted for real HTML5 Audio & Google Drive playback
     */
     .uiverse-music-card {
       max-width: 420px;
@@ -70,7 +67,6 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
-      transition: all 0.3s ease;
     }
 
     .uiverse-track-info {
@@ -93,11 +89,6 @@
       font-size: 1.1rem;
       letter-spacing: 1px;
       color: #fff;
-      transition: transform 0.3s ease;
-    }
-
-    .uiverse-album-art:hover {
-      transform: scale(1.05);
     }
 
     .uiverse-track-details {
@@ -106,7 +97,7 @@
     }
 
     .uiverse-track-title {
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       font-weight: 600;
       white-space: nowrap;
       text-overflow: ellipsis;
@@ -117,9 +108,6 @@
       font-size: 0.85rem;
       color: #d1d1d6;
       margin-top: 3px;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      overflow: hidden;
     }
 
     .uiverse-volume-bars {
@@ -141,7 +129,6 @@
       animation-play-state: paused;
     }
 
-    /* Animate bars only when playing */
     .uiverse-music-card.is-playing .uiverse-volume-bars .uiverse-bar {
       animation-play-state: running;
     }
@@ -165,13 +152,24 @@
       font-variant-numeric: tabular-nums;
     }
 
+    /* Interactive Seek Bar */
+    .uiverse-progress-wrapper {
+      padding: 8px 0;
+      cursor: pointer;
+      touch-action: none;
+    }
+
     .uiverse-progress-bar {
       width: 100%;
       height: 6px;
-      background-color: rgba(255, 255, 255, 0.12);
+      background-color: rgba(255, 255, 255, 0.14);
       border-radius: 4px;
       position: relative;
-      cursor: pointer;
+      transition: height 0.15s ease;
+    }
+
+    .uiverse-progress-wrapper:hover .uiverse-progress-bar {
+      height: 8px;
     }
 
     .uiverse-progress-fill {
@@ -187,19 +185,24 @@
       top: 50%;
       left: 0%;
       transform: translate(-50%, -50%);
-      width: 12px;
-      height: 12px;
+      width: 14px;
+      height: 14px;
       background-color: #ffffff;
       border-radius: 50%;
-      box-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 0 8px rgba(0, 198, 255, 0.8);
       pointer-events: none;
+      transition: transform 0.15s ease;
+    }
+
+    .uiverse-progress-wrapper:hover .uiverse-progress-handle {
+      transform: translate(-50%, -50%) scale(1.2);
     }
 
     .uiverse-button-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 4px;
+      margin-top: 2px;
     }
 
     .uiverse-main-control-btns {
@@ -240,7 +243,7 @@
       color: var(--accent-1);
     }
 
-    /* Playlist Section */
+    /* Playlist Box */
     .ad-playlist-box {
       max-width: 420px;
       width: 100%;
@@ -261,11 +264,22 @@
       margin-bottom: 8px;
       display: flex;
       justify-content: space-between;
+      align-items: center;
+    }
+
+    .ad-refresh-btn {
+      background: rgba(0, 198, 255, 0.15);
+      color: var(--accent-1);
+      border: 1px solid rgba(0, 198, 255, 0.3);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      cursor: pointer;
     }
 
     .ad-track-list {
       list-style: none;
-      max-height: 220px;
+      max-height: 240px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -280,7 +294,7 @@
       border-radius: 14px;
       cursor: pointer;
       transition: background 0.2s;
-      font-size: 0.92rem;
+      font-size: 0.9rem;
     }
 
     .ad-track-item:hover {
@@ -295,11 +309,13 @@
     .ad-track-item-meta {
       font-size: 0.75rem;
       color: var(--text-muted);
+      flex-shrink: 0;
+      margin-left: 8px;
     }
 
     .ad-status-msg {
       text-align: center;
-      font-size: 0.75rem;
+      font-size: 0.78rem;
       color: #ff6b6b;
       margin-top: 8px;
       min-height: 16px;
@@ -310,15 +326,14 @@
 
   <header class="ad-brand-header">
     <div class="ad-brand-title">AD MUSIC</div>
-    <div class="ad-brand-subtitle">CLOUD STREAMING PLAYER</div>
+    <div class="ad-brand-subtitle">GOOGLE DRIVE CLOUD PLAYER</div>
   </header>
 
-  <!-- Main Animated Music Card -->
   <div class="uiverse-music-card" id="musicCard">
     <div class="uiverse-track-info">
-      <div class="uiverse-album-art" id="albumArt">AD</div>
+      <div class="uiverse-album-art">AD</div>
       <div class="uiverse-track-details">
-        <div class="uiverse-track-title" id="trackTitle">Loading...</div>
+        <div class="uiverse-track-title" id="trackTitle">Syncing Drive...</div>
         <div class="uiverse-artist-name" id="artistName">AD Music</div>
       </div>
       <div class="uiverse-volume-bars">
@@ -338,9 +353,11 @@
         <span id="currentTime">0:00</span>
         <span id="remainingTime">-0:00</span>
       </div>
-      <div class="uiverse-progress-bar" id="progressBar">
-        <div class="uiverse-progress-fill" id="progressFill"></div>
-        <div class="uiverse-progress-handle" id="progressHandle"></div>
+      <div class="uiverse-progress-wrapper" id="progressWrapper">
+        <div class="uiverse-progress-bar" id="progressBar">
+          <div class="uiverse-progress-fill" id="progressFill"></div>
+          <div class="uiverse-progress-handle" id="progressHandle"></div>
+        </div>
       </div>
       <div class="uiverse-button-row">
         <div class="uiverse-main-control-btns">
@@ -375,58 +392,34 @@
     </div>
   </div>
 
-  <!-- Playlist Box -->
   <div class="ad-playlist-box">
     <div class="ad-playlist-header">
-      <span>Playlist</span>
-      <span id="trackCount">0 Tracks</span>
+      <span id="trackCount">Loading Tracks...</span>
+      <button type="button" class="ad-refresh-btn" id="refreshBtn">↻ Sync Drive</button>
     </div>
     <ul class="ad-track-list" id="playlistEl"></ul>
     <div class="ad-status-msg" id="statusMsg"></div>
   </div>
 
   <script>
-    // Helper function: Converts Google Drive Share URL or File ID into Direct Stream URL
-    function getDriveStreamUrl(idOrUrl) {
-      const match = idOrUrl.match(/[-\w]{25,}/);
-      const fileId = match ? match[0] : idOrUrl;
-      return `https://docs.google.com/uc?export=download&id=${fileId}`;
-    }
-
-    // ==========================================
-    // YAHAN APNE GOOGLE DRIVE KE GANE ADD KAREIN
-    // ==========================================
-    const tracks = [
-      {
-        title: "Sample Synthwave Track",
-        artist: "AD Music Studio",
-        // Sample test audio (Ise hata kar apni Google Drive File ID dalein)
-        url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
-      },
-      {
-        title: "Night Drive Beat",
-        artist: "AD Music",
-        // Example: Google Drive link ya sirf File ID aise dalein:
-        // url: getDriveStreamUrl("1A2B3C4D5E6F7G8H9I0J_YOUR_FILE_ID")
-        url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
-      },
-      {
-        title: "Chill Vibes",
-        artist: "AD Music",
-        url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
-      }
-    ];
+    // =================================================================
+    // APNA DEPLOY KIYA HUA GOOGLE APPS SCRIPT WEB APP URL YAHAN DALEIN
+    // =================================================================
+    const SCRIPT_URL = "YAHAN_APNA_GOOGLE_APPS_SCRIPT_URL_DALEIN";
 
     const audio = new Audio();
+    let tracks = [];
     let currentIndex = 0;
     let isPlaying = false;
     let isLooping = false;
+    let isSeeking = false;
 
     const musicCard = document.getElementById("musicCard");
     const trackTitle = document.getElementById("trackTitle");
     const artistName = document.getElementById("artistName");
     const currentTimeEl = document.getElementById("currentTime");
     const remainingTimeEl = document.getElementById("remainingTime");
+    const progressWrapper = document.getElementById("progressWrapper");
     const progressBar = document.getElementById("progressBar");
     const progressFill = document.getElementById("progressFill");
     const progressHandle = document.getElementById("progressHandle");
@@ -439,6 +432,7 @@
     const playlistEl = document.getElementById("playlistEl");
     const trackCount = document.getElementById("trackCount");
     const statusMsg = document.getElementById("statusMsg");
+    const refreshBtn = document.getElementById("refreshBtn");
 
     function formatTime(sec) {
       if (isNaN(sec) || !isFinite(sec)) return "0:00";
@@ -447,16 +441,52 @@
       return `${m}:${s < 10 ? "0" : ""}${s}`;
     }
 
+    async function fetchDriveSongs() {
+      statusMsg.textContent = "";
+      trackCount.textContent = "Fetching from Drive...";
+      playlistEl.innerHTML = `<li class="ad-track-item" style="justify-content:center; color:#8e8e93;">Loading playlist...</li>`;
+
+      if (!SCRIPT_URL || SCRIPT_URL.includes("YAHAN_APNA")) {
+        statusMsg.textContent = "Pehle code me SCRIPT_URL paste karein.";
+        trackTitle.textContent = "Setup Required";
+        trackCount.textContent = "0 Tracks";
+        playlistEl.innerHTML = "";
+        return;
+      }
+
+      try {
+        const res = await fetch(SCRIPT_URL);
+        const data = await res.json();
+
+        if (data.error) throw new Error(data.error);
+
+        if (!Array.isArray(data) || data.length === 0) {
+          trackTitle.textContent = "Folder Empty";
+          trackCount.textContent = "0 Tracks";
+          playlistEl.innerHTML = `<li class="ad-track-item" style="justify-content:center; color:#8e8e93;">Is Drive folder me abhi koi audio file nahi hai.</li>`;
+          return;
+        }
+
+        tracks = data;
+        loadTrack(0);
+      } catch (err) {
+        statusMsg.textContent = "Error: " + err.message;
+        trackTitle.textContent = "Connection Failed";
+        trackCount.textContent = "0 Tracks";
+        playlistEl.innerHTML = "";
+      }
+    }
+
     function renderPlaylist() {
       playlistEl.innerHTML = "";
-      trackCount.textContent = `${tracks.length} Tracks`;
+      trackCount.textContent = `Playlist (${tracks.length} Tracks)`;
       tracks.forEach((track, idx) => {
         const li = document.createElement("li");
         li.className = `ad-track-item ${idx === currentIndex ? "active" : ""}`;
         li.innerHTML = `
-          <div>
-            <div style="font-weight:600;">${track.title}</div>
-            <div class="ad-track-item-meta">${track.artist}</div>
+          <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            <div style="font-weight:600; overflow:hidden; text-overflow:ellipsis;">${track.title}</div>
+            <div style="font-size:0.75rem; color:#8e8e93;">${track.artist}</div>
           </div>
           <span class="ad-track-item-meta">${idx === currentIndex && isPlaying ? "Playing" : `#${idx + 1}`}</span>
         `;
@@ -469,6 +499,7 @@
     }
 
     function loadTrack(index) {
+      if (tracks.length === 0) return;
       statusMsg.textContent = "";
       currentIndex = index;
       const track = tracks[currentIndex];
@@ -483,6 +514,7 @@
     }
 
     function playTrack() {
+      if (tracks.length === 0) return;
       audio.play()
         .then(() => {
           isPlaying = true;
@@ -492,7 +524,7 @@
           renderPlaylist();
         })
         .catch(() => {
-          statusMsg.textContent = "Audio load nahi ho paya. Drive link 'Anyone with the link' check karein.";
+          statusMsg.textContent = "Audio play nahi hua. Drive folder ko 'Anyone with the link' par share karein.";
         });
     }
 
@@ -510,12 +542,14 @@
     });
 
     prevBtn.addEventListener("click", () => {
+      if (tracks.length === 0) return;
       const prev = (currentIndex - 1 + tracks.length) % tracks.length;
       loadTrack(prev);
       playTrack();
     });
 
     nextBtn.addEventListener("click", () => {
+      if (tracks.length === 0) return;
       const next = (currentIndex + 1) % tracks.length;
       loadTrack(next);
       playTrack();
@@ -527,8 +561,13 @@
       loopBtn.classList.toggle("active-loop", isLooping);
     });
 
+    refreshBtn.addEventListener("click", () => {
+      pauseTrack();
+      fetchDriveSongs();
+    });
+
     audio.addEventListener("timeupdate", () => {
-      if (!audio.duration) return;
+      if (!audio.duration || isSeeking) return;
       const percent = (audio.currentTime / audio.duration) * 100;
       progressFill.style.width = `${percent}%`;
       progressHandle.style.left = `${percent}%`;
@@ -537,23 +576,46 @@
     });
 
     audio.addEventListener("ended", () => {
-      if (!isLooping) {
+      if (!isLooping && tracks.length > 0) {
         const next = (currentIndex + 1) % tracks.length;
         loadTrack(next);
         playTrack();
       }
     });
 
-    progressBar.addEventListener("click", (e) => {
+    // Smooth Click & Drag Seeking (Mouse + Touch)
+    function updateSeekPosition(clientX) {
       if (!audio.duration) return;
       const rect = progressBar.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
-      const ratio = Math.max(0, Math.min(1, clickX / rect.width));
-      audio.currentTime = ratio * audio.duration;
+      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      const percent = ratio * 100;
+      progressFill.style.width = `${percent}%`;
+      progressHandle.style.left = `${percent}%`;
+      currentTimeEl.textContent = formatTime(ratio * audio.duration);
+      remainingTimeEl.textContent = `-${formatTime(audio.duration - ratio * audio.duration)}`;
+      return ratio * audio.duration;
+    }
+
+    progressWrapper.addEventListener("pointerdown", (e) => {
+      if (!audio.duration) return;
+      isSeeking = true;
+      progressWrapper.setPointerCapture(e.pointerId);
+      updateSeekPosition(e.clientX);
     });
 
-    // Initialize first track
-    loadTrack(0);
+    progressWrapper.addEventListener("pointermove", (e) => {
+      if (!isSeeking) return;
+      updateSeekPosition(e.clientX);
+    });
+
+    progressWrapper.addEventListener("pointerup", (e) => {
+      if (!isSeeking) return;
+      const newTime = updateSeekPosition(e.clientX);
+      if (newTime !== undefined) audio.currentTime = newTime;
+      isSeeking = false;
+    });
+
+    fetchDriveSongs();
   </script>
 </body>
 </html>
