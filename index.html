@@ -314,7 +314,7 @@
     .ad-status-msg {
       text-align: center;
       font-size: 0.78rem;
-      color: #ff6b6b;
+      color: #00c6ff;
       margin-top: 8px;
       min-height: 16px;
     }
@@ -403,12 +403,13 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxPBqalX_xM8xz7XSxtSGbyW72vyZn1lXz085X3Bd2MEY665dDrMdBk2syCDRi9pCVz/exec";
 
     const audio = new Audio();
-    audio.preload = "auto";
+    const audioCache = {};
     let tracks = [];
     let currentIndex = 0;
     let isPlaying = false;
     let isLooping = false;
     let isSeeking = false;
+    let isLoadingAudio = false;
 
     const musicCard = document.getElementById("musicCard");
     const trackTitle = document.getElementById("trackTitle");
@@ -437,26 +438,14 @@
       return `${m}:${s < 10 ? "0" : ""}${s}`;
     }
 
-    // Converts old Drive URLs to direct usercontent stream URLs
-    function getDirectStreamUrls(rawUrl) {
-      const match = rawUrl.match(/[-\w]{25,}/);
-      if (!match) return [rawUrl];
-      const id = match[0];
-      return [
-        `https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t`,
-        `https://docs.google.com/uc?export=open&id=${id}`,
-        `https://docs.google.com/uc?export=download&id=${id}`
-      ];
-    }
-
-    function loadViaJsonp(url) {
+    function callAppsScript(params = "") {
       return new Promise((resolve, reject) => {
-        const callbackName = "adMusicCb_" + Date.now();
+        const callbackName = "adMusicCb_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
         const script = document.createElement("script");
         const timeout = setTimeout(() => {
           cleanup();
           reject(new Error("Request timed out."));
-        }, 12000);
+        }, 25000);
 
         function cleanup() {
           clearTimeout(timeout);
@@ -474,26 +463,20 @@
           reject(new Error("Apps Script connection failed."));
         };
 
-        const sep = url.includes("?") ? "&" : "?";
-        script.src = `${url}${sep}callback=${callbackName}`;
+        const sep = SCRIPT_URL.includes("?") ? "&" : "?";
+        script.src = `${SCRIPT_URL}${sep}${params ? params + "&" : ""}callback=${callbackName}`;
         document.body.appendChild(script);
       });
     }
 
     async function fetchDriveSongs() {
+      statusMsg.style.color = "#00c6ff";
       statusMsg.textContent = "";
       trackCount.textContent = "Fetching from Drive...";
       playlistEl.innerHTML = `<li class="ad-track-item" style="justify-content:center; color:#8e8e93;">Loading playlist...</li>`;
 
       try {
-        let data;
-        try {
-          const res = await fetch(SCRIPT_URL, { redirect: "follow" });
-          data = await res.json();
-        } catch (fetchErr) {
-          data = await loadViaJsonp(SCRIPT_URL);
-        }
-
+        const data = await callAppsScript("");
         if (data && data.error) throw new Error(data.error);
 
         if (!Array.isArray(data) || data.length === 0) {
@@ -504,8 +487,9 @@
         }
 
         tracks = data;
-        loadTrack(0);
+        selectTrackUI(0);
       } catch (err) {
+        statusMsg.style.color = "#ff6b6b";
         statusMsg.textContent = err.message;
         trackTitle.textContent = "Connection Failed";
         trackCount.textContent = "0 Tracks";
@@ -527,26 +511,18 @@
           <span class="ad-track-item-meta">${idx === currentIndex && isPlaying ? "Playing" : `#${idx + 1}`}</span>
         `;
         li.addEventListener("click", () => {
-          loadTrack(idx);
-          playTrack();
+          loadAndPlayTrack(idx);
         });
         playlistEl.appendChild(li);
       });
     }
 
-    function loadTrack(index) {
+    function selectTrackUI(index) {
       if (tracks.length === 0) return;
-      statusMsg.textContent = "";
       currentIndex = index;
       const track = tracks[currentIndex];
       trackTitle.textContent = track.title;
       artistName.textContent = track.artist;
-      
-      const urls = getDirectStreamUrls(track.url);
-      audio.dataset.fallbackUrls = JSON.stringify(urls);
-      audio.dataset.urlIndex = "0";
-      audio.src = urls[0];
-
       progressFill.style.width = "0%";
       progressHandle.style.left = "0%";
       currentTimeEl.textContent = "0:00";
@@ -554,37 +530,48 @@
       renderPlaylist();
     }
 
-    // Try fallback stream URLs automatically if primary fails
-    audio.addEventListener("error", () => {
-      try {
-        const urls = JSON.parse(audio.dataset.fallbackUrls || "[]");
-        let nextIdx = parseInt(audio.dataset.urlIndex || "0", 10) + 1;
-        if (nextIdx < urls.length) {
-          audio.dataset.urlIndex = String(nextIdx);
-          audio.src = urls[nextIdx];
-          if (isPlaying) audio.play().catch(() => {});
-        } else {
-          pauseTrack();
-          statusMsg.textContent = "Stream block ho raha hai. Drive folder ko 'Anyone with the link' par share karein.";
-        }
-      } catch (e) {}
-    });
+    async function loadAndPlayTrack(index) {
+      if (tracks.length === 0 || isLoadingAudio) return;
+      pauseTrack();
+      selectTrackUI(index);
+      const track = tracks[currentIndex];
 
-    function playTrack() {
-      if (tracks.length === 0) return;
-      statusMsg.textContent = "Loading audio...";
-      audio.play()
-        .then(() => {
-          statusMsg.textContent = "";
-          isPlaying = true;
-          musicCard.classList.add("is-playing");
-          iconPlay.style.display = "none";
-          iconPause.style.display = "block";
-          renderPlaylist();
-        })
-        .catch(() => {
-          statusMsg.textContent = "Audio play nahi hua. Drive folder ko 'Anyone with the link' par share karein.";
-        });
+      try {
+        isLoadingAudio = true;
+        statusMsg.style.color = "#00c6ff";
+        statusMsg.textContent = "Buffering audio from Drive...";
+
+        let blobUrl = audioCache[track.id];
+        if (!blobUrl) {
+          const res = await callAppsScript(`fileId=${encodeURIComponent(track.id)}`);
+          if (res.error) throw new Error(res.error);
+
+          // Convert Base64 to playable Blob URL
+          const byteChars = atob(res.base64);
+          const byteNumbers = new Array(byteChars.length);
+          for (let i = 0; i < byteChars.length; i++) {
+            byteNumbers[i] = byteChars.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: res.mimeType || "audio/webm" });
+          blobUrl = URL.createObjectURL(blob);
+          audioCache[track.id] = blobUrl;
+        }
+
+        audio.src = blobUrl;
+        await audio.play();
+        isPlaying = true;
+        statusMsg.textContent = "";
+        musicCard.classList.add("is-playing");
+        iconPlay.style.display = "none";
+        iconPause.style.display = "block";
+        renderPlaylist();
+      } catch (err) {
+        statusMsg.style.color = "#ff6b6b";
+        statusMsg.textContent = "Play error: " + err.message;
+      } finally {
+        isLoadingAudio = false;
+      }
     }
 
     function pauseTrack() {
@@ -597,21 +584,32 @@
     }
 
     playPauseBtn.addEventListener("click", () => {
-      isPlaying ? pauseTrack() : playTrack();
+      if (tracks.length === 0) return;
+      if (isPlaying) {
+        pauseTrack();
+      } else if (audio.src && audio.src.startsWith("blob:")) {
+        audio.play().then(() => {
+          isPlaying = true;
+          musicCard.classList.add("is-playing");
+          iconPlay.style.display = "none";
+          iconPause.style.display = "block";
+          renderPlaylist();
+        });
+      } else {
+        loadAndPlayTrack(currentIndex);
+      }
     });
 
     prevBtn.addEventListener("click", () => {
       if (tracks.length === 0) return;
       const prev = (currentIndex - 1 + tracks.length) % tracks.length;
-      loadTrack(prev);
-      playTrack();
+      loadAndPlayTrack(prev);
     });
 
     nextBtn.addEventListener("click", () => {
       if (tracks.length === 0) return;
       const next = (currentIndex + 1) % tracks.length;
-      loadTrack(next);
-      playTrack();
+      loadAndPlayTrack(next);
     });
 
     loopBtn.addEventListener("click", () => {
@@ -637,8 +635,7 @@
     audio.addEventListener("ended", () => {
       if (!isLooping && tracks.length > 0) {
         const next = (currentIndex + 1) % tracks.length;
-        loadTrack(next);
-        playTrack();
+        loadAndPlayTrack(next);
       }
     });
 
