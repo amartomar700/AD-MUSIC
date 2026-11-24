@@ -391,6 +391,44 @@
       cursor: pointer;
     }
 
+    .ad-filter-bar {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      margin-bottom: 4px;
+      scrollbar-width: none;
+    }
+
+    .ad-filter-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .ad-filter-chip {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #d1d1d6;
+      padding: 6px 13px;
+      border-radius: 20px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .ad-filter-chip:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+
+    .ad-filter-chip.active {
+      background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+      border-color: transparent;
+      color: #ffffff;
+      box-shadow: 0 3px 10px rgba(0, 114, 255, 0.4);
+    }
+
     .ad-search-input {
       width: 100%;
       background: rgba(255, 255, 255, 0.06);
@@ -455,6 +493,16 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+
+    .ad-cat-tag {
+      font-size: 0.65rem;
+      background: rgba(0, 198, 255, 0.14);
+      color: var(--accent-1);
+      padding: 2px 7px;
+      border-radius: 8px;
+      margin-left: 6px;
+      font-weight: 600;
     }
 
     .ad-track-item-meta {
@@ -587,11 +635,18 @@
     </div>
   </div>
 
+  <!-- Playlist Box with Dynamic Folder Filters -->
   <div class="ad-playlist-box">
     <div class="ad-playlist-header">
       <span id="trackCount">Loading Tracks...</span>
       <button type="button" class="ad-refresh-btn" id="refreshBtn">↻ Sync Drive</button>
     </div>
+
+    <!-- Auto-Populated Folder Filter Chips -->
+    <div class="ad-filter-bar" id="filterBar">
+      <button type="button" class="ad-filter-chip active" data-cat="All">All</button>
+    </div>
+
     <input type="text" class="ad-search-input" id="searchInput" placeholder="Search songs in playlist..." />
     <ul class="ad-track-list" id="playlistEl"></ul>
     <div class="ad-status-msg" id="statusMsg"></div>
@@ -603,10 +658,11 @@
     const audio = new Audio();
     const audioCache = {};
     let tracks = [];
-    let currentIndex = 0;
+    let currentTrackId = null;
+    let activeCategory = "All";
     let isPlaying = false;
     let isShuffle = false;
-    let repeatMode = 0; // 0: Off, 1: Repeat All, 2: Repeat One
+    let repeatMode = 0;
     let isSeeking = false;
     let isLoadingAudio = false;
     let lastVolume = 1;
@@ -648,6 +704,7 @@
     const speedBtn = document.getElementById("speedBtn");
     const sleepBtn = document.getElementById("sleepBtn");
 
+    const filterBar = document.getElementById("filterBar");
     const searchInput = document.getElementById("searchInput");
     const playlistEl = document.getElementById("playlistEl");
     const trackCount = document.getElementById("trackCount");
@@ -661,13 +718,36 @@
       return `${m}:${s < 10 ? "0" : ""}${s}`;
     }
 
-    // Lock Screen & Notification Media Controls (Android / iOS / Desktop)
+    function getFilteredTracks() {
+      const query = searchInput.value.trim().toLowerCase();
+      return tracks.filter(t => {
+        const catMatch = activeCategory === "All" || (t.category || "").toLowerCase() === activeCategory.toLowerCase();
+        const textMatch = !query || t.title.toLowerCase().includes(query);
+        return catMatch && textMatch;
+      });
+    }
+
+    function renderFilterChips(folderCategories = []) {
+      const trackCats = tracks.map(t => t.category).filter(Boolean);
+      const allCats = Array.from(new Set(["All", ...folderCategories, ...trackCats]));
+
+      filterBar.innerHTML = "";
+      allCats.forEach(cat => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `ad-filter-chip ${cat === activeCategory ? "active" : ""}`;
+        btn.dataset.cat = cat;
+        btn.textContent = cat;
+        filterBar.appendChild(btn);
+      });
+    }
+
     function updateMediaSession(track) {
       if (!("mediaSession" in navigator) || !track) return;
       try {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: track.title,
-          artist: track.artist || "AD Music",
+          artist: `${track.artist || "AD Music"} • ${track.category || "Music"}`,
           album: "AD Music Cloud",
           artwork: track.thumb ? [{ src: track.thumb, sizes: "400x400", type: "image/jpeg" }] : []
         });
@@ -727,15 +807,20 @@
         const data = await callAppsScript("");
         if (data && data.error) throw new Error(data.error);
 
-        if (!Array.isArray(data) || data.length === 0) {
+        const list = Array.isArray(data) ? data : (data.tracks || []);
+        const folderCats = Array.isArray(data.categories) ? data.categories : [];
+
+        tracks = list;
+        renderFilterChips(folderCats);
+
+        if (tracks.length === 0) {
           trackTitle.textContent = "Folder Empty";
           trackCount.textContent = "0 Tracks";
           playlistEl.innerHTML = `<li class="ad-track-item" style="justify-content:center; color:#8e8e93;">Is Drive folder me abhi koi audio file nahi hai.</li>`;
           return;
         }
 
-        tracks = data;
-        selectTrackUI(0);
+        selectTrackUI(tracks[0]);
       } catch (err) {
         statusMsg.style.color = "#ff6b6b";
         statusMsg.textContent = err.message;
@@ -754,15 +839,19 @@
     }
 
     function renderPlaylist() {
-      const query = searchInput.value.trim().toLowerCase();
+      const visibleTracks = getFilteredTracks();
       playlistEl.innerHTML = "";
-      trackCount.textContent = `Playlist (${tracks.length} Tracks)`;
+      trackCount.textContent = `${activeCategory} (${visibleTracks.length} Tracks)`;
 
-      tracks.forEach((track, idx) => {
-        if (query && !track.title.toLowerCase().includes(query)) return;
+      if (visibleTracks.length === 0) {
+        playlistEl.innerHTML = `<li class="ad-track-item" style="justify-content:center; color:#8e8e93;">Is folder/category me koi gaana nahi hai.</li>`;
+        return;
+      }
 
+      visibleTracks.forEach((track, idx) => {
+        const isCurrent = track.id === currentTrackId;
         const li = document.createElement("li");
-        li.className = `ad-track-item ${idx === currentIndex ? "active" : ""}`;
+        li.className = `ad-track-item ${isCurrent ? "active" : ""}`;
         const thumbHtml = track.thumb
           ? `<img src="${track.thumb}" alt="" onerror="this.parentElement.innerHTML='AD';" />`
           : `AD`;
@@ -771,23 +860,25 @@
           <div class="ad-item-thumb">${thumbHtml}</div>
           <div style="flex-grow:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
             <div style="font-weight:600; overflow:hidden; text-overflow:ellipsis;">${track.title}</div>
-            <div style="font-size:0.75rem; color:#8e8e93;">${track.artist}</div>
+            <div style="font-size:0.75rem; color:#8e8e93;">
+              ${track.artist}
+              <span class="ad-cat-tag">${track.category || "Music"}</span>
+            </div>
           </div>
-          <span class="ad-track-item-meta">${idx === currentIndex && isPlaying ? "Playing" : `#${idx + 1}`}</span>
+          <span class="ad-track-item-meta">${isCurrent && isPlaying ? "Playing" : `#${idx + 1}`}</span>
         `;
         li.addEventListener("click", () => {
-          loadAndPlayTrack(idx);
+          loadAndPlayTrack(track);
         });
         playlistEl.appendChild(li);
       });
     }
 
-    function selectTrackUI(index) {
-      if (tracks.length === 0) return;
-      currentIndex = index;
-      const track = tracks[currentIndex];
+    function selectTrackUI(track) {
+      if (!track) return;
+      currentTrackId = track.id;
       trackTitle.textContent = track.title;
-      artistName.textContent = track.artist;
+      artistName.textContent = `${track.artist} • ${track.category || "Music"}`;
       updateAlbumArt(track.thumb);
       progressFill.style.width = "0%";
       progressHandle.style.left = "0%";
@@ -797,11 +888,10 @@
       updateMediaSession(track);
     }
 
-    // Preload next track in background so lock-screen transitions don't stall
-    async function preloadTrack(index) {
-      if (!tracks[index] || audioCache[tracks[index].id]) return;
+    async function preloadTrack(track) {
+      if (!track || audioCache[track.id]) return;
       try {
-        const res = await callAppsScript(`fileId=${encodeURIComponent(tracks[index].id)}`);
+        const res = await callAppsScript(`fileId=${encodeURIComponent(track.id)}`);
         if (res && res.base64) {
           const byteChars = atob(res.base64);
           const byteNumbers = new Array(byteChars.length);
@@ -809,16 +899,15 @@
             byteNumbers[i] = byteChars.charCodeAt(i);
           }
           const blob = new Blob([new Uint8Array(byteNumbers)], { type: res.mimeType || "audio/webm" });
-          audioCache[tracks[index].id] = URL.createObjectURL(blob);
+          audioCache[track.id] = URL.createObjectURL(blob);
         }
       } catch (e) {}
     }
 
-    async function loadAndPlayTrack(index) {
-      if (tracks.length === 0 || isLoadingAudio) return;
+    async function loadAndPlayTrack(track) {
+      if (!track || isLoadingAudio) return;
       pauseTrack();
-      selectTrackUI(index);
-      const track = tracks[currentIndex];
+      selectTrackUI(track);
 
       try {
         isLoadingAudio = true;
@@ -851,8 +940,8 @@
         if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
         renderPlaylist();
 
-        // Preload next song in cache for seamless background play
-        preloadTrack((currentIndex + 1) % tracks.length);
+        const nextTrack = getNextTrack();
+        if (nextTrack) preloadTrack(nextTrack);
       } catch (err) {
         statusMsg.style.color = "#ff6b6b";
         statusMsg.textContent = "Play error: " + err.message;
@@ -871,16 +960,38 @@
       renderPlaylist();
     }
 
-    function getNextIndex() {
-      if (isShuffle && tracks.length > 1) {
+    function getNextTrack() {
+      const list = getFilteredTracks();
+      if (list.length === 0) return null;
+      const idx = list.findIndex(t => t.id === currentTrackId);
+
+      if (isShuffle && list.length > 1) {
         let rand;
         do {
-          rand = Math.floor(Math.random() * tracks.length);
-        } while (rand === currentIndex);
-        return rand;
+          rand = Math.floor(Math.random() * list.length);
+        } while (rand === idx);
+        return list[rand];
       }
-      return (currentIndex + 1) % tracks.length;
+      const nextIdx = idx === -1 ? 0 : (idx + 1) % list.length;
+      return list[nextIdx];
     }
+
+    function getPrevTrack() {
+      const list = getFilteredTracks();
+      if (list.length === 0) return null;
+      const idx = list.findIndex(t => t.id === currentTrackId);
+      const prevIdx = idx <= 0 ? list.length - 1 : idx - 1;
+      return list[prevIdx];
+    }
+
+    filterBar.addEventListener("click", (e) => {
+      const chip = e.target.closest(".ad-filter-chip");
+      if (!chip) return;
+      document.querySelectorAll(".ad-filter-chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      activeCategory = chip.dataset.cat;
+      renderPlaylist();
+    });
 
     playPauseBtn.addEventListener("click", () => {
       if (tracks.length === 0) return;
@@ -896,23 +1007,23 @@
           renderPlaylist();
         });
       } else {
-        loadAndPlayTrack(currentIndex);
+        const current = tracks.find(t => t.id === currentTrackId) || getFilteredTracks()[0] || tracks[0];
+        loadAndPlayTrack(current);
       }
     });
 
     prevBtn.addEventListener("click", () => {
-      if (tracks.length === 0) return;
       if (audio.currentTime > 4) {
         audio.currentTime = 0;
         return;
       }
-      const prev = (currentIndex - 1 + tracks.length) % tracks.length;
-      loadAndPlayTrack(prev);
+      const prev = getPrevTrack();
+      if (prev) loadAndPlayTrack(prev);
     });
 
     nextBtn.addEventListener("click", () => {
-      if (tracks.length === 0) return;
-      loadAndPlayTrack(getNextIndex());
+      const next = getNextTrack();
+      if (next) loadAndPlayTrack(next);
     });
 
     rewind10Btn.addEventListener("click", () => {
@@ -1013,8 +1124,11 @@
 
     audio.addEventListener("ended", () => {
       if (repeatMode === 2) return;
-      if (repeatMode === 1 || currentIndex < tracks.length - 1 || isShuffle) {
-        loadAndPlayTrack(getNextIndex());
+      const list = getFilteredTracks();
+      const idx = list.findIndex(t => t.id === currentTrackId);
+      if (repeatMode === 1 || idx < list.length - 1 || isShuffle) {
+        const next = getNextTrack();
+        if (next) loadAndPlayTrack(next);
       } else {
         pauseTrack();
       }
