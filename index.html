@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b0d13" />
   <title>AD MUSIC — Cloud Audio Player</title>
   <style>
     :root {
@@ -55,7 +56,6 @@
     /*
       From Uiverse.io by Vosoone - https://uiverse.io/Vosoone/orange-dog-20
       MIT License, Copyright (c) Vosoone (Vosoone)
-      Enhanced with full online player controls
     */
     .uiverse-music-card {
       max-width: 440px;
@@ -147,7 +147,6 @@
       50% { height: 26px; }
     }
 
-    /* Progress Bar */
     .uiverse-playback-controls {
       display: flex;
       flex-direction: column;
@@ -207,7 +206,6 @@
       transform: translate(-50%, -50%) scale(1.2);
     }
 
-    /* Main Playback Buttons (Shuffle, Prev, -10s, Play, +10s, Next, Repeat) */
     .uiverse-button-row {
       display: flex;
       justify-content: space-between;
@@ -273,7 +271,6 @@
       justify-content: center;
     }
 
-    /* Volume + Extra Online Controls Bar */
     .ad-extra-bar {
       display: flex;
       align-items: center;
@@ -363,7 +360,6 @@
       color: var(--accent-1);
     }
 
-    /* Playlist Box */
     .ad-playlist-box {
       max-width: 440px;
       width: 100%;
@@ -514,9 +510,7 @@
         </div>
       </div>
 
-      <!-- Main Control Row -->
       <div class="uiverse-button-row">
-        <!-- Shuffle -->
         <button type="button" class="uiverse-control-button" id="shuffleBtn" title="Shuffle" aria-label="Shuffle">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
             <path fill-rule="evenodd" d="M0 3.5A.5.5 0 0 1 .5 3H1c2.202 0 3.827 1.24 4.874 2.418.49.552.865 1.102 1.126 1.532.26-.43.636-.98 1.126-1.532C9.173 4.24 10.798 3 13 3v1c-1.798 0-3.173 1.01-4.126 2.082A9.6 9.6 0 0 0 7.556 8a9.6 9.6 0 0 0 1.317 1.918C9.828 10.99 11.204 12 13 12v1c-2.202 0-3.827-1.24-4.874-2.418A10.6 10.6 0 0 1 7 9.05c-.26.43-.636.98-1.126 1.532C4.827 11.76 3.202 13 1 13H.5a.5.5 0 0 1 0-1H1c1.798 0 3.173-1.01 4.126-2.082A9.6 9.6 0 0 0 6.444 8a9.6 9.6 0 0 0-1.317-1.918C4.172 5.01 2.796 4 1 4H.5a.5.5 0 0 1-.5-.5"/>
@@ -524,14 +518,12 @@
           </svg>
         </button>
 
-        <!-- Previous Track -->
         <button type="button" class="uiverse-control-button" id="prevBtn" title="Previous Track" aria-label="Previous">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
             <path d="M.5 3.5A.5.5 0 0 0 0 4v8a.5.5 0 0 0 1 0V8.753l6.267 3.636c.54.313 1.233-.066 1.233-.697v-2.94l6.267 3.636c.54.314 1.233-.065 1.233-.696V4.308c0-.63-.693-1.01-1.233-.696L8.5 7.248v-2.94c0-.63-.692-1.01-1.233-.696L1 7.248V4a.5.5 0 0 0-.5-.5"></path>
           </svg>
         </button>
 
-        <!-- Rewind 10 Seconds -->
         <button type="button" class="uiverse-control-button" id="rewind10Btn" title="Rewind 10s" aria-label="Rewind 10 seconds">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
             <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2z"/>
@@ -540,7 +532,6 @@
           <span class="skip-label">-10s</span>
         </button>
 
-        <!-- Play / Pause -->
         <button type="button" class="uiverse-control-button uiverse-play-pause-button" id="playPauseBtn" title="Play / Pause" aria-label="Play or Pause">
           <svg id="iconPlay" xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" viewBox="0 0 16 16">
             <path d="M11.596 8.697l-6.363 3.692c-.54.314-1.233-.065-1.233-.696V4.308c0-.63.693-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393"></path>
@@ -550,7 +541,6 @@
           </svg>
         </button>
 
-        <!-- Forward 10 Seconds -->
         <button type="button" class="uiverse-control-button" id="forward10Btn" title="Forward 10s" aria-label="Forward 10 seconds">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
             <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
@@ -559,14 +549,12 @@
           <span class="skip-label">+10s</span>
         </button>
 
-        <!-- Next Track -->
         <button type="button" class="uiverse-control-button" id="nextBtn" title="Next Track" aria-label="Next">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
             <path d="M15.5 3.5a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-1 0V8.753l-6.267 3.636c-.54.313-1.233-.066-1.233-.697v-2.94l-6.267 3.636C.693 12.703 0 12.324 0 11.693V4.308c0-.63.693-1.01 1.233-.696L7.5 7.248v-2.94c0-.63.693-1.01 1.233-.696L15 7.248V4a.5.5 0 0 1 .5-.5"></path>
           </svg>
         </button>
 
-        <!-- Repeat Mode (Off / All / One) -->
         <button type="button" class="uiverse-control-button" id="loopBtn" title="Repeat: Off" aria-label="Repeat Mode">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
             <path d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 0-.384l2.36-1.966a.25.25 0 0 1 .41.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z"/>
@@ -576,7 +564,6 @@
       </div>
     </div>
 
-    <!-- Volume, Speed & Sleep Timer Bar -->
     <div class="ad-extra-bar">
       <div class="ad-volume-box">
         <button type="button" class="ad-vol-btn" id="muteBtn" title="Mute / Unmute" aria-label="Mute">
@@ -600,7 +587,6 @@
     </div>
   </div>
 
-  <!-- Playlist Box -->
   <div class="ad-playlist-box">
     <div class="ad-playlist-header">
       <span id="trackCount">Loading Tracks...</span>
@@ -673,6 +659,31 @@
       const m = Math.floor(sec / 60);
       const s = Math.floor(sec % 60);
       return `${m}:${s < 10 ? "0" : ""}${s}`;
+    }
+
+    // Lock Screen & Notification Media Controls (Android / iOS / Desktop)
+    function updateMediaSession(track) {
+      if (!("mediaSession" in navigator) || !track) return;
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: track.title,
+          artist: track.artist || "AD Music",
+          album: "AD Music Cloud",
+          artwork: track.thumb ? [{ src: track.thumb, sizes: "400x400", type: "image/jpeg" }] : []
+        });
+
+        navigator.mediaSession.setActionHandler("play", () => playPauseBtn.click());
+        navigator.mediaSession.setActionHandler("pause", () => pauseTrack());
+        navigator.mediaSession.setActionHandler("previoustrack", () => prevBtn.click());
+        navigator.mediaSession.setActionHandler("nexttrack", () => nextBtn.click());
+        navigator.mediaSession.setActionHandler("seekbackward", () => rewind10Btn.click());
+        navigator.mediaSession.setActionHandler("seekforward", () => forward10Btn.click());
+        navigator.mediaSession.setActionHandler("seekto", (details) => {
+          if (details.seekTime !== undefined && audio.duration) {
+            audio.currentTime = details.seekTime;
+          }
+        });
+      } catch (e) {}
     }
 
     function callAppsScript(params = "") {
@@ -783,6 +794,24 @@
       currentTimeEl.textContent = "0:00";
       remainingTimeEl.textContent = "-0:00";
       renderPlaylist();
+      updateMediaSession(track);
+    }
+
+    // Preload next track in background so lock-screen transitions don't stall
+    async function preloadTrack(index) {
+      if (!tracks[index] || audioCache[tracks[index].id]) return;
+      try {
+        const res = await callAppsScript(`fileId=${encodeURIComponent(tracks[index].id)}`);
+        if (res && res.base64) {
+          const byteChars = atob(res.base64);
+          const byteNumbers = new Array(byteChars.length);
+          for (let i = 0; i < byteChars.length; i++) {
+            byteNumbers[i] = byteChars.charCodeAt(i);
+          }
+          const blob = new Blob([new Uint8Array(byteNumbers)], { type: res.mimeType || "audio/webm" });
+          audioCache[tracks[index].id] = URL.createObjectURL(blob);
+        }
+      } catch (e) {}
     }
 
     async function loadAndPlayTrack(index) {
@@ -806,8 +835,7 @@
           for (let i = 0; i < byteChars.length; i++) {
             byteNumbers[i] = byteChars.charCodeAt(i);
           }
-          const byteArray = new Uint8Array(byteNumbers);
-          const blob = new Blob([byteArray], { type: res.mimeType || "audio/webm" });
+          const blob = new Blob([new Uint8Array(byteNumbers)], { type: res.mimeType || "audio/webm" });
           blobUrl = URL.createObjectURL(blob);
           audioCache[track.id] = blobUrl;
         }
@@ -820,7 +848,11 @@
         musicCard.classList.add("is-playing");
         iconPlay.style.display = "none";
         iconPause.style.display = "block";
+        if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
         renderPlaylist();
+
+        // Preload next song in cache for seamless background play
+        preloadTrack((currentIndex + 1) % tracks.length);
       } catch (err) {
         statusMsg.style.color = "#ff6b6b";
         statusMsg.textContent = "Play error: " + err.message;
@@ -835,6 +867,7 @@
       musicCard.classList.remove("is-playing");
       iconPlay.style.display = "block";
       iconPause.style.display = "none";
+      if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
       renderPlaylist();
     }
 
@@ -849,7 +882,6 @@
       return (currentIndex + 1) % tracks.length;
     }
 
-    // Play / Pause
     playPauseBtn.addEventListener("click", () => {
       if (tracks.length === 0) return;
       if (isPlaying) {
@@ -860,6 +892,7 @@
           musicCard.classList.add("is-playing");
           iconPlay.style.display = "none";
           iconPause.style.display = "block";
+          if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
           renderPlaylist();
         });
       } else {
@@ -867,7 +900,6 @@
       }
     });
 
-    // Previous / Next
     prevBtn.addEventListener("click", () => {
       if (tracks.length === 0) return;
       if (audio.currentTime > 4) {
@@ -883,7 +915,6 @@
       loadAndPlayTrack(getNextIndex());
     });
 
-    // Rewind 10s & Forward 10s
     rewind10Btn.addEventListener("click", () => {
       if (!audio.duration) return;
       audio.currentTime = Math.max(0, audio.currentTime - 10);
@@ -894,13 +925,11 @@
       audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
     });
 
-    // Shuffle Toggle
     shuffleBtn.addEventListener("click", () => {
       isShuffle = !isShuffle;
       shuffleBtn.classList.toggle("active-state", isShuffle);
     });
 
-    // Repeat Mode Toggle (0: Off -> 1: All -> 2: One)
     loopBtn.addEventListener("click", () => {
       repeatMode = (repeatMode + 1) % 3;
       audio.loop = repeatMode === 2;
@@ -910,7 +939,6 @@
       loopBtn.title = labels[repeatMode];
     });
 
-    // Volume & Mute Controls
     function updateVolumeUI(val) {
       audio.volume = val;
       volumeSlider.value = val;
@@ -938,7 +966,6 @@
       }
     });
 
-    // Playback Speed Control
     speedBtn.addEventListener("click", () => {
       speedIndex = (speedIndex + 1) % speeds.length;
       const newSpeed = speeds[speedIndex];
@@ -947,7 +974,6 @@
       speedBtn.classList.toggle("active", newSpeed !== 1);
     });
 
-    // Sleep Timer Control
     sleepBtn.addEventListener("click", () => {
       sleepIndex = (sleepIndex + 1) % sleepOptions.length;
       const mins = sleepOptions[sleepIndex];
@@ -969,16 +995,13 @@
       }
     });
 
-    // Search Filter
     searchInput.addEventListener("input", renderPlaylist);
 
-    // Refresh Drive
     refreshBtn.addEventListener("click", () => {
       pauseTrack();
       fetchDriveSongs();
     });
 
-    // Time Update & Track Ended
     audio.addEventListener("timeupdate", () => {
       if (!audio.duration || isSeeking) return;
       const percent = (audio.currentTime / audio.duration) * 100;
@@ -989,7 +1012,7 @@
     });
 
     audio.addEventListener("ended", () => {
-      if (repeatMode === 2) return; // Handled by audio.loop
+      if (repeatMode === 2) return;
       if (repeatMode === 1 || currentIndex < tracks.length - 1 || isShuffle) {
         loadAndPlayTrack(getNextIndex());
       } else {
@@ -997,7 +1020,6 @@
       }
     });
 
-    // Progress Bar Scrubbing
     function updateSeekPosition(clientX) {
       if (!audio.duration) return;
       const rect = progressBar.getBoundingClientRect();
@@ -1029,7 +1051,6 @@
       isSeeking = false;
     });
 
-    // Keyboard Shortcuts (Desktop)
     document.addEventListener("keydown", (e) => {
       if (document.activeElement === searchInput) return;
       if (e.code === "Space") {
