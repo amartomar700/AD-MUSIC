@@ -12,6 +12,7 @@
       --accent-2: #0072ff;
       --text-main: #ffffff;
       --text-muted: #8e8e93;
+      --beat-scale: 0;
     }
 
     * {
@@ -29,7 +30,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 24px 14px;
+      padding: 20px 12px 32px;
       position: relative;
       overflow-x: hidden;
     }
@@ -65,15 +66,11 @@
     }
 
     body.dj-active .uiverse-music-card.is-playing {
-      animation: djCardBeat 1.2s ease-in-out infinite alternate;
+      animation: djCardBeat 1.4s ease-in-out infinite alternate;
     }
 
     body.dj-active .uiverse-music-card.is-playing .uiverse-volume-bars .uiverse-bar {
       background: linear-gradient(180deg, #ff007f, #00c6ff, #00ff88);
-    }
-
-    body.dj-active .uiverse-music-card.is-playing .uiverse-album-art {
-      animation: djArtPulse 1.2s ease-in-out infinite alternate;
     }
 
     @keyframes djSpin {
@@ -88,15 +85,10 @@
     }
 
     @keyframes djCardBeat {
-      0%   { box-shadow: 0 0 22px rgba(0, 198, 255, 0.75), 0 0 42px rgba(0, 114, 255, 0.4); border-color: rgba(0, 198, 255, 0.8); }
-      33%  { box-shadow: 0 0 26px rgba(255, 0, 128, 0.8), 0 0 46px rgba(140, 0, 255, 0.45); border-color: rgba(255, 0, 128, 0.8); }
-      66%  { box-shadow: 0 0 26px rgba(0, 255, 170, 0.75), 0 0 46px rgba(0, 198, 255, 0.45); border-color: rgba(0, 255, 170, 0.8); }
-      100% { box-shadow: 0 0 28px rgba(138, 43, 226, 0.85), 0 0 48px rgba(255, 0, 128, 0.5); border-color: rgba(168, 85, 247, 0.85); }
-    }
-
-    @keyframes djArtPulse {
-      0%   { box-shadow: 0 0 12px rgba(0, 198, 255, 0.7); transform: scale(1); }
-      100% { box-shadow: 0 0 20px rgba(255, 0, 128, 0.85); transform: scale(1.04); }
+      0%   { border-color: rgba(0, 198, 255, 0.85); }
+      33%  { border-color: rgba(255, 0, 128, 0.85); }
+      66%  { border-color: rgba(0, 255, 170, 0.85); }
+      100% { border-color: rgba(168, 85, 247, 0.9); }
     }
 
     .ad-mini-pill.dj-on {
@@ -108,7 +100,7 @@
 
     .ad-brand-header {
       text-align: center;
-      margin-bottom: 18px;
+      margin-bottom: 16px;
     }
 
     .ad-brand-title {
@@ -127,10 +119,6 @@
       margin-top: 3px;
     }
 
-    /*
-      From Uiverse.io by Vosoone - https://uiverse.io/Vosoone/orange-dog-20
-      MIT License, Copyright (c) Vosoone (Vosoone)
-    */
     .uiverse-music-card {
       max-width: 440px;
       width: 100%;
@@ -142,7 +130,7 @@
       display: flex;
       flex-direction: column;
       gap: 14px;
-      transition: border-color 0.3s ease;
+      transition: border-color 0.25s ease;
     }
 
     .uiverse-track-info {
@@ -166,6 +154,7 @@
       letter-spacing: 1px;
       color: #fff;
       overflow: hidden;
+      transition: transform 0.08s ease-out, box-shadow 0.08s ease-out;
     }
 
     .uiverse-album-art img {
@@ -181,7 +170,7 @@
     }
 
     .uiverse-track-title {
-      font-size: 1.12rem;
+      font-size: 1.1rem;
       font-weight: 600;
       white-space: nowrap;
       text-overflow: ellipsis;
@@ -189,37 +178,27 @@
     }
 
     .uiverse-artist-name {
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       color: #d1d1d6;
       margin-top: 3px;
     }
 
+    /* Real-time Beat Visualizer Bars */
     .uiverse-volume-bars {
       display: flex;
       align-items: flex-end;
-      gap: 2px;
-      width: 38px;
-      height: 32px;
+      gap: 2.5px;
+      width: 42px;
+      height: 34px;
       flex-shrink: 0;
     }
 
     .uiverse-volume-bars .uiverse-bar {
-      width: 3px;
+      width: 3.5px;
       height: 6px;
       background: linear-gradient(180deg, #00c6ff, #0072ff);
       border-radius: 2px;
-      animation: uiverse-bounce 0.8s infinite ease-in-out;
-      animation-delay: var(--delay);
-      animation-play-state: paused;
-    }
-
-    .uiverse-music-card.is-playing .uiverse-volume-bars .uiverse-bar {
-      animation-play-state: running;
-    }
-
-    @keyframes uiverse-bounce {
-      0%, 100% { height: 6px; }
-      50% { height: 26px; }
+      transition: height 0.06s ease-out;
     }
 
     .uiverse-playback-controls {
@@ -348,20 +327,17 @@
 
     .ad-extra-bar {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
+      flex-direction: column;
+      gap: 10px;
       padding-top: 10px;
       border-top: 1px solid rgba(255, 255, 255, 0.08);
-      flex-wrap: wrap;
     }
 
     .ad-volume-box {
       display: flex;
       align-items: center;
-      gap: 6px;
-      flex-grow: 1;
-      min-width: 135px;
+      gap: 8px;
+      width: 100%;
     }
 
     .ad-vol-btn {
@@ -382,8 +358,7 @@
     .ad-volume-slider {
       -webkit-appearance: none;
       appearance: none;
-      width: 100%;
-      max-width: 95px;
+      flex-grow: 1;
       height: 4px;
       background: rgba(255, 255, 255, 0.2);
       border-radius: 4px;
@@ -394,8 +369,8 @@
     .ad-volume-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
-      width: 13px;
-      height: 13px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
       background: var(--accent-1);
       cursor: pointer;
@@ -403,29 +378,41 @@
     }
 
     .ad-vol-pct {
-      font-size: 0.72rem;
+      font-size: 0.74rem;
       color: var(--text-muted);
-      min-width: 30px;
+      min-width: 38px;
+      text-align: right;
+      font-weight: 700;
       font-variant-numeric: tabular-nums;
+      transition: color 0.2s;
+    }
+
+    .ad-vol-pct.boosted {
+      color: #00ff88;
+      text-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
     }
 
     .ad-pill-controls {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 5px;
+      flex-wrap: wrap;
     }
 
     .ad-mini-pill {
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.12);
       color: #e5e5ea;
-      font-size: 0.71rem;
+      font-size: 0.7rem;
       font-weight: 600;
-      padding: 5px 8px;
+      padding: 5px 9px;
       border-radius: 10px;
       cursor: pointer;
       transition: all 0.2s;
       white-space: nowrap;
+      flex: 1;
+      text-align: center;
     }
 
     .ad-mini-pill:hover {
@@ -438,6 +425,99 @@
       color: var(--accent-1);
     }
 
+    /* === 5-BAND EQUALIZER PANEL === */
+    .ad-eq-panel {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(0, 198, 255, 0.25);
+      border-radius: 18px;
+      padding: 12px;
+      margin-top: 2px;
+    }
+
+    .ad-eq-panel.open {
+      display: flex;
+    }
+
+    .ad-eq-presets {
+      display: flex;
+      gap: 5px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .ad-eq-presets::-webkit-scrollbar {
+      display: none;
+    }
+
+    .ad-eq-preset-btn {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #d1d1d6;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 4px 9px;
+      border-radius: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .ad-eq-preset-btn.active {
+      background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .ad-eq-sliders {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      text-align: center;
+    }
+
+    .ad-eq-band {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .ad-eq-db {
+      font-size: 0.65rem;
+      color: var(--accent-1);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ad-eq-range {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 72px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      transform: rotate(-90deg);
+      margin: 32px 0;
+      cursor: pointer;
+    }
+
+    .ad-eq-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #00ff88;
+      box-shadow: 0 0 6px rgba(0, 255, 136, 0.8);
+    }
+
+    .ad-eq-freq {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    /* === PLAYLIST BOX === */
     .ad-playlist-box {
       max-width: 440px;
       width: 100%;
@@ -525,7 +605,7 @@
 
     .ad-track-list {
       list-style: none;
-      max-height: 250px;
+      max-height: 270px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -541,7 +621,7 @@
       cursor: pointer;
       transition: background 0.2s;
       font-size: 0.88rem;
-      gap: 10px;
+      gap: 8px;
     }
 
     .ad-track-item:hover {
@@ -579,14 +659,57 @@
       color: var(--accent-1);
       padding: 2px 7px;
       border-radius: 8px;
-      margin-left: 6px;
+      margin-left: 5px;
       font-weight: 600;
     }
 
-    .ad-track-item-meta {
-      font-size: 0.74rem;
-      color: var(--text-muted);
+    .ad-offline-badge {
+      font-size: 0.62rem;
+      background: rgba(0, 255, 136, 0.15);
+      color: #00ff88;
+      padding: 1px 6px;
+      border-radius: 6px;
+      margin-left: 4px;
+      font-weight: 700;
+    }
+
+    .ad-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
       flex-shrink: 0;
+    }
+
+    .ad-action-icon {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #8e8e93;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.76rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .ad-action-icon:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    .ad-action-icon.fav-active {
+      color: #ff2d55;
+      border-color: rgba(255, 45, 85, 0.4);
+      background: rgba(255, 45, 85, 0.15);
+    }
+
+    .ad-action-icon.saved-active {
+      color: #00ff88;
+      border-color: rgba(0, 255, 136, 0.4);
+      background: rgba(0, 255, 136, 0.14);
     }
 
     .ad-status-msg {
@@ -612,15 +735,15 @@
         <div class="uiverse-track-title" id="trackTitle">Syncing Drive...</div>
         <div class="uiverse-artist-name" id="artistName">AD Music</div>
       </div>
-      <div class="uiverse-volume-bars">
-        <div class="uiverse-bar" style="--delay:0s"></div>
-        <div class="uiverse-bar" style="--delay:0.1s"></div>
-        <div class="uiverse-bar" style="--delay:0.2s"></div>
-        <div class="uiverse-bar" style="--delay:0.3s"></div>
-        <div class="uiverse-bar" style="--delay:0.4s"></div>
-        <div class="uiverse-bar" style="--delay:0.5s"></div>
-        <div class="uiverse-bar" style="--delay:0.6s"></div>
-        <div class="uiverse-bar" style="--delay:0.7s"></div>
+      <div class="uiverse-volume-bars" id="visualizerBars">
+        <div class="uiverse-bar"></div>
+        <div class="uiverse-bar"></div>
+        <div class="uiverse-bar"></div>
+        <div class="uiverse-bar"></div>
+        <div class="uiverse-bar"></div>
+        <div class="uiverse-bar"></div>
+        <div class="uiverse-bar"></div>
+        <div class="uiverse-bar"></div>
       </div>
     </div>
 
@@ -702,26 +825,65 @@
             <path d="M6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 1 1 10V6a.5.5 0 0 1 .5-.5h2.325l2.363-1.89a.5.5 0 0 1 .529-.06m7.137 2.096a.5.5 0 0 1 0 .708L12.207 8l1.647 1.646a.5.5 0 0 1-.708.708L11.5 8.707l-1.646 1.647a.5.5 0 0 1-.708-.708L10.793 8 9.146 6.354a.5.5 0 1 1 .708-.708L11.5 7.293l1.646-1.647a.5.5 0 0 1 .708 0"/>
           </svg>
         </button>
-        <input type="range" class="ad-volume-slider" id="volumeSlider" min="0" max="1" step="0.01" value="1" aria-label="Volume" />
-        <span class="ad-vol-pct" id="volPct">100%</span>
+        <input type="range" class="ad-volume-slider" id="volumeSlider" min="0" max="2" step="0.05" value="1.25" aria-label="Volume Boost" />
+        <span class="ad-vol-pct boosted" id="volPct">125%</span>
       </div>
 
       <div class="ad-pill-controls">
+        <button type="button" class="ad-mini-pill" id="eqToggleBtn" title="5-Band Equalizer">EQ</button>
+        <button type="button" class="ad-mini-pill active" id="fadeBtn" title="DJ Crossfade">Fade: 4s</button>
         <button type="button" class="ad-mini-pill" id="speedBtn" title="Playback Speed">1x</button>
-        <button type="button" class="ad-mini-pill" id="sleepBtn" title="Sleep Timer">Sleep: Off</button>
+        <button type="button" class="ad-mini-pill" id="sleepBtn" title="Sleep Timer">Sleep</button>
         <button type="button" class="ad-mini-pill dj-on" id="djBtn" title="Toggle DJ Lights">DJ: ON</button>
+      </div>
+
+      <!-- 5-Band Equalizer Panel -->
+      <div class="ad-eq-panel" id="eqPanel">
+        <div class="ad-eq-presets" id="eqPresets">
+          <button type="button" class="ad-eq-preset-btn active" data-preset="normal">Normal</button>
+          <button type="button" class="ad-eq-preset-btn" data-preset="bass">Bass Boost</button>
+          <button type="button" class="ad-eq-preset-btn" data-preset="club">Club / DJ</button>
+          <button type="button" class="ad-eq-preset-btn" data-preset="vocal">Vocal</button>
+          <button type="button" class="ad-eq-preset-btn" data-preset="treble">Treble</button>
+        </div>
+        <div class="ad-eq-sliders">
+          <div class="ad-eq-band">
+            <span class="ad-eq-db" id="eqVal0">0dB</span>
+            <input type="range" class="ad-eq-range" data-band="0" min="-12" max="12" step="1" value="0" />
+            <span class="ad-eq-freq">60Hz</span>
+          </div>
+          <div class="ad-eq-band">
+            <span class="ad-eq-db" id="eqVal1">0dB</span>
+            <input type="range" class="ad-eq-range" data-band="1" min="-12" max="12" step="1" value="0" />
+            <span class="ad-eq-freq">230Hz</span>
+          </div>
+          <div class="ad-eq-band">
+            <span class="ad-eq-db" id="eqVal2">0dB</span>
+            <input type="range" class="ad-eq-range" data-band="2" min="-12" max="12" step="1" value="0" />
+            <span class="ad-eq-freq">910Hz</span>
+          </div>
+          <div class="ad-eq-band">
+            <span class="ad-eq-db" id="eqVal3">0dB</span>
+            <input type="range" class="ad-eq-range" data-band="3" min="-12" max="12" step="1" value="0" />
+            <span class="ad-eq-freq">3.6kHz</span>
+          </div>
+          <div class="ad-eq-band">
+            <span class="ad-eq-db" id="eqVal4">0dB</span>
+            <input type="range" class="ad-eq-range" data-band="4" min="-12" max="12" step="1" value="0" />
+            <span class="ad-eq-freq">14kHz</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Playlist Box with Dynamic Folder Filters -->
+  <!-- Playlist Box -->
   <div class="ad-playlist-box">
     <div class="ad-playlist-header">
       <span id="trackCount">Loading Tracks...</span>
       <button type="button" class="ad-refresh-btn" id="refreshBtn">↻ Sync Drive</button>
     </div>
 
-    <!-- Auto-Populated Folder Filter Chips -->
     <div class="ad-filter-bar" id="filterBar">
       <button type="button" class="ad-filter-chip active" data-cat="All">All</button>
     </div>
@@ -744,7 +906,196 @@
     let repeatMode = 0;
     let isSeeking = false;
     let isLoadingAudio = false;
-    let lastVolume = 1;
+    let lastVolume = 1.25;
+    let crossfadeEnabled = true;
+
+    // Favorites & Saved State (localStorage)
+    let favoriteIds = new Set(JSON.parse(localStorage.getItem("ad_music_favs") || "[]"));
+    let offlineSavedIds = new Set();
+
+    function saveFavorites() {
+      localStorage.setItem("ad_music_favs", JSON.stringify(Array.from(favoriteIds)));
+    }
+
+    function savePlaybackState() {
+      if (!currentTrackId) return;
+      localStorage.setItem("ad_music_last", JSON.stringify({
+        id: currentTrackId,
+        time: audio.currentTime || 0,
+        cat: activeCategory
+      }));
+    }
+
+    // === INDEXEDDB OFFLINE STORAGE ===
+    const DB_NAME = "ADMusicOfflineDB";
+    const STORE_NAME = "songs";
+
+    function openOfflineDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: "id" });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function loadOfflineKeys() {
+      try {
+        const db = await openOfflineDB();
+        const tx = db.transaction(STORE_NAME, "readonly");
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.getAllKeys();
+        req.onsuccess = () => {
+          offlineSavedIds = new Set(req.result || []);
+          renderPlaylist();
+        };
+      } catch (e) {}
+    }
+
+    async function getOfflineSong(id) {
+      try {
+        const db = await openOfflineDB();
+        return new Promise((resolve) => {
+          const tx = db.transaction(STORE_NAME, "readonly");
+          const req = tx.objectStore(STORE_NAME).get(id);
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => resolve(null);
+        });
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function saveSongOffline(track, blob) {
+      const db = await openOfflineDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        tx.objectStore(STORE_NAME).put({ id: track.id, title: track.title, blob });
+        tx.oncomplete = () => {
+          offlineSavedIds.add(track.id);
+          resolve();
+        };
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function removeOfflineSong(id) {
+      const db = await openOfflineDB();
+      return new Promise((resolve) => {
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        tx.objectStore(STORE_NAME).delete(id);
+        tx.oncomplete = () => {
+          offlineSavedIds.delete(id);
+          resolve();
+        };
+      });
+    }
+
+    // === WEB AUDIO API: 200% BOOSTER + 5-BAND EQ + REAL BEAT ANALYSER ===
+    let audioCtx = null;
+    let gainNode = null;
+    let analyser = null;
+    let eqFilters = [];
+    let isAudioEngineReady = false;
+    const eqFreqs = [60, 230, 910, 3600, 14000];
+    const eqPresets = {
+      normal: [0, 0, 0, 0, 0],
+      bass:   [8, 5, 0, 1, 2],
+      club:   [7, 4, -2, 4, 6],
+      vocal:  [-2, 1, 5, 4, 1],
+      treble: [-1, 0, 2, 6, 8]
+    };
+
+    function initAudioEngine() {
+      if (isAudioEngineReady) {
+        if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+        return;
+      }
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        const source = audioCtx.createMediaElementSource(audio);
+
+        // 5-Band EQ BiquadFilters
+        eqFilters = eqFreqs.map((freq, idx) => {
+          const filter = audioCtx.createBiquadFilter();
+          filter.type = idx === 0 ? "lowshelf" : (idx === 4 ? "highshelf" : "peaking");
+          filter.frequency.value = freq;
+          filter.Q.value = 1.2;
+          filter.gain.value = 0;
+          return filter;
+        });
+
+        gainNode = audioCtx.createGain();
+        gainNode.gain.value = parseFloat(volumeSlider.value) || 1.25;
+
+        const compressor = audioCtx.createDynamicsCompressor();
+        compressor.threshold.setValueAtTime(-10, audioCtx.currentTime);
+        compressor.knee.setValueAtTime(12, audioCtx.currentTime);
+        compressor.ratio.setValueAtTime(6, audioCtx.currentTime);
+        compressor.attack.setValueAtTime(0.005, audioCtx.currentTime);
+        compressor.release.setValueAtTime(0.15, audioCtx.currentTime);
+
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 64;
+
+        // Connect chain: source -> EQ bands -> gain -> compressor -> analyser -> speakers
+        let lastNode = source;
+        eqFilters.forEach(f => {
+          lastNode.connect(f);
+          lastNode = f;
+        });
+        lastNode.connect(gainNode);
+        gainNode.connect(compressor);
+        compressor.connect(analyser);
+        analyser.connect(audioCtx.destination);
+
+        isAudioEngineReady = true;
+        startVisualizerLoop();
+      } catch (e) {
+        audio.volume = Math.min(1, parseFloat(volumeSlider.value) || 1);
+      }
+    }
+
+    const visBars = document.querySelectorAll("#visualizerBars .uiverse-bar");
+    function startVisualizerLoop() {
+      if (!analyser) return;
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      function renderFrame() {
+        requestAnimationFrame(renderFrame);
+        if (!isPlaying) {
+          visBars.forEach(b => b.style.height = "6px");
+          albumArt.style.transform = "scale(1)";
+          return;
+        }
+        analyser.getByteFrequencyData(dataArray);
+
+        // Update 8 visualizer bars from frequency bins
+        visBars.forEach((bar, i) => {
+          const val = dataArray[i * 2] || 0;
+          const h = Math.max(6, Math.round((val / 255) * 32));
+          bar.style.height = `${h}px`;
+        });
+
+        // Bass pulse on Album Art & Card Glow
+        const bass = (dataArray[0] + dataArray[1] + dataArray[2]) / 3;
+        const beatNorm = bass / 255;
+        if (document.body.classList.contains("dj-active")) {
+          const scale = 1 + beatNorm * 0.08;
+          albumArt.style.transform = `scale(${scale.toFixed(3)})`;
+          musicCard.style.boxShadow = `0 0 ${Math.round(18 + beatNorm * 28)}px rgba(0, 198, 255, ${(0.35 + beatNorm * 0.55).toFixed(2)}), 0 0 ${Math.round(25 + beatNorm * 35)}px rgba(255, 0, 128, ${(0.25 + beatNorm * 0.5).toFixed(2)})`;
+        } else {
+          albumArt.style.transform = "scale(1)";
+        }
+      }
+      renderFrame();
+    }
 
     const speeds = [1, 1.25, 1.5, 2, 0.75];
     let speedIndex = 0;
@@ -780,6 +1131,9 @@
     const volIconMute = document.getElementById("volIconMute");
     const volumeSlider = document.getElementById("volumeSlider");
     const volPct = document.getElementById("volPct");
+    const eqToggleBtn = document.getElementById("eqToggleBtn");
+    const eqPanel = document.getElementById("eqPanel");
+    const fadeBtn = document.getElementById("fadeBtn");
     const speedBtn = document.getElementById("speedBtn");
     const sleepBtn = document.getElementById("sleepBtn");
     const djBtn = document.getElementById("djBtn");
@@ -795,6 +1149,45 @@
       const isOn = document.body.classList.toggle("dj-active");
       djBtn.textContent = isOn ? "DJ: ON" : "DJ: OFF";
       djBtn.classList.toggle("dj-on", isOn);
+      if (!isOn) musicCard.style.boxShadow = "";
+    });
+
+    eqToggleBtn.addEventListener("click", () => {
+      initAudioEngine();
+      const open = eqPanel.classList.toggle("open");
+      eqToggleBtn.classList.toggle("active", open);
+    });
+
+    fadeBtn.addEventListener("click", () => {
+      crossfadeEnabled = !crossfadeEnabled;
+      fadeBtn.textContent = crossfadeEnabled ? "Fade: 4s" : "Fade: Off";
+      fadeBtn.classList.toggle("active", crossfadeEnabled);
+    });
+
+    // EQ Preset & Slider Controls
+    document.getElementById("eqPresets").addEventListener("click", (e) => {
+      const btn = e.target.closest(".ad-eq-preset-btn");
+      if (!btn) return;
+      initAudioEngine();
+      document.querySelectorAll(".ad-eq-preset-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const values = eqPresets[btn.dataset.preset] || [0, 0, 0, 0, 0];
+      document.querySelectorAll(".ad-eq-range").forEach((slider, idx) => {
+        slider.value = values[idx];
+        document.getElementById(`eqVal${idx}`).textContent = `${values[idx] > 0 ? "+" : ""}${values[idx]}dB`;
+        if (eqFilters[idx]) eqFilters[idx].gain.value = values[idx];
+      });
+    });
+
+    document.querySelectorAll(".ad-eq-range").forEach((slider) => {
+      slider.addEventListener("input", (e) => {
+        initAudioEngine();
+        const idx = parseInt(e.target.dataset.band, 10);
+        const val = parseFloat(e.target.value);
+        document.getElementById(`eqVal${idx}`).textContent = `${val > 0 ? "+" : ""}${val}dB`;
+        if (eqFilters[idx]) eqFilters[idx].gain.value = val;
+        document.querySelectorAll(".ad-eq-preset-btn").forEach(b => b.classList.remove("active"));
+      });
     });
 
     function formatTime(sec) {
@@ -807,7 +1200,14 @@
     function getFilteredTracks() {
       const query = searchInput.value.trim().toLowerCase();
       return tracks.filter(t => {
-        const catMatch = activeCategory === "All" || (t.category || "").toLowerCase() === activeCategory.toLowerCase();
+        let catMatch = true;
+        if (activeCategory === "Favorites") {
+          catMatch = favoriteIds.has(t.id);
+        } else if (activeCategory === "Offline") {
+          catMatch = offlineSavedIds.has(t.id);
+        } else if (activeCategory !== "All") {
+          catMatch = (t.category || "").toLowerCase() === activeCategory.toLowerCase();
+        }
         const textMatch = !query || t.title.toLowerCase().includes(query);
         return catMatch && textMatch;
       });
@@ -815,7 +1215,7 @@
 
     function renderFilterChips(folderCategories = []) {
       const trackCats = tracks.map(t => t.category).filter(Boolean);
-      const allCats = Array.from(new Set(["All", ...folderCategories, ...trackCats]));
+      const allCats = Array.from(new Set(["All", "Favorites", "Offline", ...folderCategories, ...trackCats]));
 
       filterBar.innerHTML = "";
       allCats.forEach(cat => {
@@ -823,7 +1223,7 @@
         btn.type = "button";
         btn.className = `ad-filter-chip ${cat === activeCategory ? "active" : ""}`;
         btn.dataset.cat = cat;
-        btn.textContent = cat;
+        btn.textContent = cat === "Favorites" ? "❤️ Favorites" : (cat === "Offline" ? "📥 Offline" : cat);
         filterBar.appendChild(btn);
       });
     }
@@ -897,6 +1297,7 @@
         const folderCats = Array.isArray(data.categories) ? data.categories : [];
 
         tracks = list;
+        localStorage.setItem("ad_music_tracks_backup", JSON.stringify(tracks));
         renderFilterChips(folderCats);
 
         if (tracks.length === 0) {
@@ -906,13 +1307,27 @@
           return;
         }
 
-        selectTrackUI(tracks[0]);
+        // Restore last played song if available
+        const saved = JSON.parse(localStorage.getItem("ad_music_last") || "null");
+        const initialTrack = (saved && tracks.find(t => t.id === saved.id)) || tracks[0];
+        selectTrackUI(initialTrack);
       } catch (err) {
-        statusMsg.style.color = "#ff6b6b";
-        statusMsg.textContent = err.message;
-        trackTitle.textContent = "Connection Failed";
-        trackCount.textContent = "0 Tracks";
-        playlistEl.innerHTML = "";
+        // Offline Fallback from localStorage + IndexedDB
+        const backup = JSON.parse(localStorage.getItem("ad_music_tracks_backup") || "[]");
+        if (backup.length > 0) {
+          tracks = backup;
+          activeCategory = offlineSavedIds.size > 0 ? "Offline" : "All";
+          renderFilterChips([]);
+          selectTrackUI(tracks[0]);
+          statusMsg.style.color = "#00ff88";
+          statusMsg.textContent = "Offline Mode: Saved tracks ready.";
+        } else {
+          statusMsg.style.color = "#ff6b6b";
+          statusMsg.textContent = err.message;
+          trackTitle.textContent = "Connection Failed";
+          trackCount.textContent = "0 Tracks";
+          playlistEl.innerHTML = "";
+        }
       }
     }
 
@@ -930,12 +1345,15 @@
       trackCount.textContent = `${activeCategory} (${visibleTracks.length} Tracks)`;
 
       if (visibleTracks.length === 0) {
-        playlistEl.innerHTML = `<li class="ad-track-item" style="justify-content:center; color:#8e8e93;">Is folder/category me koi gaana nahi hai.</li>`;
+        playlistEl.innerHTML = `<li class="ad-track-item" style="justify-content:center; color:#8e8e93;">Is section me abhi koi gaana nahi hai.</li>`;
         return;
       }
 
-      visibleTracks.forEach((track, idx) => {
+      visibleTracks.forEach((track) => {
         const isCurrent = track.id === currentTrackId;
+        const isFav = favoriteIds.has(track.id);
+        const isSaved = offlineSavedIds.has(track.id);
+
         const li = document.createElement("li");
         li.className = `ad-track-item ${isCurrent ? "active" : ""}`;
         const thumbHtml = track.thumb
@@ -946,18 +1364,77 @@
           <div class="ad-item-thumb">${thumbHtml}</div>
           <div style="flex-grow:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
             <div style="font-weight:600; overflow:hidden; text-overflow:ellipsis;">${track.title}</div>
-            <div style="font-size:0.75rem; color:#8e8e93;">
+            <div style="font-size:0.74rem; color:#8e8e93;">
               ${track.artist}
               <span class="ad-cat-tag">${track.category || "Music"}</span>
+              ${isSaved ? `<span class="ad-offline-badge">Offline</span>` : ""}
             </div>
           </div>
-          <span class="ad-track-item-meta">${isCurrent && isPlaying ? "Playing" : `#${idx + 1}`}</span>
+          <div class="ad-item-actions">
+            <button type="button" class="ad-action-icon fav-btn ${isFav ? "fav-active" : ""}" title="Favorite">${isFav ? "♥" : "♡"}</button>
+            <button type="button" class="ad-action-icon save-btn ${isSaved ? "saved-active" : ""}" title="${isSaved ? "Saved Offline (Tap to remove)" : "Save Offline"}">${isSaved ? "✓" : "↓"}</button>
+          </div>
         `;
-        li.addEventListener("click", () => {
+
+        li.addEventListener("click", (e) => {
+          if (e.target.closest(".fav-btn")) {
+            e.stopPropagation();
+            if (favoriteIds.has(track.id)) favoriteIds.delete(track.id);
+            else favoriteIds.add(track.id);
+            saveFavorites();
+            renderPlaylist();
+            return;
+          }
+          if (e.target.closest(".save-btn")) {
+            e.stopPropagation();
+            handleOfflineToggle(track, e.target.closest(".save-btn"));
+            return;
+          }
           loadAndPlayTrack(track);
         });
+
         playlistEl.appendChild(li);
       });
+    }
+
+    async function handleOfflineToggle(track, btn) {
+      if (offlineSavedIds.has(track.id)) {
+        await removeOfflineSong(track.id);
+        statusMsg.style.color = "#8e8e93";
+        statusMsg.textContent = `Removed "${track.title}" from offline storage.`;
+        renderPlaylist();
+        return;
+      }
+
+      try {
+        btn.textContent = "…";
+        statusMsg.style.color = "#00c6ff";
+        statusMsg.textContent = `Saving "${track.title}" offline...`;
+        const blob = await fetchTrackBlob(track);
+        await saveSongOffline(track, blob);
+        statusMsg.style.color = "#00ff88";
+        statusMsg.textContent = `Saved "${track.title}" for offline playback!`;
+        renderPlaylist();
+      } catch (err) {
+        btn.textContent = "↓";
+        statusMsg.style.color = "#ff6b6b";
+        statusMsg.textContent = "Offline save failed: " + err.message;
+      }
+    }
+
+    async function fetchTrackBlob(track) {
+      const offlineEntry = await getOfflineSong(track.id);
+      if (offlineEntry && offlineEntry.blob) return offlineEntry.blob;
+
+      const res = await callAppsScript(`fileId=${encodeURIComponent(track.id)}`);
+      if (res.error) throw new Error(res.error);
+
+      const byteChars = atob(res.base64);
+      const byteNumbers = new Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) {
+        byteNumbers[i] = byteChars.charCodeAt(i);
+      }
+      return new Blob([new Uint8Array(byteNumbers)], { type: res.mimeType || "audio/webm" });
     }
 
     function selectTrackUI(track) {
@@ -977,46 +1454,40 @@
     async function preloadTrack(track) {
       if (!track || audioCache[track.id]) return;
       try {
-        const res = await callAppsScript(`fileId=${encodeURIComponent(track.id)}`);
-        if (res && res.base64) {
-          const byteChars = atob(res.base64);
-          const byteNumbers = new Array(byteChars.length);
-          for (let i = 0; i < byteChars.length; i++) {
-            byteNumbers[i] = byteChars.charCodeAt(i);
-          }
-          const blob = new Blob([new Uint8Array(byteNumbers)], { type: res.mimeType || "audio/webm" });
-          audioCache[track.id] = URL.createObjectURL(blob);
-        }
+        const blob = await fetchTrackBlob(track);
+        audioCache[track.id] = URL.createObjectURL(blob);
       } catch (e) {}
     }
 
-    async function loadAndPlayTrack(track) {
+    async function loadAndPlayTrack(track, resumeTime = 0) {
       if (!track || isLoadingAudio) return;
+      initAudioEngine();
       pauseTrack();
       selectTrackUI(track);
 
       try {
         isLoadingAudio = true;
         statusMsg.style.color = "#00c6ff";
-        statusMsg.textContent = "Buffering audio from Drive...";
+        statusMsg.textContent = offlineSavedIds.has(track.id) ? "Loading from offline storage..." : "Buffering audio from Drive...";
 
         let blobUrl = audioCache[track.id];
         if (!blobUrl) {
-          const res = await callAppsScript(`fileId=${encodeURIComponent(track.id)}`);
-          if (res.error) throw new Error(res.error);
-
-          const byteChars = atob(res.base64);
-          const byteNumbers = new Array(byteChars.length);
-          for (let i = 0; i < byteChars.length; i++) {
-            byteNumbers[i] = byteChars.charCodeAt(i);
-          }
-          const blob = new Blob([new Uint8Array(byteNumbers)], { type: res.mimeType || "audio/webm" });
+          const blob = await fetchTrackBlob(track);
           blobUrl = URL.createObjectURL(blob);
           audioCache[track.id] = blobUrl;
         }
 
         audio.src = blobUrl;
         audio.playbackRate = speeds[speedIndex];
+        if (resumeTime > 0) audio.currentTime = resumeTime;
+
+        // Smooth DJ Fade-In if crossfade is ON
+        const targetGain = parseFloat(volumeSlider.value) || 1.25;
+        if (crossfadeEnabled && isAudioEngineReady && gainNode && !audio.muted) {
+          gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+          gainNode.gain.linearRampToValueAtTime(targetGain, audioCtx.currentTime + 1.5);
+        }
+
         await audio.play();
         isPlaying = true;
         statusMsg.textContent = "";
@@ -1043,6 +1514,7 @@
       iconPlay.style.display = "block";
       iconPause.style.display = "none";
       if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
+      savePlaybackState();
       renderPlaylist();
     }
 
@@ -1081,6 +1553,7 @@
 
     playPauseBtn.addEventListener("click", () => {
       if (tracks.length === 0) return;
+      initAudioEngine();
       if (isPlaying) {
         pauseTrack();
       } else if (audio.src && audio.src.startsWith("blob:")) {
@@ -1093,8 +1566,10 @@
           renderPlaylist();
         });
       } else {
+        const saved = JSON.parse(localStorage.getItem("ad_music_last") || "null");
         const current = tracks.find(t => t.id === currentTrackId) || getFilteredTracks()[0] || tracks[0];
-        loadAndPlayTrack(current);
+        const resumeAt = (saved && saved.id === current.id && saved.time > 5) ? saved.time : 0;
+        loadAndPlayTrack(current, resumeAt);
       }
     });
 
@@ -1137,15 +1612,24 @@
     });
 
     function updateVolumeUI(val) {
-      audio.volume = val;
+      if (isAudioEngineReady && gainNode) {
+        audio.volume = 1;
+        gainNode.gain.setValueAtTime(val, audioCtx.currentTime);
+      } else {
+        audio.volume = Math.min(1, val);
+      }
       volumeSlider.value = val;
-      volPct.textContent = `${Math.round(val * 100)}%`;
+      const pct = Math.round(val * 100);
+      volPct.textContent = `${pct}%`;
+      volPct.classList.toggle("boosted", pct > 100);
+
       const muted = val === 0 || audio.muted;
       volIconHigh.style.display = muted ? "none" : "block";
       volIconMute.style.display = muted ? "block" : "none";
     }
 
     volumeSlider.addEventListener("input", (e) => {
+      initAudioEngine();
       const val = parseFloat(e.target.value);
       audio.muted = false;
       if (val > 0) lastVolume = val;
@@ -1153,11 +1637,12 @@
     });
 
     muteBtn.addEventListener("click", () => {
-      if (audio.muted || audio.volume === 0) {
+      initAudioEngine();
+      if (audio.muted || parseFloat(volumeSlider.value) === 0) {
         audio.muted = false;
-        updateVolumeUI(lastVolume || 1);
+        updateVolumeUI(lastVolume || 1.25);
       } else {
-        lastVolume = audio.volume;
+        lastVolume = parseFloat(volumeSlider.value);
         audio.muted = true;
         updateVolumeUI(0);
       }
@@ -1177,15 +1662,15 @@
       if (sleepTimeout) clearTimeout(sleepTimeout);
 
       if (mins === 0) {
-        sleepBtn.textContent = "Sleep: Off";
+        sleepBtn.textContent = "Sleep";
         sleepBtn.classList.remove("active");
       } else {
-        sleepBtn.textContent = `Sleep: ${mins}m`;
+        sleepBtn.textContent = `${mins}m`;
         sleepBtn.classList.add("active");
         sleepTimeout = setTimeout(() => {
           pauseTrack();
           sleepIndex = 0;
-          sleepBtn.textContent = "Sleep: Off";
+          sleepBtn.textContent = "Sleep";
           sleepBtn.classList.remove("active");
           statusMsg.textContent = "Sleep timer ended. Playback paused.";
         }, mins * 60 * 1000);
@@ -1199,6 +1684,7 @@
       fetchDriveSongs();
     });
 
+    let lastSaveTick = 0;
     audio.addEventListener("timeupdate", () => {
       if (!audio.duration || isSeeking) return;
       const percent = (audio.currentTime / audio.duration) * 100;
@@ -1206,6 +1692,20 @@
       progressHandle.style.left = `${percent}%`;
       currentTimeEl.textContent = formatTime(audio.currentTime);
       remainingTimeEl.textContent = `-${formatTime(audio.duration - audio.currentTime)}`;
+
+      // Save resume timestamp every 5 seconds
+      if (Date.now() - lastSaveTick > 5000) {
+        lastSaveTick = Date.now();
+        savePlaybackState();
+      }
+
+      // DJ Crossfade Out in final 4 seconds
+      const timeLeft = audio.duration - audio.currentTime;
+      if (crossfadeEnabled && isAudioEngineReady && gainNode && !audio.muted && repeatMode !== 2 && timeLeft <= 4 && timeLeft > 0.2) {
+        const baseGain = parseFloat(volumeSlider.value) || 1.25;
+        const fadedGain = Math.max(0.05, baseGain * (timeLeft / 4));
+        gainNode.gain.setValueAtTime(fadedGain, audioCtx.currentTime);
+      }
     });
 
     audio.addEventListener("ended", () => {
@@ -1265,6 +1765,7 @@
       }
     });
 
+    loadOfflineKeys();
     fetchDriveSongs();
   </script>
 </body>
