@@ -108,78 +108,6 @@
       100% { border-color: rgba(168, 85, 247, 0.9); }
     }
 
-    /* === FULL-SCREEN THUMBNAIL SCREENSAVER OVERLAY === */
-    .ad-fullscreen-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      background: radial-gradient(circle at center, #111b2e 0%, #05070b 85%);
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      text-align: center;
-      cursor: pointer;
-      animation: fsFadeIn 0.35s ease-out;
-    }
-
-    .ad-fullscreen-overlay.active {
-      display: flex;
-    }
-
-    @keyframes fsFadeIn {
-      from { opacity: 0; transform: scale(1.03); }
-      to   { opacity: 1; transform: scale(1); }
-    }
-
-    .ad-fs-art-frame {
-      width: min(82vw, 360px);
-      height: min(82vw, 360px);
-      border-radius: 32px;
-      background: linear-gradient(135deg, #00c6ff, #0072ff);
-      box-shadow: 0 0 45px rgba(0, 198, 255, 0.55), 0 25px 60px rgba(0, 0, 0, 0.85);
-      border: 2px solid rgba(0, 198, 255, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      margin-bottom: 24px;
-      transition: transform 0.1s ease-out;
-    }
-
-    .ad-fs-art-frame img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .ad-fs-title {
-      font-size: 1.45rem;
-      font-weight: 800;
-      color: #ffffff;
-      max-width: 90vw;
-      margin-bottom: 6px;
-      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
-    }
-
-    .ad-fs-artist {
-      font-size: 0.92rem;
-      color: var(--accent-1);
-      font-weight: 600;
-      margin-bottom: 18px;
-    }
-
-    .ad-fs-hint {
-      font-size: 0.74rem;
-      color: rgba(255, 255, 255, 0.55);
-      background: rgba(255, 255, 255, 0.08);
-      padding: 6px 14px;
-      border-radius: 20px;
-      letter-spacing: 0.5px;
-    }
-
     /* === TOP PAGE HEADER WITH BACK BUTTON === */
     .subpage-top-bar {
       width: 100%;
@@ -1055,14 +983,6 @@
 </head>
 <body class="dj-active">
 
-  <!-- ==================== FULL-SCREEN THUMBNAIL OVERLAY ==================== -->
-  <div class="ad-fullscreen-overlay" id="fsOverlay" title="Touch anywhere to return to player">
-    <div class="ad-fs-art-frame" id="fsArtFrame">AD</div>
-    <div class="ad-fs-title" id="fsTitle">AD Music</div>
-    <div class="ad-fs-artist" id="fsArtist">AMAR TOMAR</div>
-    <div class="ad-fs-hint">Touch anywhere to return to player</div>
-  </div>
-
   <!-- ==================== PAGE 1: MAIN PLAYER ==================== -->
   <section class="app-page active-page" id="playerPage">
     <header class="ad-brand-header">
@@ -1329,34 +1249,7 @@
     let lastMasterGain = 1.25;
     let crossfadeEnabled = true;
 
-    // === 10-SECOND FULL-SCREEN THUMBNAIL TIMER ===
-    const fsOverlay = document.getElementById("fsOverlay");
-    const fsArtFrame = document.getElementById("fsArtFrame");
-    const fsTitle = document.getElementById("fsTitle");
-    const fsArtist = document.getElementById("fsArtist");
-    let playSecondsCounter = 0;
-
-    function hideFullscreenThumbnail() {
-      fsOverlay.classList.remove("active");
-      playSecondsCounter = 0;
-    }
-
-    fsOverlay.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      hideFullscreenThumbnail();
-    });
-
-    // Any touch/interaction resets the 10-second timer
-    ["pointerdown", "touchstart", "keydown"].forEach(evt => {
-      document.addEventListener(evt, () => {
-        if (!fsOverlay.classList.contains("active")) {
-          playSecondsCounter = 0;
-        }
-      }, { passive: true });
-    });
-
-      // Page Navigation
+    // Page Navigation
     function showPage(pageId) {
       document.querySelectorAll(".app-page").forEach(p => p.classList.remove("active-page"));
       const target = document.getElementById(pageId);
@@ -1540,7 +1433,6 @@
         if (!isPlaying) {
           visBars.forEach(b => b.style.height = "6px");
           albumArt.style.transform = "scale(1)";
-          fsArtFrame.style.transform = "scale(1)";
           return;
         }
         analyser.getByteFrequencyData(dataArray);
@@ -1556,11 +1448,9 @@
         if (document.body.classList.contains("dj-active")) {
           const scale = 1 + beatNorm * 0.08;
           albumArt.style.transform = `scale(${scale.toFixed(3)})`;
-          fsArtFrame.style.transform = `scale(${(1 + beatNorm * 0.05).toFixed(3)})`;
           musicCard.style.boxShadow = `0 0 ${Math.round(18 + beatNorm * 28)}px rgba(0, 198, 255, ${(0.35 + beatNorm * 0.55).toFixed(2)}), 0 0 ${Math.round(25 + beatNorm * 35)}px rgba(255, 0, 128, ${(0.25 + beatNorm * 0.5).toFixed(2)})`;
         } else {
           albumArt.style.transform = "scale(1)";
-          fsArtFrame.style.transform = "scale(1)";
         }
       }
       renderFrame();
@@ -1764,7 +1654,6 @@
           }
         }
 
-        // Single click opens folder song list; double click/tap plays that folder immediately
         card.addEventListener("click", () => {
           const now = Date.now();
           if (lastTapKey === alb.key && (now - lastTapTime) < 420) {
@@ -1878,7 +1767,6 @@
 
         navTrackSummary.textContent = `${tracks.length} Songs • ${Math.max(1, folderCategories.length)} Albums`;
 
-        // Always select 1st Favorite Song on launch if available
         const firstFav = getFirstFavoriteTrack();
         if (firstFav) {
           activeCategory = "Favorites";
@@ -1910,10 +1798,8 @@
     function updateAlbumArt(thumbUrl) {
       if (thumbUrl) {
         albumArt.innerHTML = `<img src="${thumbUrl}" alt="Cover" onerror="this.parentElement.innerHTML='AD';" />`;
-        fsArtFrame.innerHTML = `<img src="${thumbUrl}" alt="Cover" onerror="this.parentElement.innerHTML='<span style=font-size:4rem;font-weight:900;>AD</span>';" />`;
       } else {
         albumArt.innerHTML = "AD";
-        fsArtFrame.innerHTML = `<span style="font-size:4rem;font-weight:900;letter-spacing:3px;">AD</span>`;
       }
     }
 
@@ -2020,8 +1906,6 @@
       currentTrackId = track.id;
       trackTitle.textContent = track.title;
       artistName.textContent = `${track.artist} • ${track.category || "Music"}`;
-      fsTitle.textContent = track.title;
-      fsArtist.textContent = `${track.artist} • ${track.category || "Music"}`;
       updateAlbumArt(track.thumb);
       progressFill.style.width = "0%";
       progressHandle.style.left = "0%";
@@ -2045,7 +1929,6 @@
       initAudioEngine();
       pauseTrack();
       selectTrackUI(track);
-      playSecondsCounter = 0;
 
       try {
         isLoadingAudio = true;
@@ -2086,7 +1969,6 @@
     function pauseTrack() {
       audio.pause();
       isPlaying = false;
-      playSecondsCounter = 0;
       musicCard.classList.remove("is-playing");
       if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
       renderPlaylist();
@@ -2124,13 +2006,11 @@
       } else if (audio.src && audio.src.startsWith("blob:")) {
         audio.play().then(() => {
           isPlaying = true;
-          playSecondsCounter = 0;
           musicCard.classList.add("is-playing");
           if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
           renderPlaylist();
         });
       } else {
-        // Always prioritize 1st Favorite Song when starting fresh playback
         const firstFav = getFirstFavoriteTrack();
         const startTrack = firstFav || tracks.find(t => t.id === currentTrackId) || getFilteredTracks()[0] || tracks[0];
         if (firstFav && startTrack.id === firstFav.id) {
