@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0b0d13" />
   <title>AD MUSIC — AMAR TOMAR</title>
   <style>
@@ -12,13 +12,18 @@
       --accent-2: #0072ff;
       --text-main: #ffffff;
       --text-muted: #8e8e93;
-      --beat-scale: 0;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
     }
 
     body {
@@ -29,10 +34,9 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 20px 12px 32px;
+      justify-content: flex-start;
+      padding: 16px 12px 28px;
       position: relative;
-      overflow-x: hidden;
     }
 
     /* === DJ LIGHT EFFECTS === */
@@ -53,11 +57,24 @@
       z-index: 0;
     }
 
-    .ad-brand-header,
-    .uiverse-music-card,
-    .ad-playlist-box {
+    .app-page {
+      width: 100%;
+      max-width: 440px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
       position: relative;
       z-index: 1;
+      animation: pageFadeIn 0.2s ease-out;
+    }
+
+    .app-page.active-page {
+      display: flex;
+    }
+
+    @keyframes pageFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     body.dj-active .uiverse-music-card {
@@ -91,20 +108,51 @@
       100% { border-color: rgba(168, 85, 247, 0.9); }
     }
 
-    .ad-mini-pill.dj-on {
-      background: linear-gradient(90deg, rgba(0, 198, 255, 0.28), rgba(255, 0, 128, 0.28));
-      border-color: rgba(255, 0, 128, 0.55);
-      color: #ffffff;
-      box-shadow: 0 0 10px rgba(255, 0, 128, 0.35);
+    /* === TOP PAGE HEADER WITH BACK BUTTON === */
+    .subpage-top-bar {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding: 4px 2px;
+    }
+
+    .ad-back-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(0, 198, 255, 0.35);
+      color: var(--accent-1);
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+
+    .ad-back-btn:hover {
+      background: rgba(0, 198, 255, 0.18);
+    }
+
+    .subpage-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     .ad-brand-header {
       text-align: center;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     .ad-brand-title {
-      font-size: 1.8rem;
+      font-size: 1.75rem;
       font-weight: 800;
       letter-spacing: 3px;
       background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
@@ -113,17 +161,17 @@
     }
 
     .ad-brand-subtitle {
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       color: var(--text-muted);
       letter-spacing: 1px;
-      margin-top: 3px;
+      margin-top: 2px;
     }
 
+    /* === MAIN PLAYER CARD === */
     .uiverse-music-card {
-      max-width: 440px;
       width: 100%;
-      padding: 20px;
-      border-radius: 32px;
+      padding: 18px;
+      border-radius: 28px;
       background: #000000;
       border: 1px solid rgba(255, 255, 255, 0.09);
       box-shadow: 0 18px 45px rgba(0, 0, 0, 0.7);
@@ -136,12 +184,13 @@
     .uiverse-track-info {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
+      width: 100%;
     }
 
     .uiverse-album-art {
-      width: 68px;
-      height: 68px;
+      width: 66px;
+      height: 66px;
       border-radius: 16px;
       background: linear-gradient(135deg, #00c6ff, #0072ff);
       box-shadow: 0 4px 14px rgba(0, 114, 255, 0.35);
@@ -166,11 +215,12 @@
 
     .uiverse-track-details {
       flex-grow: 1;
+      min-width: 0;
       overflow: hidden;
     }
 
     .uiverse-track-title {
-      font-size: 1.1rem;
+      font-size: 1.08rem;
       font-weight: 600;
       white-space: nowrap;
       text-overflow: ellipsis;
@@ -181,20 +231,22 @@
       font-size: 0.8rem;
       color: #d1d1d6;
       margin-top: 3px;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
     }
 
-    /* Real-time Beat Visualizer Bars */
     .uiverse-volume-bars {
       display: flex;
       align-items: flex-end;
-      gap: 2.5px;
-      width: 42px;
-      height: 34px;
+      gap: 2px;
+      width: 38px;
+      height: 32px;
       flex-shrink: 0;
     }
 
     .uiverse-volume-bars .uiverse-bar {
-      width: 3.5px;
+      width: 3px;
       height: 6px;
       background: linear-gradient(180deg, #00c6ff, #0072ff);
       border-radius: 2px;
@@ -205,12 +257,13 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
+      width: 100%;
     }
 
     .uiverse-time-info {
       display: flex;
       justify-content: space-between;
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       color: #8e8e93;
       font-variant-numeric: tabular-nums;
     }
@@ -227,11 +280,6 @@
       background-color: rgba(255, 255, 255, 0.14);
       border-radius: 4px;
       position: relative;
-      transition: height 0.15s ease;
-    }
-
-    .uiverse-progress-wrapper:hover .uiverse-progress-bar {
-      height: 8px;
     }
 
     .uiverse-progress-fill {
@@ -253,24 +301,20 @@
       border-radius: 50%;
       box-shadow: 0 0 8px rgba(0, 198, 255, 0.8);
       pointer-events: none;
-      transition: transform 0.15s ease;
-    }
-
-    .uiverse-progress-wrapper:hover .uiverse-progress-handle {
-      transform: translate(-50%, -50%) scale(1.2);
     }
 
     .uiverse-button-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 4px;
+      gap: 2px;
       margin-top: 2px;
+      width: 100%;
     }
 
     .uiverse-control-button {
-      width: 40px;
-      height: 40px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
       border: none;
       background: transparent;
@@ -287,7 +331,6 @@
 
     .uiverse-control-button:hover {
       background: rgba(255, 255, 255, 0.1);
-      transform: scale(1.06);
     }
 
     .uiverse-play-pause-button {
@@ -311,8 +354,8 @@
 
     .repeat-one-badge {
       position: absolute;
-      top: 5px;
-      right: 5px;
+      top: 4px;
+      right: 4px;
       font-size: 9px;
       font-weight: 800;
       background: var(--accent-1);
@@ -331,6 +374,7 @@
       gap: 10px;
       padding-top: 10px;
       border-top: 1px solid rgba(255, 255, 255, 0.08);
+      width: 100%;
     }
 
     .ad-volume-box {
@@ -349,10 +393,6 @@
       align-items: center;
       justify-content: center;
       padding: 4px;
-    }
-
-    .ad-vol-btn:hover {
-      color: #fff;
     }
 
     .ad-volume-slider {
@@ -384,7 +424,6 @@
       text-align: right;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
-      transition: color 0.2s;
     }
 
     .ad-vol-pct.boosted {
@@ -397,7 +436,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 5px;
-      flex-wrap: wrap;
+      width: 100%;
     }
 
     .ad-mini-pill {
@@ -406,7 +445,7 @@
       color: #e5e5ea;
       font-size: 0.7rem;
       font-weight: 600;
-      padding: 5px 9px;
+      padding: 6px 8px;
       border-radius: 10px;
       cursor: pointer;
       transition: all 0.2s;
@@ -415,125 +454,258 @@
       text-align: center;
     }
 
-    .ad-mini-pill:hover {
-      background: rgba(255, 255, 255, 0.15);
-    }
-
     .ad-mini-pill.active {
       background: rgba(0, 198, 255, 0.18);
       border-color: rgba(0, 198, 255, 0.45);
       color: var(--accent-1);
     }
 
-    /* === 5-BAND EQUALIZER PANEL === */
-    .ad-eq-panel {
-      display: none;
-      flex-direction: column;
-      gap: 10px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(0, 198, 255, 0.25);
-      border-radius: 18px;
-      padding: 12px;
-      margin-top: 2px;
+    .ad-mini-pill.dj-on {
+      background: linear-gradient(90deg, rgba(0, 198, 255, 0.28), rgba(255, 0, 128, 0.28));
+      border-color: rgba(255, 0, 128, 0.55);
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(255, 0, 128, 0.35);
     }
 
-    .ad-eq-panel.open {
+    /* === BOTTOM NAVIGATION BUTTONS ON MAIN PLAYER === */
+    .ad-nav-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+      margin-top: 14px;
+    }
+
+    .ad-nav-card-btn {
+      background: rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(0, 198, 255, 0.3);
+      border-radius: 20px;
+      padding: 14px 12px;
+      color: #fff;
+      cursor: pointer;
       display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+    }
+
+    .ad-nav-card-btn:hover {
+      border-color: var(--accent-1);
+      background: rgba(0, 198, 255, 0.12);
+    }
+
+    .ad-nav-icon {
+      font-size: 1.3rem;
+    }
+
+    .ad-nav-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--accent-1);
+    }
+
+    .ad-nav-sub {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    /* === DEDICATED EQUALIZER PAGE === */
+    .ad-eq-page-card {
+      width: 100%;
+      background: #000000;
+      border: 1px solid rgba(0, 198, 255, 0.28);
+      border-radius: 28px;
+      padding: 18px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.75);
     }
 
     .ad-eq-presets {
       display: flex;
-      gap: 5px;
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-
-    .ad-eq-presets::-webkit-scrollbar {
-      display: none;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     .ad-eq-preset-btn {
       background: rgba(255, 255, 255, 0.07);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       color: #d1d1d6;
-      font-size: 0.68rem;
+      font-size: 0.74rem;
       font-weight: 600;
-      padding: 4px 9px;
-      border-radius: 12px;
+      padding: 6px 12px;
+      border-radius: 14px;
       cursor: pointer;
-      white-space: nowrap;
     }
 
     .ad-eq-preset-btn.active {
       background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
       color: #fff;
       border-color: transparent;
+      box-shadow: 0 3px 10px rgba(0, 114, 255, 0.4);
     }
 
     .ad-eq-sliders {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 6px;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 4px;
       text-align: center;
+      width: 100%;
+      padding: 12px 0;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
     }
 
     .ad-eq-band {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 5px;
+      justify-content: center;
+      min-width: 0;
     }
 
     .ad-eq-db {
-      font-size: 0.65rem;
+      font-size: 0.7rem;
+      font-weight: 700;
       color: var(--accent-1);
       font-variant-numeric: tabular-nums;
+      margin-bottom: 6px;
     }
 
     .ad-eq-range {
       -webkit-appearance: none;
       appearance: none;
-      width: 72px;
-      height: 4px;
+      width: 110px;
+      height: 5px;
       background: rgba(255, 255, 255, 0.2);
       border-radius: 4px;
       transform: rotate(-90deg);
-      margin: 32px 0;
+      margin: 48px 0;
       cursor: pointer;
     }
 
     .ad-eq-range::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
-      width: 12px;
-      height: 12px;
+      width: 15px;
+      height: 15px;
       border-radius: 50%;
       background: #00ff88;
-      box-shadow: 0 0 6px rgba(0, 255, 136, 0.8);
+      box-shadow: 0 0 8px rgba(0, 255, 136, 0.85);
     }
 
     .ad-eq-freq {
-      font-size: 0.65rem;
+      font-size: 0.7rem;
+      font-weight: 600;
       color: var(--text-muted);
+      margin-top: 6px;
     }
 
-    /* === PLAYLIST BOX === */
-    .ad-playlist-box {
-      max-width: 440px;
+    /* === DEDICATED PLAYLIST & ALBUMS PAGE === */
+    .ad-albums-section-title {
       width: 100%;
-      margin-top: 16px;
-      background: rgba(0, 0, 0, 0.78);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      padding-left: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .ad-album-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      width: 100%;
+      margin-bottom: 14px;
+    }
+
+    .ad-album-card {
+      background: rgba(0, 0, 0, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-width: 0;
+    }
+
+    .ad-album-card:hover {
+      border-color: rgba(0, 198, 255, 0.45);
+    }
+
+    .ad-album-card.active {
+      background: linear-gradient(135deg, rgba(0, 198, 255, 0.22), rgba(0, 114, 255, 0.22));
+      border-color: var(--accent-1);
+      box-shadow: 0 4px 14px rgba(0, 114, 255, 0.35);
+    }
+
+    .ad-album-cover {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #00c6ff, #0072ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 800;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .ad-album-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .ad-album-meta {
+      min-width: 0;
+      flex-grow: 1;
+    }
+
+    .ad-album-name {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ad-album-count {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .ad-playlist-box {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.82);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 24px;
       padding: 14px;
     }
 
     .ad-playlist-header {
-      font-size: 0.76rem;
+      font-size: 0.74rem;
       text-transform: uppercase;
-      letter-spacing: 1.1px;
+      letter-spacing: 1px;
       color: var(--text-muted);
-      padding: 2px 6px 10px;
+      padding: 2px 4px 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -547,44 +719,6 @@
       border-radius: 12px;
       font-size: 0.7rem;
       cursor: pointer;
-    }
-
-    .ad-filter-bar {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 10px;
-      margin-bottom: 4px;
-      scrollbar-width: none;
-    }
-
-    .ad-filter-bar::-webkit-scrollbar {
-      display: none;
-    }
-
-    .ad-filter-chip {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #d1d1d6;
-      padding: 6px 13px;
-      border-radius: 20px;
-      font-size: 0.76rem;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.2s ease;
-    }
-
-    .ad-filter-chip:hover {
-      background: rgba(255, 255, 255, 0.12);
-      color: #fff;
-    }
-
-    .ad-filter-chip.active {
-      background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
-      border-color: transparent;
-      color: #ffffff;
-      box-shadow: 0 3px 10px rgba(0, 114, 255, 0.4);
     }
 
     .ad-search-input {
@@ -605,7 +739,7 @@
 
     .ad-track-list {
       list-style: none;
-      max-height: 270px;
+      max-height: 46vh;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -616,11 +750,11 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 8px 10px;
+      padding: 8px;
       border-radius: 14px;
       cursor: pointer;
       transition: background 0.2s;
-      font-size: 0.88rem;
+      font-size: 0.86rem;
       gap: 8px;
     }
 
@@ -634,15 +768,15 @@
     }
 
     .ad-item-thumb {
-      width: 40px;
-      height: 40px;
+      width: 38px;
+      height: 38px;
       border-radius: 10px;
       background: linear-gradient(135deg, #00c6ff, #0072ff);
       flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 800;
       overflow: hidden;
     }
@@ -654,20 +788,20 @@
     }
 
     .ad-cat-tag {
-      font-size: 0.65rem;
+      font-size: 0.63rem;
       background: rgba(0, 198, 255, 0.14);
       color: var(--accent-1);
-      padding: 2px 7px;
+      padding: 2px 6px;
       border-radius: 8px;
-      margin-left: 5px;
+      margin-left: 4px;
       font-weight: 600;
     }
 
     .ad-offline-badge {
-      font-size: 0.62rem;
+      font-size: 0.6rem;
       background: rgba(0, 255, 136, 0.15);
       color: #00ff88;
-      padding: 1px 6px;
+      padding: 1px 5px;
       border-radius: 6px;
       margin-left: 4px;
       font-weight: 700;
@@ -676,7 +810,7 @@
     .ad-item-actions {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       flex-shrink: 0;
     }
 
@@ -684,20 +818,14 @@
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid rgba(255, 255, 255, 0.08);
       color: #8e8e93;
-      width: 28px;
-      height: 28px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.76rem;
+      font-size: 0.82rem;
       cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .ad-action-icon:hover {
-      background: rgba(255, 255, 255, 0.15);
-      color: #fff;
     }
 
     .ad-action-icon.fav-active {
@@ -714,7 +842,7 @@
 
     .ad-status-msg {
       text-align: center;
-      font-size: 0.76rem;
+      font-size: 0.75rem;
       color: #00c6ff;
       margin-top: 8px;
       min-height: 16px;
@@ -723,175 +851,218 @@
 </head>
 <body class="dj-active">
 
-  <header class="ad-brand-header">
-    <div class="ad-brand-title">AD MUSIC</div>
-    <div class="ad-brand-subtitle">AMAR TOMAR</div>
-  </header>
+  <!-- ==================== PAGE 1: MAIN PLAYER ==================== -->
+  <section class="app-page active-page" id="playerPage">
+    <header class="ad-brand-header">
+      <div class="ad-brand-title">AD MUSIC</div>
+      <div class="ad-brand-subtitle">AMAR TOMAR</div>
+    </header>
 
-  <div class="uiverse-music-card" id="musicCard">
-    <div class="uiverse-track-info">
-      <div class="uiverse-album-art" id="albumArt">AD</div>
-      <div class="uiverse-track-details">
-        <div class="uiverse-track-title" id="trackTitle">Syncing Drive...</div>
-        <div class="uiverse-artist-name" id="artistName">AD Music</div>
-      </div>
-      <div class="uiverse-volume-bars" id="visualizerBars">
-        <div class="uiverse-bar"></div>
-        <div class="uiverse-bar"></div>
-        <div class="uiverse-bar"></div>
-        <div class="uiverse-bar"></div>
-        <div class="uiverse-bar"></div>
-        <div class="uiverse-bar"></div>
-        <div class="uiverse-bar"></div>
-        <div class="uiverse-bar"></div>
-      </div>
-    </div>
-
-    <div class="uiverse-playback-controls">
-      <div class="uiverse-time-info">
-        <span id="currentTime">0:00</span>
-        <span id="remainingTime">-0:00</span>
-      </div>
-      <div class="uiverse-progress-wrapper" id="progressWrapper">
-        <div class="uiverse-progress-bar" id="progressBar">
-          <div class="uiverse-progress-fill" id="progressFill"></div>
-          <div class="uiverse-progress-handle" id="progressHandle"></div>
+    <div class="uiverse-music-card" id="musicCard">
+      <div class="uiverse-track-info">
+        <div class="uiverse-album-art" id="albumArt">AD</div>
+        <div class="uiverse-track-details">
+          <div class="uiverse-track-title" id="trackTitle">Syncing Drive...</div>
+          <div class="uiverse-artist-name" id="artistName">AD Music</div>
+        </div>
+        <div class="uiverse-volume-bars" id="visualizerBars">
+          <div class="uiverse-bar"></div>
+          <div class="uiverse-bar"></div>
+          <div class="uiverse-bar"></div>
+          <div class="uiverse-bar"></div>
+          <div class="uiverse-bar"></div>
+          <div class="uiverse-bar"></div>
+          <div class="uiverse-bar"></div>
+          <div class="uiverse-bar"></div>
         </div>
       </div>
 
-      <div class="uiverse-button-row">
-        <button type="button" class="uiverse-control-button" id="shuffleBtn" title="Shuffle" aria-label="Shuffle">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-            <path fill-rule="evenodd" d="M0 3.5A.5.5 0 0 1 .5 3H1c2.202 0 3.827 1.24 4.874 2.418.49.552.865 1.102 1.126 1.532.26-.43.636-.98 1.126-1.532C9.173 4.24 10.798 3 13 3v1c-1.798 0-3.173 1.01-4.126 2.082A9.6 9.6 0 0 0 7.556 8a9.6 9.6 0 0 0 1.317 1.918C9.828 10.99 11.204 12 13 12v1c-2.202 0-3.827-1.24-4.874-2.418A10.6 10.6 0 0 1 7 9.05c-.26.43-.636.98-1.126 1.532C4.827 11.76 3.202 13 1 13H.5a.5.5 0 0 1 0-1H1c1.798 0 3.173-1.01 4.126-2.082A9.6 9.6 0 0 0 6.444 8a9.6 9.6 0 0 0-1.317-1.918C4.172 5.01 2.796 4 1 4H.5a.5.5 0 0 1-.5-.5"/>
-            <path d="M13 5.466V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m0 9v-3.932a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192"/>
-          </svg>
-        </button>
-
-        <button type="button" class="uiverse-control-button" id="prevBtn" title="Previous Track" aria-label="Previous">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M.5 3.5A.5.5 0 0 0 0 4v8a.5.5 0 0 0 1 0V8.753l6.267 3.636c.54.313 1.233-.066 1.233-.697v-2.94l6.267 3.636c.54.314 1.233-.065 1.233-.696V4.308c0-.63-.693-1.01-1.233-.696L8.5 7.248v-2.94c0-.63-.692-1.01-1.233-.696L1 7.248V4a.5.5 0 0 0-.5-.5"></path>
-          </svg>
-        </button>
-
-        <button type="button" class="uiverse-control-button" id="rewind10Btn" title="Rewind 10s" aria-label="Rewind 10 seconds">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-            <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2z"/>
-            <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466"/>
-          </svg>
-          <span class="skip-label">-10s</span>
-        </button>
-
-        <button type="button" class="uiverse-control-button uiverse-play-pause-button" id="playPauseBtn" title="Play / Pause" aria-label="Play or Pause">
-          <svg id="iconPlay" xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M11.596 8.697l-6.363 3.692c-.54.314-1.233-.065-1.233-.696V4.308c0-.63.693-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393"></path>
-          </svg>
-          <svg id="iconPause" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5"></path>
-          </svg>
-        </button>
-
-        <button type="button" class="uiverse-control-button" id="forward10Btn" title="Forward 10s" aria-label="Forward 10 seconds">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-            <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
-            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
-          </svg>
-          <span class="skip-label">+10s</span>
-        </button>
-
-        <button type="button" class="uiverse-control-button" id="nextBtn" title="Next Track" aria-label="Next">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M15.5 3.5a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-1 0V8.753l-6.267 3.636c-.54.313-1.233-.066-1.233-.697v-2.94l-6.267 3.636C.693 12.703 0 12.324 0 11.693V4.308c0-.63.693-1.01 1.233-.696L7.5 7.248v-2.94c0-.63.693-1.01 1.233-.696L15 7.248V4a.5.5 0 0 1 .5-.5"></path>
-          </svg>
-        </button>
-
-        <button type="button" class="uiverse-control-button" id="loopBtn" title="Repeat: Off" aria-label="Repeat Mode">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 0-.384l2.36-1.966a.25.25 0 0 1 .41.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z"/>
-          </svg>
-          <span class="repeat-one-badge" id="repeatOneBadge">1</span>
-        </button>
-      </div>
-    </div>
-
-    <div class="ad-extra-bar">
-      <div class="ad-volume-box">
-        <button type="button" class="ad-vol-btn" id="muteBtn" title="Mute / Unmute" aria-label="Mute">
-          <svg id="volIconHigh" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M11.536 14.01A8.47 8.47 0 0 0 14.026 8a8.47 8.47 0 0 0-2.49-6.01l-.708.707A7.48 7.48 0 0 1 13.025 8c0 2.071-.84 3.946-2.197 5.303z"/>
-            <path d="M10.121 12.596A6.48 6.48 0 0 0 12.025 8a6.48 6.48 0 0 0-1.904-4.596l-.707.707A5.48 5.48 0 0 1 11.025 8a5.48 5.48 0 0 1-1.61 3.89z"/>
-            <path d="M8.707 11.182A4.5 4.5 0 0 0 10.025 8a4.5 4.5 0 0 0-1.318-3.182L8 5.525A3.5 3.5 0 0 1 9.025 8 3.5 3.5 0 0 1 8 10.475zM6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 1 1 10V6a.5.5 0 0 1 .5-.5h2.325l2.363-1.89a.5.5 0 0 1 .529-.06"/>
-          </svg>
-          <svg id="volIconMute" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#ff6b6b" viewBox="0 0 16 16">
-            <path d="M6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 1 1 10V6a.5.5 0 0 1 .5-.5h2.325l2.363-1.89a.5.5 0 0 1 .529-.06m7.137 2.096a.5.5 0 0 1 0 .708L12.207 8l1.647 1.646a.5.5 0 0 1-.708.708L11.5 8.707l-1.646 1.647a.5.5 0 0 1-.708-.708L10.793 8 9.146 6.354a.5.5 0 1 1 .708-.708L11.5 7.293l1.646-1.647a.5.5 0 0 1 .708 0"/>
-          </svg>
-        </button>
-        <input type="range" class="ad-volume-slider" id="volumeSlider" min="0" max="2" step="0.05" value="1.25" aria-label="Volume Boost" />
-        <span class="ad-vol-pct boosted" id="volPct">125%</span>
-      </div>
-
-      <div class="ad-pill-controls">
-        <button type="button" class="ad-mini-pill" id="eqToggleBtn" title="5-Band Equalizer">EQ</button>
-        <button type="button" class="ad-mini-pill active" id="fadeBtn" title="DJ Crossfade">Fade: 4s</button>
-        <button type="button" class="ad-mini-pill" id="speedBtn" title="Playback Speed">1x</button>
-        <button type="button" class="ad-mini-pill" id="sleepBtn" title="Sleep Timer">Sleep</button>
-        <button type="button" class="ad-mini-pill dj-on" id="djBtn" title="Toggle DJ Lights">DJ: ON</button>
-      </div>
-
-      <!-- 5-Band Equalizer Panel -->
-      <div class="ad-eq-panel" id="eqPanel">
-        <div class="ad-eq-presets" id="eqPresets">
-          <button type="button" class="ad-eq-preset-btn active" data-preset="normal">Normal</button>
-          <button type="button" class="ad-eq-preset-btn" data-preset="bass">Bass Boost</button>
-          <button type="button" class="ad-eq-preset-btn" data-preset="club">Club / DJ</button>
-          <button type="button" class="ad-eq-preset-btn" data-preset="vocal">Vocal</button>
-          <button type="button" class="ad-eq-preset-btn" data-preset="treble">Treble</button>
+      <div class="uiverse-playback-controls">
+        <div class="uiverse-time-info">
+          <span id="currentTime">0:00</span>
+          <span id="remainingTime">-0:00</span>
         </div>
-        <div class="ad-eq-sliders">
-          <div class="ad-eq-band">
-            <span class="ad-eq-db" id="eqVal0">0dB</span>
-            <input type="range" class="ad-eq-range" data-band="0" min="-12" max="12" step="1" value="0" />
-            <span class="ad-eq-freq">60Hz</span>
-          </div>
-          <div class="ad-eq-band">
-            <span class="ad-eq-db" id="eqVal1">0dB</span>
-            <input type="range" class="ad-eq-range" data-band="1" min="-12" max="12" step="1" value="0" />
-            <span class="ad-eq-freq">230Hz</span>
-          </div>
-          <div class="ad-eq-band">
-            <span class="ad-eq-db" id="eqVal2">0dB</span>
-            <input type="range" class="ad-eq-range" data-band="2" min="-12" max="12" step="1" value="0" />
-            <span class="ad-eq-freq">910Hz</span>
-          </div>
-          <div class="ad-eq-band">
-            <span class="ad-eq-db" id="eqVal3">0dB</span>
-            <input type="range" class="ad-eq-range" data-band="3" min="-12" max="12" step="1" value="0" />
-            <span class="ad-eq-freq">3.6kHz</span>
-          </div>
-          <div class="ad-eq-band">
-            <span class="ad-eq-db" id="eqVal4">0dB</span>
-            <input type="range" class="ad-eq-range" data-band="4" min="-12" max="12" step="1" value="0" />
-            <span class="ad-eq-freq">14kHz</span>
+        <div class="uiverse-progress-wrapper" id="progressWrapper">
+          <div class="uiverse-progress-bar" id="progressBar">
+            <div class="uiverse-progress-fill" id="progressFill"></div>
+            <div class="uiverse-progress-handle" id="progressHandle"></div>
           </div>
         </div>
+
+        <div class="uiverse-button-row">
+          <button type="button" class="uiverse-control-button" id="shuffleBtn" title="Shuffle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M0 3.5A.5.5 0 0 1 .5 3H1c2.202 0 3.827 1.24 4.874 2.418.49.552.865 1.102 1.126 1.532.26-.43.636-.98 1.126-1.532C9.173 4.24 10.798 3 13 3v1c-1.798 0-3.173 1.01-4.126 2.082A9.6 9.6 0 0 0 7.556 8a9.6 9.6 0 0 0 1.317 1.918C9.828 10.99 11.204 12 13 12v1c-2.202 0-3.827-1.24-4.874-2.418A10.6 10.6 0 0 1 7 9.05c-.26.43-.636.98-1.126 1.532C4.827 11.76 3.202 13 1 13H.5a.5.5 0 0 1 0-1H1c1.798 0 3.173-1.01 4.126-2.082A9.6 9.6 0 0 0 6.444 8a9.6 9.6 0 0 0-1.317-1.918C4.172 5.01 2.796 4 1 4H.5a.5.5 0 0 1-.5-.5"/>
+              <path d="M13 5.466V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m0 9v-3.932a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192"/>
+            </svg>
+          </button>
+
+          <button type="button" class="uiverse-control-button" id="prevBtn" title="Previous Track">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M.5 3.5A.5.5 0 0 0 0 4v8a.5.5 0 0 0 1 0V8.753l6.267 3.636c.54.313 1.233-.066 1.233-.697v-2.94l6.267 3.636c.54.314 1.233-.065 1.233-.696V4.308c0-.63-.693-1.01-1.233-.696L8.5 7.248v-2.94c0-.63-.692-1.01-1.233-.696L1 7.248V4a.5.5 0 0 0-.5-.5"></path>
+            </svg>
+          </button>
+
+          <button type="button" class="uiverse-control-button" id="rewind10Btn" title="Rewind 10s">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2z"/>
+              <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466"/>
+            </svg>
+            <span class="skip-label">-10s</span>
+          </button>
+
+          <button type="button" class="uiverse-control-button uiverse-play-pause-button" id="playPauseBtn" title="Play / Pause">
+            <svg id="iconPlay" xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M11.596 8.697l-6.363 3.692c-.54.314-1.233-.065-1.233-.696V4.308c0-.63.693-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393"></path>
+            </svg>
+            <svg id="iconPause" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5"></path>
+            </svg>
+          </button>
+
+          <button type="button" class="uiverse-control-button" id="forward10Btn" title="Forward 10s">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
+              <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
+            </svg>
+            <span class="skip-label">+10s</span>
+          </button>
+
+          <button type="button" class="uiverse-control-button" id="nextBtn" title="Next Track">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M15.5 3.5a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-1 0V8.753l-6.267 3.636c-.54.313-1.233-.066-1.233-.697v-2.94l-6.267 3.636C.693 12.703 0 12.324 0 11.693V4.308c0-.63.693-1.01 1.233-.696L7.5 7.248v-2.94c0-.63.693-1.01 1.233-.696L15 7.248V4a.5.5 0 0 1 .5-.5"></path>
+            </svg>
+          </button>
+
+          <button type="button" class="uiverse-control-button" id="loopBtn" title="Repeat: Off">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 0-.384l2.36-1.966a.25.25 0 0 1 .41.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z"/>
+            </svg>
+            <span class="repeat-one-badge" id="repeatOneBadge">1</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="ad-extra-bar">
+        <div class="ad-volume-box">
+          <button type="button" class="ad-vol-btn" id="muteBtn" title="Mute / Unmute">
+            <svg id="volIconHigh" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M11.536 14.01A8.47 8.47 0 0 0 14.026 8a8.47 8.47 0 0 0-2.49-6.01l-.708.707A7.48 7.48 0 0 1 13.025 8c0 2.071-.84 3.946-2.197 5.303z"/>
+              <path d="M10.121 12.596A6.48 6.48 0 0 0 12.025 8a6.48 6.48 0 0 0-1.904-4.596l-.707.707A5.48 5.48 0 0 1 11.025 8a5.48 5.48 0 0 1-1.61 3.89z"/>
+              <path d="M8.707 11.182A4.5 4.5 0 0 0 10.025 8a4.5 4.5 0 0 0-1.318-3.182L8 5.525A3.5 3.5 0 0 1 9.025 8 3.5 3.5 0 0 1 8 10.475zM6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 1 1 10V6a.5.5 0 0 1 .5-.5h2.325l2.363-1.89a.5.5 0 0 1 .529-.06"/>
+            </svg>
+            <svg id="volIconMute" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#ff6b6b" viewBox="0 0 16 16">
+              <path d="M6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 1 1 10V6a.5.5 0 0 1 .5-.5h2.325l2.363-1.89a.5.5 0 0 1 .529-.06m7.137 2.096a.5.5 0 0 1 0 .708L12.207 8l1.647 1.646a.5.5 0 0 1-.708.708L11.5 8.707l-1.646 1.647a.5.5 0 0 1-.708-.708L10.793 8 9.146 6.354a.5.5 0 1 1 .708-.708L11.5 7.293l1.646-1.647a.5.5 0 0 1 .708 0"/>
+            </svg>
+          </button>
+          <input type="range" class="ad-volume-slider" id="volumeSlider" min="0" max="2" step="0.05" value="1.25" aria-label="Volume Boost" />
+          <span class="ad-vol-pct boosted" id="volPct">125%</span>
+        </div>
+
+        <div class="ad-pill-controls">
+          <button type="button" class="ad-mini-pill active" id="fadeBtn">Fade: 4s</button>
+          <button type="button" class="ad-mini-pill" id="speedBtn">1x</button>
+          <button type="button" class="ad-mini-pill" id="sleepBtn">Sleep</button>
+          <button type="button" class="ad-mini-pill dj-on" id="djBtn">DJ: ON</button>
+        </div>
+      </div>
+
+      <div class="ad-status-msg" id="playerStatusMsg"></div>
+    </div>
+
+    <!-- Navigation Buttons to Separate EQ & Playlist Pages -->
+    <div class="ad-nav-grid">
+      <button type="button" class="ad-nav-card-btn" id="openEqPageBtn">
+        <span class="ad-nav-icon">🎛️</span>
+        <span class="ad-nav-label">Equalizer</span>
+        <span class="ad-nav-sub" id="eqCurrentPresetLabel">Normal • 5-Band</span>
+      </button>
+
+      <button type="button" class="ad-nav-card-btn" id="openPlaylistPageBtn">
+        <span class="ad-nav-icon">💿</span>
+        <span class="ad-nav-label">Albums & Playlist</span>
+        <span class="ad-nav-sub" id="navTrackSummary">Loading Drive...</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ==================== PAGE 2: EQUALIZER PAGE ==================== -->
+  <section class="app-page" id="eqPage">
+    <div class="subpage-top-bar">
+      <button type="button" class="ad-back-btn" data-back="playerPage">← Back</button>
+      <div class="subpage-title">5-BAND EQUALIZER</div>
+      <div style="width: 65px;"></div>
+    </div>
+
+    <div class="ad-eq-page-card">
+      <div class="ad-eq-presets" id="eqPresets">
+        <button type="button" class="ad-eq-preset-btn active" data-preset="normal">Normal</button>
+        <button type="button" class="ad-eq-preset-btn" data-preset="bass">Bass Boost</button>
+        <button type="button" class="ad-eq-preset-btn" data-preset="club">Club / DJ</button>
+        <button type="button" class="ad-eq-preset-btn" data-preset="vocal">Vocal</button>
+        <button type="button" class="ad-eq-preset-btn" data-preset="treble">Treble</button>
+      </div>
+
+      <div class="ad-eq-sliders">
+        <div class="ad-eq-band">
+          <span class="ad-eq-db" id="eqVal0">0dB</span>
+          <input type="range" class="ad-eq-range" data-band="0" min="-12" max="12" step="1" value="0" />
+          <span class="ad-eq-freq">60Hz</span>
+        </div>
+        <div class="ad-eq-band">
+          <span class="ad-eq-db" id="eqVal1">0dB</span>
+          <input type="range" class="ad-eq-range" data-band="1" min="-12" max="12" step="1" value="0" />
+          <span class="ad-eq-freq">230Hz</span>
+        </div>
+        <div class="ad-eq-band">
+          <span class="ad-eq-db" id="eqVal2">0dB</span>
+          <input type="range" class="ad-eq-range" data-band="2" min="-12" max="12" step="1" value="0" />
+          <span class="ad-eq-freq">910Hz</span>
+        </div>
+        <div class="ad-eq-band">
+          <span class="ad-eq-db" id="eqVal3">0dB</span>
+          <input type="range" class="ad-eq-range" data-band="3" min="-12" max="12" step="1" value="0" />
+          <span class="ad-eq-freq">3.6kHz</span>
+        </div>
+        <div class="ad-eq-band">
+          <span class="ad-eq-db" id="eqVal4">0dB</span>
+          <input type="range" class="ad-eq-range" data-band="4" min="-12" max="12" step="1" value="0" />
+          <span class="ad-eq-freq">14kHz</span>
+        </div>
+      </div>
+
+      <div style="text-align:center; font-size:0.75rem; color:#8e8e93;">
+        Bass aur Treble badhane ke baad ← Back dabakar player par laut sakte hain.
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- Playlist Box -->
-  <div class="ad-playlist-box">
-    <div class="ad-playlist-header">
-      <span id="trackCount">Loading Tracks...</span>
-      <button type="button" class="ad-refresh-btn" id="refreshBtn">↻ Sync Drive</button>
+  <!-- ==================== PAGE 3: ALBUMS & PLAYLIST PAGE ==================== -->
+  <section class="app-page" id="playlistPage">
+    <div class="subpage-top-bar">
+      <button type="button" class="ad-back-btn" data-back="playerPage">← Back</button>
+      <div class="subpage-title">ALBUMS & PLAYLIST</div>
+      <button type="button" class="ad-refresh-btn" id="refreshBtn">↻ Sync</button>
     </div>
 
-    <div class="ad-filter-bar" id="filterBar">
-      <button type="button" class="ad-filter-chip active" data-cat="All">All</button>
+    <!-- Folder Albums Grid -->
+    <div class="ad-albums-section-title">
+      <span>Folders & Albums</span>
+      <span id="albumCountLabel">0 Albums</span>
     </div>
+    <div class="ad-album-grid" id="albumGrid"></div>
 
-    <input type="text" class="ad-search-input" id="searchInput" placeholder="Search songs in playlist..." />
-    <ul class="ad-track-list" id="playlistEl"></ul>
-    <div class="ad-status-msg" id="statusMsg"></div>
-  </div>
+    <!-- Selected Album Songs List -->
+    <div class="ad-playlist-box">
+      <div class="ad-playlist-header">
+        <span id="trackCount">Loading Tracks...</span>
+      </div>
+
+      <input type="text" class="ad-search-input" id="searchInput" placeholder="Search songs in this album..." />
+      <ul class="ad-track-list" id="playlistEl"></ul>
+      <div class="ad-status-msg" id="statusMsg"></div>
+    </div>
+  </section>
 
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxPBqalX_xM8xz7XSxtSGbyW72vyZn1lXz085X3Bd2MEY665dDrMdBk2syCDRi9pCVz/exec";
@@ -899,6 +1070,7 @@
     const audio = new Audio();
     const audioCache = {};
     let tracks = [];
+    let folderCategories = [];
     let currentTrackId = null;
     let activeCategory = "All";
     let isPlaying = false;
@@ -909,7 +1081,30 @@
     let lastVolume = 1.25;
     let crossfadeEnabled = true;
 
-    // Favorites & Saved State (localStorage)
+    // Page Navigation Logic
+    function showPage(pageId) {
+      document.querySelectorAll(".app-page").forEach(p => p.classList.remove("active-page"));
+      const target = document.getElementById(pageId);
+      if (target) target.classList.add("active-page");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    document.getElementById("openEqPageBtn").addEventListener("click", () => {
+      initAudioEngine();
+      showPage("eqPage");
+    });
+
+    document.getElementById("openPlaylistPageBtn").addEventListener("click", () => {
+      renderAlbumsGrid();
+      renderPlaylist();
+      showPage("playlistPage");
+    });
+
+    document.querySelectorAll("[data-back]").forEach(btn => {
+      btn.addEventListener("click", () => showPage(btn.dataset.back));
+    });
+
+    // Favorites & Offline Storage
     let favoriteIds = new Set(JSON.parse(localStorage.getItem("ad_music_favs") || "[]"));
     let offlineSavedIds = new Set();
 
@@ -926,7 +1121,6 @@
       }));
     }
 
-    // === INDEXEDDB OFFLINE STORAGE ===
     const DB_NAME = "ADMusicOfflineDB";
     const STORE_NAME = "songs";
 
@@ -948,10 +1142,10 @@
       try {
         const db = await openOfflineDB();
         const tx = db.transaction(STORE_NAME, "readonly");
-        const store = tx.objectStore(STORE_NAME);
-        const req = store.getAllKeys();
+        const req = tx.objectStore(STORE_NAME).getAllKeys();
         req.onsuccess = () => {
           offlineSavedIds = new Set(req.result || []);
+          renderAlbumsGrid();
           renderPlaylist();
         };
       } catch (e) {}
@@ -996,7 +1190,7 @@
       });
     }
 
-    // === WEB AUDIO API: 200% BOOSTER + 5-BAND EQ + REAL BEAT ANALYSER ===
+    // Web Audio API: 200% Booster + 5-Band EQ + Real Beat Visualizer
     let audioCtx = null;
     let gainNode = null;
     let analyser = null;
@@ -1021,7 +1215,6 @@
         audioCtx = new AudioContext();
         const source = audioCtx.createMediaElementSource(audio);
 
-        // 5-Band EQ BiquadFilters
         eqFilters = eqFreqs.map((freq, idx) => {
           const filter = audioCtx.createBiquadFilter();
           filter.type = idx === 0 ? "lowshelf" : (idx === 4 ? "highshelf" : "peaking");
@@ -1044,7 +1237,6 @@
         analyser = audioCtx.createAnalyser();
         analyser.fftSize = 64;
 
-        // Connect chain: source -> EQ bands -> gain -> compressor -> analyser -> speakers
         let lastNode = source;
         eqFilters.forEach(f => {
           lastNode.connect(f);
@@ -1076,14 +1268,12 @@
         }
         analyser.getByteFrequencyData(dataArray);
 
-        // Update 8 visualizer bars from frequency bins
         visBars.forEach((bar, i) => {
           const val = dataArray[i * 2] || 0;
           const h = Math.max(6, Math.round((val / 255) * 32));
           bar.style.height = `${h}px`;
         });
 
-        // Bass pulse on Album Art & Card Glow
         const bass = (dataArray[0] + dataArray[1] + dataArray[2]) / 3;
         const beatNorm = bass / 255;
         if (document.body.classList.contains("dj-active")) {
@@ -1131,18 +1321,20 @@
     const volIconMute = document.getElementById("volIconMute");
     const volumeSlider = document.getElementById("volumeSlider");
     const volPct = document.getElementById("volPct");
-    const eqToggleBtn = document.getElementById("eqToggleBtn");
-    const eqPanel = document.getElementById("eqPanel");
     const fadeBtn = document.getElementById("fadeBtn");
     const speedBtn = document.getElementById("speedBtn");
     const sleepBtn = document.getElementById("sleepBtn");
     const djBtn = document.getElementById("djBtn");
 
-    const filterBar = document.getElementById("filterBar");
+    const albumGrid = document.getElementById("albumGrid");
+    const albumCountLabel = document.getElementById("albumCountLabel");
     const searchInput = document.getElementById("searchInput");
     const playlistEl = document.getElementById("playlistEl");
     const trackCount = document.getElementById("trackCount");
     const statusMsg = document.getElementById("statusMsg");
+    const playerStatusMsg = document.getElementById("playerStatusMsg");
+    const navTrackSummary = document.getElementById("navTrackSummary");
+    const eqCurrentPresetLabel = document.getElementById("eqCurrentPresetLabel");
     const refreshBtn = document.getElementById("refreshBtn");
 
     djBtn.addEventListener("click", () => {
@@ -1152,25 +1344,19 @@
       if (!isOn) musicCard.style.boxShadow = "";
     });
 
-    eqToggleBtn.addEventListener("click", () => {
-      initAudioEngine();
-      const open = eqPanel.classList.toggle("open");
-      eqToggleBtn.classList.toggle("active", open);
-    });
-
     fadeBtn.addEventListener("click", () => {
       crossfadeEnabled = !crossfadeEnabled;
       fadeBtn.textContent = crossfadeEnabled ? "Fade: 4s" : "Fade: Off";
       fadeBtn.classList.toggle("active", crossfadeEnabled);
     });
 
-    // EQ Preset & Slider Controls
     document.getElementById("eqPresets").addEventListener("click", (e) => {
       const btn = e.target.closest(".ad-eq-preset-btn");
       if (!btn) return;
       initAudioEngine();
       document.querySelectorAll(".ad-eq-preset-btn").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
+      eqCurrentPresetLabel.textContent = `${btn.textContent} • 5-Band`;
       const values = eqPresets[btn.dataset.preset] || [0, 0, 0, 0, 0];
       document.querySelectorAll(".ad-eq-range").forEach((slider, idx) => {
         slider.value = values[idx];
@@ -1187,6 +1373,7 @@
         document.getElementById(`eqVal${idx}`).textContent = `${val > 0 ? "+" : ""}${val}dB`;
         if (eqFilters[idx]) eqFilters[idx].gain.value = val;
         document.querySelectorAll(".ad-eq-preset-btn").forEach(b => b.classList.remove("active"));
+        eqCurrentPresetLabel.textContent = "Custom • 5-Band";
       });
     });
 
@@ -1213,18 +1400,52 @@
       });
     }
 
-    function renderFilterChips(folderCategories = []) {
+    // Render Drive Folders as Album Cards
+    function renderAlbumsGrid() {
       const trackCats = tracks.map(t => t.category).filter(Boolean);
-      const allCats = Array.from(new Set(["All", "Favorites", "Offline", ...folderCategories, ...trackCats]));
+      const uniqueFolders = Array.from(new Set([...folderCategories, ...trackCats]));
 
-      filterBar.innerHTML = "";
-      allCats.forEach(cat => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = `ad-filter-chip ${cat === activeCategory ? "active" : ""}`;
-        btn.dataset.cat = cat;
-        btn.textContent = cat === "Favorites" ? "❤️ Favorites" : (cat === "Offline" ? "📥 Offline" : cat);
-        filterBar.appendChild(btn);
+      const albums = [
+        { key: "All", name: "All Songs", icon: "🎵", count: tracks.length, thumb: tracks[0]?.thumb },
+        { key: "Favorites", name: "Favorites", icon: "❤️", count: tracks.filter(t => favoriteIds.has(t.id)).length },
+        { key: "Offline", name: "Offline Saved", icon: "📥", count: tracks.filter(t => offlineSavedIds.has(t.id)).length },
+        ...uniqueFolders.map(folder => {
+          const folderTracks = tracks.filter(t => (t.category || "").toLowerCase() === folder.toLowerCase());
+          return {
+            key: folder,
+            name: folder,
+            icon: "💿",
+            count: folderTracks.length,
+            thumb: folderTracks.find(t => t.thumb)?.thumb
+          };
+        })
+      ];
+
+      albumCountLabel.textContent = `${albums.length} Albums`;
+      albumGrid.innerHTML = "";
+
+      albums.forEach(alb => {
+        const card = document.createElement("div");
+        card.className = `ad-album-card ${alb.key === activeCategory ? "active" : ""}`;
+        const coverHtml = alb.thumb
+          ? `<img src="${alb.thumb}" alt="" onerror="this.parentElement.textContent='${alb.icon}';" />`
+          : alb.icon;
+
+        card.innerHTML = `
+          <div class="ad-album-cover">${coverHtml}</div>
+          <div class="ad-album-meta">
+            <div class="ad-album-name">${alb.name}</div>
+            <div class="ad-album-count">${alb.count} ${alb.count === 1 ? "Track" : "Tracks"}</div>
+          </div>
+        `;
+
+        card.addEventListener("click", () => {
+          activeCategory = alb.key;
+          renderAlbumsGrid();
+          renderPlaylist();
+        });
+
+        albumGrid.appendChild(card);
       });
     }
 
@@ -1283,10 +1504,17 @@
       });
     }
 
+    function setStatus(text, color = "#00c6ff") {
+      statusMsg.style.color = color;
+      statusMsg.textContent = text;
+      playerStatusMsg.style.color = color;
+      playerStatusMsg.textContent = text;
+    }
+
     async function fetchDriveSongs() {
-      statusMsg.style.color = "#00c6ff";
-      statusMsg.textContent = "";
+      setStatus("");
       trackCount.textContent = "Fetching from Drive...";
+      navTrackSummary.textContent = "Syncing Drive...";
       playlistEl.innerHTML = `<li class="ad-track-item" style="justify-content:center; color:#8e8e93;">Loading playlist...</li>`;
 
       try {
@@ -1294,38 +1522,38 @@
         if (data && data.error) throw new Error(data.error);
 
         const list = Array.isArray(data) ? data : (data.tracks || []);
-        const folderCats = Array.isArray(data.categories) ? data.categories : [];
+        folderCategories = Array.isArray(data.categories) ? data.categories : [];
 
         tracks = list;
         localStorage.setItem("ad_music_tracks_backup", JSON.stringify(tracks));
-        renderFilterChips(folderCats);
+        renderAlbumsGrid();
 
         if (tracks.length === 0) {
           trackTitle.textContent = "Folder Empty";
           trackCount.textContent = "0 Tracks";
+          navTrackSummary.textContent = "0 Tracks";
           playlistEl.innerHTML = `<li class="ad-track-item" style="justify-content:center; color:#8e8e93;">Is Drive folder me abhi koi audio file nahi hai.</li>`;
           return;
         }
 
-        // Restore last played song if available
+        navTrackSummary.textContent = `${tracks.length} Songs • ${Math.max(1, folderCategories.length)} Albums`;
         const saved = JSON.parse(localStorage.getItem("ad_music_last") || "null");
         const initialTrack = (saved && tracks.find(t => t.id === saved.id)) || tracks[0];
         selectTrackUI(initialTrack);
       } catch (err) {
-        // Offline Fallback from localStorage + IndexedDB
         const backup = JSON.parse(localStorage.getItem("ad_music_tracks_backup") || "[]");
         if (backup.length > 0) {
           tracks = backup;
           activeCategory = offlineSavedIds.size > 0 ? "Offline" : "All";
-          renderFilterChips([]);
+          renderAlbumsGrid();
           selectTrackUI(tracks[0]);
-          statusMsg.style.color = "#00ff88";
-          statusMsg.textContent = "Offline Mode: Saved tracks ready.";
+          navTrackSummary.textContent = `${offlineSavedIds.size} Offline Saved`;
+          setStatus("Offline Mode: Saved tracks ready.", "#00ff88");
         } else {
-          statusMsg.style.color = "#ff6b6b";
-          statusMsg.textContent = err.message;
+          setStatus(err.message, "#ff6b6b");
           trackTitle.textContent = "Connection Failed";
           trackCount.textContent = "0 Tracks";
+          navTrackSummary.textContent = "Sync Failed";
           playlistEl.innerHTML = "";
         }
       }
@@ -1342,10 +1570,10 @@
     function renderPlaylist() {
       const visibleTracks = getFilteredTracks();
       playlistEl.innerHTML = "";
-      trackCount.textContent = `${activeCategory} (${visibleTracks.length} Tracks)`;
+      trackCount.textContent = `${activeCategory} Album (${visibleTracks.length} Tracks)`;
 
       if (visibleTracks.length === 0) {
-        playlistEl.innerHTML = `<li class="ad-track-item" style="justify-content:center; color:#8e8e93;">Is section me abhi koi gaana nahi hai.</li>`;
+        playlistEl.innerHTML = `<li class="ad-track-item" style="justify-content:center; color:#8e8e93;">Is album me abhi koi gaana nahi hai.</li>`;
         return;
       }
 
@@ -1362,7 +1590,7 @@
 
         li.innerHTML = `
           <div class="ad-item-thumb">${thumbHtml}</div>
-          <div style="flex-grow:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+          <div style="flex-grow:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
             <div style="font-weight:600; overflow:hidden; text-overflow:ellipsis;">${track.title}</div>
             <div style="font-size:0.74rem; color:#8e8e93;">
               ${track.artist}
@@ -1372,7 +1600,7 @@
           </div>
           <div class="ad-item-actions">
             <button type="button" class="ad-action-icon fav-btn ${isFav ? "fav-active" : ""}" title="Favorite">${isFav ? "♥" : "♡"}</button>
-            <button type="button" class="ad-action-icon save-btn ${isSaved ? "saved-active" : ""}" title="${isSaved ? "Saved Offline (Tap to remove)" : "Save Offline"}">${isSaved ? "✓" : "↓"}</button>
+            <button type="button" class="ad-action-icon save-btn ${isSaved ? "saved-active" : ""}" title="${isSaved ? "Saved Offline" : "Save Offline"}">${isSaved ? "✓" : "↓"}</button>
           </div>
         `;
 
@@ -1382,6 +1610,7 @@
             if (favoriteIds.has(track.id)) favoriteIds.delete(track.id);
             else favoriteIds.add(track.id);
             saveFavorites();
+            renderAlbumsGrid();
             renderPlaylist();
             return;
           }
@@ -1391,6 +1620,7 @@
             return;
           }
           loadAndPlayTrack(track);
+          showPage("playerPage");
         });
 
         playlistEl.appendChild(li);
@@ -1400,25 +1630,23 @@
     async function handleOfflineToggle(track, btn) {
       if (offlineSavedIds.has(track.id)) {
         await removeOfflineSong(track.id);
-        statusMsg.style.color = "#8e8e93";
-        statusMsg.textContent = `Removed "${track.title}" from offline storage.`;
+        setStatus(`Removed "${track.title}" from offline storage.`, "#8e8e93");
+        renderAlbumsGrid();
         renderPlaylist();
         return;
       }
 
       try {
         btn.textContent = "…";
-        statusMsg.style.color = "#00c6ff";
-        statusMsg.textContent = `Saving "${track.title}" offline...`;
+        setStatus(`Saving "${track.title}" offline...`, "#00c6ff");
         const blob = await fetchTrackBlob(track);
         await saveSongOffline(track, blob);
-        statusMsg.style.color = "#00ff88";
-        statusMsg.textContent = `Saved "${track.title}" for offline playback!`;
+        setStatus(`Saved "${track.title}" for offline playback!`, "#00ff88");
+        renderAlbumsGrid();
         renderPlaylist();
       } catch (err) {
         btn.textContent = "↓";
-        statusMsg.style.color = "#ff6b6b";
-        statusMsg.textContent = "Offline save failed: " + err.message;
+        setStatus("Offline save failed: " + err.message, "#ff6b6b");
       }
     }
 
@@ -1467,8 +1695,7 @@
 
       try {
         isLoadingAudio = true;
-        statusMsg.style.color = "#00c6ff";
-        statusMsg.textContent = offlineSavedIds.has(track.id) ? "Loading from offline storage..." : "Buffering audio from Drive...";
+        setStatus(offlineSavedIds.has(track.id) ? "Loading from offline storage..." : "Buffering audio from Drive...", "#00c6ff");
 
         let blobUrl = audioCache[track.id];
         if (!blobUrl) {
@@ -1481,7 +1708,6 @@
         audio.playbackRate = speeds[speedIndex];
         if (resumeTime > 0) audio.currentTime = resumeTime;
 
-        // Smooth DJ Fade-In if crossfade is ON
         const targetGain = parseFloat(volumeSlider.value) || 1.25;
         if (crossfadeEnabled && isAudioEngineReady && gainNode && !audio.muted) {
           gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
@@ -1490,7 +1716,7 @@
 
         await audio.play();
         isPlaying = true;
-        statusMsg.textContent = "";
+        setStatus("");
         musicCard.classList.add("is-playing");
         iconPlay.style.display = "none";
         iconPause.style.display = "block";
@@ -1500,8 +1726,7 @@
         const nextTrack = getNextTrack();
         if (nextTrack) preloadTrack(nextTrack);
       } catch (err) {
-        statusMsg.style.color = "#ff6b6b";
-        statusMsg.textContent = "Play error: " + err.message;
+        setStatus("Play error: " + err.message, "#ff6b6b");
       } finally {
         isLoadingAudio = false;
       }
@@ -1541,15 +1766,6 @@
       const prevIdx = idx <= 0 ? list.length - 1 : idx - 1;
       return list[prevIdx];
     }
-
-    filterBar.addEventListener("click", (e) => {
-      const chip = e.target.closest(".ad-filter-chip");
-      if (!chip) return;
-      document.querySelectorAll(".ad-filter-chip").forEach(c => c.classList.remove("active"));
-      chip.classList.add("active");
-      activeCategory = chip.dataset.cat;
-      renderPlaylist();
-    });
 
     playPauseBtn.addEventListener("click", () => {
       if (tracks.length === 0) return;
@@ -1672,7 +1888,7 @@
           sleepIndex = 0;
           sleepBtn.textContent = "Sleep";
           sleepBtn.classList.remove("active");
-          statusMsg.textContent = "Sleep timer ended. Playback paused.";
+          setStatus("Sleep timer ended. Playback paused.");
         }, mins * 60 * 1000);
       }
     });
@@ -1693,13 +1909,11 @@
       currentTimeEl.textContent = formatTime(audio.currentTime);
       remainingTimeEl.textContent = `-${formatTime(audio.duration - audio.currentTime)}`;
 
-      // Save resume timestamp every 5 seconds
       if (Date.now() - lastSaveTick > 5000) {
         lastSaveTick = Date.now();
         savePlaybackState();
       }
 
-      // DJ Crossfade Out in final 4 seconds
       const timeLeft = audio.duration - audio.currentTime;
       if (crossfadeEnabled && isAudioEngineReady && gainNode && !audio.muted && repeatMode !== 2 && timeLeft <= 4 && timeLeft > 0.2) {
         const baseGain = parseFloat(volumeSlider.value) || 1.25;
