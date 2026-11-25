@@ -30,6 +30,80 @@
       align-items: center;
       justify-content: center;
       padding: 24px 14px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* === DJ LIGHT EFFECTS === */
+    body.dj-active::before {
+      content: "";
+      position: fixed;
+      inset: -50%;
+      background: conic-gradient(
+        from 0deg,
+        rgba(0, 198, 255, 0.14),
+        rgba(255, 0, 128, 0.14),
+        rgba(112, 0, 255, 0.14),
+        rgba(0, 255, 136, 0.14),
+        rgba(0, 198, 255, 0.14)
+      );
+      animation: djSpin 10s linear infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .ad-brand-header,
+    .uiverse-music-card,
+    .ad-playlist-box {
+      position: relative;
+      z-index: 1;
+    }
+
+    body.dj-active .uiverse-music-card {
+      animation: djCardGlow 3s ease-in-out infinite alternate;
+      border-color: rgba(0, 198, 255, 0.45);
+    }
+
+    body.dj-active .uiverse-music-card.is-playing {
+      animation: djCardBeat 1.2s ease-in-out infinite alternate;
+    }
+
+    body.dj-active .uiverse-music-card.is-playing .uiverse-volume-bars .uiverse-bar {
+      background: linear-gradient(180deg, #ff007f, #00c6ff, #00ff88);
+    }
+
+    body.dj-active .uiverse-music-card.is-playing .uiverse-album-art {
+      animation: djArtPulse 1.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes djSpin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes djCardGlow {
+      0%   { box-shadow: 0 0 18px rgba(0, 198, 255, 0.4), 0 18px 45px rgba(0, 0, 0, 0.75); }
+      50%  { box-shadow: 0 0 22px rgba(255, 0, 128, 0.45), 0 18px 45px rgba(0, 0, 0, 0.75); }
+      100% { box-shadow: 0 0 22px rgba(0, 255, 170, 0.4), 0 18px 45px rgba(0, 0, 0, 0.75); }
+    }
+
+    @keyframes djCardBeat {
+      0%   { box-shadow: 0 0 22px rgba(0, 198, 255, 0.75), 0 0 42px rgba(0, 114, 255, 0.4); border-color: rgba(0, 198, 255, 0.8); }
+      33%  { box-shadow: 0 0 26px rgba(255, 0, 128, 0.8), 0 0 46px rgba(140, 0, 255, 0.45); border-color: rgba(255, 0, 128, 0.8); }
+      66%  { box-shadow: 0 0 26px rgba(0, 255, 170, 0.75), 0 0 46px rgba(0, 198, 255, 0.45); border-color: rgba(0, 255, 170, 0.8); }
+      100% { box-shadow: 0 0 28px rgba(138, 43, 226, 0.85), 0 0 48px rgba(255, 0, 128, 0.5); border-color: rgba(168, 85, 247, 0.85); }
+    }
+
+    @keyframes djArtPulse {
+      0%   { box-shadow: 0 0 12px rgba(0, 198, 255, 0.7); transform: scale(1); }
+      100% { box-shadow: 0 0 20px rgba(255, 0, 128, 0.85); transform: scale(1.04); }
+    }
+
+    .ad-mini-pill.dj-on {
+      background: linear-gradient(90deg, rgba(0, 198, 255, 0.28), rgba(255, 0, 128, 0.28));
+      border-color: rgba(255, 0, 128, 0.55);
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(255, 0, 128, 0.35);
     }
 
     .ad-brand-header {
@@ -68,6 +142,7 @@
       display: flex;
       flex-direction: column;
       gap: 14px;
+      transition: border-color 0.3s ease;
     }
 
     .uiverse-track-info {
@@ -275,16 +350,18 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 8px;
       padding-top: 10px;
       border-top: 1px solid rgba(255, 255, 255, 0.08);
+      flex-wrap: wrap;
     }
 
     .ad-volume-box {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       flex-grow: 1;
+      min-width: 135px;
     }
 
     .ad-vol-btn {
@@ -306,7 +383,7 @@
       -webkit-appearance: none;
       appearance: none;
       width: 100%;
-      max-width: 115px;
+      max-width: 95px;
       height: 4px;
       background: rgba(255, 255, 255, 0.2);
       border-radius: 4px;
@@ -335,19 +412,20 @@
     .ad-pill-controls {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
     }
 
     .ad-mini-pill {
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.12);
       color: #e5e5ea;
-      font-size: 0.72rem;
+      font-size: 0.71rem;
       font-weight: 600;
-      padding: 5px 9px;
+      padding: 5px 8px;
       border-radius: 10px;
       cursor: pointer;
       transition: all 0.2s;
+      white-space: nowrap;
     }
 
     .ad-mini-pill:hover {
@@ -520,7 +598,7 @@
     }
   </style>
 </head>
-<body>
+<body class="dj-active">
 
   <header class="ad-brand-header">
     <div class="ad-brand-title">AD MUSIC</div>
@@ -630,53 +708,8 @@
 
       <div class="ad-pill-controls">
         <button type="button" class="ad-mini-pill" id="speedBtn" title="Playback Speed">1x</button>
-        <button type="button" class="ad-mini-pill" id="sleepBtn" title="Sleep Timer">Sleep: Off</button>/* === DJ LIGHT EFFECTS === */
-body.dj-active::before {
-  content: "";
-  position: fixed;
-  inset: -50%;
-  background: conic-gradient(from 0deg, #00c6ff22, #ff007f22, #7000ff22, #00ff8822, #00c6ff22);
-  animation: djSpin 8s linear infinite;
-  pointer-events: none;
-  z-index: 0;
-}
-
-body.dj-active .player-card,
-body.dj-active > div:first-of-type {
-  position: relative;
-  animation: djCardGlow 2.5s ease-in-out infinite alternate;
-  border: 1px solid rgba(0, 198, 255, 0.5) !important;
-}
-
-@keyframes djSpin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes djCardGlow {
-  0%   { box-shadow: 0 0 18px rgba(0, 198, 255, 0.55), 0 0 35px rgba(0, 114, 255, 0.3); }
-  33%  { box-shadow: 0 0 22px rgba(255, 0, 128, 0.65), 0 0 40px rgba(140, 0, 255, 0.35); }
-  66%  { box-shadow: 0 0 22px rgba(0, 255, 170, 0.6),  0 0 40px rgba(0, 198, 255, 0.35); }
-  100% { box-shadow: 0 0 25px rgba(138, 43, 226, 0.7), 0 0 45px rgba(255, 0, 128, 0.4); }
-}
-
-.dj-toggle-btn {
-  background: rgba(255, 255, 255, 0.08);
-  color: #00c6ff;
-  border: 1px solid rgba(0, 198, 255, 0.4);
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  margin-left: 6px;
-}
-
-body.dj-active .dj-toggle-btn {
-  background: linear-gradient(90deg, #00c6ff, #ff007f);
-  color: #fff;
-  border-color: transparent;
-}
+        <button type="button" class="ad-mini-pill" id="sleepBtn" title="Sleep Timer">Sleep: Off</button>
+        <button type="button" class="ad-mini-pill dj-on" id="djBtn" title="Toggle DJ Lights">DJ: ON</button>
       </div>
     </div>
   </div>
@@ -749,6 +782,7 @@ body.dj-active .dj-toggle-btn {
     const volPct = document.getElementById("volPct");
     const speedBtn = document.getElementById("speedBtn");
     const sleepBtn = document.getElementById("sleepBtn");
+    const djBtn = document.getElementById("djBtn");
 
     const filterBar = document.getElementById("filterBar");
     const searchInput = document.getElementById("searchInput");
@@ -756,6 +790,12 @@ body.dj-active .dj-toggle-btn {
     const trackCount = document.getElementById("trackCount");
     const statusMsg = document.getElementById("statusMsg");
     const refreshBtn = document.getElementById("refreshBtn");
+
+    djBtn.addEventListener("click", () => {
+      const isOn = document.body.classList.toggle("dj-active");
+      djBtn.textContent = isOn ? "DJ: ON" : "DJ: OFF";
+      djBtn.classList.toggle("dj-on", isOn);
+    });
 
     function formatTime(sec) {
       if (isNaN(sec) || !isFinite(sec)) return "0:00";
