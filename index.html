@@ -108,6 +108,78 @@
       100% { border-color: rgba(168, 85, 247, 0.9); }
     }
 
+    /* === FULL-SCREEN THUMBNAIL SCREENSAVER OVERLAY === */
+    .ad-fullscreen-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: radial-gradient(circle at center, #111b2e 0%, #05070b 85%);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      animation: fsFadeIn 0.35s ease-out;
+    }
+
+    .ad-fullscreen-overlay.active {
+      display: flex;
+    }
+
+    @keyframes fsFadeIn {
+      from { opacity: 0; transform: scale(1.03); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .ad-fs-art-frame {
+      width: min(82vw, 360px);
+      height: min(82vw, 360px);
+      border-radius: 32px;
+      background: linear-gradient(135deg, #00c6ff, #0072ff);
+      box-shadow: 0 0 45px rgba(0, 198, 255, 0.55), 0 25px 60px rgba(0, 0, 0, 0.85);
+      border: 2px solid rgba(0, 198, 255, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      margin-bottom: 24px;
+      transition: transform 0.1s ease-out;
+    }
+
+    .ad-fs-art-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .ad-fs-title {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: #ffffff;
+      max-width: 90vw;
+      margin-bottom: 6px;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+    }
+
+    .ad-fs-artist {
+      font-size: 0.92rem;
+      color: var(--accent-1);
+      font-weight: 600;
+      margin-bottom: 18px;
+    }
+
+    .ad-fs-hint {
+      font-size: 0.74rem;
+      color: rgba(255, 255, 255, 0.55);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 6px 14px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+
     /* === TOP PAGE HEADER WITH BACK BUTTON === */
     .subpage-top-bar {
       width: 100%;
@@ -333,11 +405,46 @@
       background: rgba(255, 255, 255, 0.1);
     }
 
+    /* === ROTATING ROUND AD LOGO PLAY BUTTON === */
     .uiverse-play-pause-button {
-      background: linear-gradient(135deg, rgba(0, 198, 255, 0.22), rgba(0, 114, 255, 0.22));
-      border: 1px solid rgba(0, 198, 255, 0.35);
-      width: 52px;
-      height: 52px;
+      width: 58px;
+      height: 58px;
+      padding: 0;
+      border-radius: 50%;
+      background: #0b0f19;
+      border: 2px solid rgba(0, 198, 255, 0.55);
+      box-shadow: 0 0 14px rgba(0, 198, 255, 0.45);
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.25s ease;
+    }
+
+    .uiverse-play-pause-button:active {
+      transform: scale(0.94);
+    }
+
+    .ad-spin-disc {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: discSpin 4s linear infinite;
+      animation-play-state: paused;
+    }
+
+    .uiverse-music-card.is-playing .uiverse-play-pause-button {
+      box-shadow: 0 0 22px rgba(0, 198, 255, 0.85), 0 0 34px rgba(0, 114, 255, 0.55);
+      border-color: #00c6ff;
+    }
+
+    .uiverse-music-card.is-playing .ad-spin-disc {
+      animation-play-state: running;
+    }
+
+    @keyframes discSpin {
+      0%   { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
     .uiverse-control-button.active-state {
@@ -384,6 +491,53 @@
       width: 100%;
     }
 
+    /* === TURBO VOLUME SLIDER (200% - 400%, OPENS WHEN 1ST VOLUME IS FULL) === */
+    .ad-turbo-vol-box {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      background: linear-gradient(90deg, rgba(255, 0, 128, 0.12), rgba(0, 255, 136, 0.12));
+      border: 1px solid rgba(0, 255, 136, 0.35);
+      border-radius: 12px;
+      padding: 6px 10px;
+      animation: pageFadeIn 0.2s ease-out;
+    }
+
+    .ad-turbo-vol-box.unlocked {
+      display: flex;
+    }
+
+    .ad-turbo-badge {
+      font-size: 0.66rem;
+      font-weight: 800;
+      color: #00ff88;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+    }
+
+    .ad-turbo-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      flex-grow: 1;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.22);
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .ad-turbo-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #00ff88;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(0, 255, 136, 0.85);
+    }
+
     .ad-vol-btn {
       background: none;
       border: none;
@@ -420,7 +574,7 @@
     .ad-vol-pct {
       font-size: 0.74rem;
       color: var(--text-muted);
-      min-width: 38px;
+      min-width: 40px;
       text-align: right;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
@@ -429,6 +583,11 @@
     .ad-vol-pct.boosted {
       color: #00ff88;
       text-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+    }
+
+    .ad-vol-pct.turbo {
+      color: #ff2d55;
+      text-shadow: 0 0 8px rgba(255, 45, 85, 0.65);
     }
 
     .ad-pill-controls {
@@ -510,6 +669,50 @@
     .ad-nav-sub {
       font-size: 0.68rem;
       color: var(--text-muted);
+    }
+
+    /* === 5-MINUTE SKIP BAR FOR 1+ HOUR TRACKS === */
+    .ad-long-skip-bar {
+      display: none;
+      width: 100%;
+      margin-top: 12px;
+      background: rgba(0, 0, 0, 0.84);
+      border: 1px solid rgba(0, 198, 255, 0.35);
+      border-radius: 20px;
+      padding: 10px 12px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+      animation: pageFadeIn 0.25s ease-out;
+    }
+
+    .ad-long-skip-bar.visible {
+      display: flex;
+    }
+
+    .ad-long-skip-btn {
+      background: linear-gradient(135deg, rgba(0, 198, 255, 0.2), rgba(0, 114, 255, 0.2));
+      border: 1px solid rgba(0, 198, 255, 0.45);
+      color: #ffffff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 8px 14px;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .ad-long-skip-btn:active {
+      transform: scale(0.96);
+    }
+
+    .ad-long-skip-info {
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--accent-1);
+      font-weight: 600;
     }
 
     /* === DEDICATED EQUALIZER PAGE === */
@@ -640,6 +843,7 @@
       cursor: pointer;
       transition: all 0.2s ease;
       min-width: 0;
+      user-select: none;
     }
 
     .ad-album-card:hover {
@@ -851,6 +1055,14 @@
 </head>
 <body class="dj-active">
 
+  <!-- ==================== FULL-SCREEN THUMBNAIL OVERLAY ==================== -->
+  <div class="ad-fullscreen-overlay" id="fsOverlay" title="Touch anywhere to return to player">
+    <div class="ad-fs-art-frame" id="fsArtFrame">AD</div>
+    <div class="ad-fs-title" id="fsTitle">AD Music</div>
+    <div class="ad-fs-artist" id="fsArtist">AMAR TOMAR</div>
+    <div class="ad-fs-hint">Touch anywhere to return to player</div>
+  </div>
+
   <!-- ==================== PAGE 1: MAIN PLAYER ==================== -->
   <section class="app-page active-page" id="playerPage">
     <header class="ad-brand-header">
@@ -911,13 +1123,33 @@
             <span class="skip-label">-10s</span>
           </button>
 
+          <!-- Rotating Round AD Logo Play/Pause Button -->
           <button type="button" class="uiverse-control-button uiverse-play-pause-button" id="playPauseBtn" title="Play / Pause">
-            <svg id="iconPlay" xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M11.596 8.697l-6.363 3.692c-.54.314-1.233-.065-1.233-.696V4.308c0-.63.693-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393"></path>
-            </svg>
-            <svg id="iconPause" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5"></path>
-            </svg>
+            <div class="ad-spin-disc">
+              <svg viewBox="0 0 120 120" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="adRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#00d2ff" />
+                    <stop offset="100%" stop-color="#0066ff" />
+                  </linearGradient>
+                  <linearGradient id="adLetterDGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#00c6ff" />
+                    <stop offset="100%" stop-color="#0072ff" />
+                  </linearGradient>
+                </defs>
+                <circle cx="60" cy="60" r="56" fill="#0d1322" stroke="url(#adRingGrad)" stroke-width="5" />
+                <circle cx="60" cy="60" r="49" fill="none" stroke="#00c6ff" stroke-width="1.2" opacity="0.65" />
+                <rect x="43" y="29" width="4" height="10" rx="2" fill="#00d2ff" />
+                <rect x="50" y="25" width="4" height="14" rx="2" fill="#00b4ff" />
+                <rect x="57" y="21" width="4.5" height="18" rx="2.2" fill="#00e1ff" />
+                <rect x="64.5" y="25" width="4" height="14" rx="2" fill="#0088ff" />
+                <rect x="71.5" y="28" width="4" height="11" rx="2" fill="#00c6ff" />
+                <rect x="78.5" y="31" width="4" height="8" rx="2" fill="#0066ff" />
+                <text x="27" y="75" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="38" fill="#ffffff">A</text>
+                <text x="61" y="75" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="38" fill="url(#adLetterDGrad)">D</text>
+                <rect x="37" y="84" width="46" height="3.5" rx="1.75" fill="url(#adRingGrad)" />
+              </svg>
+            </div>
           </button>
 
           <button type="button" class="uiverse-control-button" id="forward10Btn" title="Forward 10s">
@@ -944,6 +1176,7 @@
       </div>
 
       <div class="ad-extra-bar">
+        <!-- 1st Volume Slider: 0% to 200% -->
         <div class="ad-volume-box">
           <button type="button" class="ad-vol-btn" id="muteBtn" title="Mute / Unmute">
             <svg id="volIconHigh" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
@@ -955,8 +1188,15 @@
               <path d="M6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 1 1 10V6a.5.5 0 0 1 .5-.5h2.325l2.363-1.89a.5.5 0 0 1 .529-.06m7.137 2.096a.5.5 0 0 1 0 .708L12.207 8l1.647 1.646a.5.5 0 0 1-.708.708L11.5 8.707l-1.646 1.647a.5.5 0 0 1-.708-.708L10.793 8 9.146 6.354a.5.5 0 1 1 .708-.708L11.5 7.293l1.646-1.647a.5.5 0 0 1 .708 0"/>
             </svg>
           </button>
-          <input type="range" class="ad-volume-slider" id="volumeSlider" min="0" max="2" step="0.05" value="1.25" aria-label="Volume Boost" />
+          <input type="range" class="ad-volume-slider" id="volumeSlider" min="0" max="2" step="0.05" value="1.25" aria-label="Primary Volume" />
           <span class="ad-vol-pct boosted" id="volPct">125%</span>
+        </div>
+
+        <!-- 2nd Turbo Volume Slider: 200% to 400% (Unlocks automatically when 1st volume reaches 200%) -->
+        <div class="ad-turbo-vol-box" id="turboVolBox">
+          <span class="ad-turbo-badge">🔥 TURBO</span>
+          <input type="range" class="ad-turbo-slider" id="turboSlider" min="2" max="4" step="0.05" value="2" aria-label="Turbo Volume 200 to 400 percent" />
+          <span class="ad-vol-pct turbo" id="turboPct">200%</span>
         </div>
 
         <div class="ad-pill-controls">
@@ -983,6 +1223,13 @@
         <span class="ad-nav-label">Albums & Playlist</span>
         <span class="ad-nav-sub" id="navTrackSummary">Loading Drive...</span>
       </button>
+    </div>
+
+    <!-- 5-Minute Skip Bar (Appears ONLY when track duration >= 1 hour / 3600s) -->
+    <div class="ad-long-skip-bar" id="longSkipBar">
+      <button type="button" class="ad-long-skip-btn" id="rewind5mBtn">⏪ -5 Min</button>
+      <div class="ad-long-skip-info">Long Track (1hr+)<br><span style="color:#8e8e93;font-weight:400;">Quick Jump</span></div>
+      <button type="button" class="ad-long-skip-btn" id="forward5mBtn">+5 Min ⏩</button>
     </div>
   </section>
 
@@ -1032,7 +1279,7 @@
       </div>
 
       <div style="text-align:center; font-size:0.75rem; color:#8e8e93;">
-        Bass aur Treble badhane ke baad ← Back dabakar player par laut sakte hain.
+        Bass aur Treble set karne ke baad ← Back dabakar player par laut sakte hain.
       </div>
     </div>
   </section>
@@ -1045,9 +1292,9 @@
       <button type="button" class="ad-refresh-btn" id="refreshBtn">↻ Sync</button>
     </div>
 
-    <!-- Folder Albums Grid -->
+    <!-- Folder Albums Grid (Single click = view songs, Double click/tap = play folder immediately) -->
     <div class="ad-albums-section-title">
-      <span>Folders & Albums</span>
+      <span>Folders & Albums (Double-tap to play)</span>
       <span id="albumCountLabel">0 Albums</span>
     </div>
     <div class="ad-album-grid" id="albumGrid"></div>
@@ -1078,10 +1325,49 @@
     let repeatMode = 0;
     let isSeeking = false;
     let isLoadingAudio = false;
-    let lastVolume = 1.25;
+    let currentMasterGain = 1.25;
+    let lastMasterGain = 1.25;
     let crossfadeEnabled = true;
 
-    // Page Navigation Logic
+    // === 10-SECOND FULL-SCREEN THUMBNAIL TIMER ===
+    const fsOverlay = document.getElementById("fsOverlay");
+    const fsArtFrame = document.getElementById("fsArtFrame");
+    const fsTitle = document.getElementById("fsTitle");
+    const fsArtist = document.getElementById("fsArtist");
+    let playSecondsCounter = 0;
+
+    function hideFullscreenThumbnail() {
+      fsOverlay.classList.remove("active");
+      playSecondsCounter = 0;
+    }
+
+    fsOverlay.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      hideFullscreenThumbnail();
+    });
+
+    // Any touch/interaction resets the 10-second timer
+    ["pointerdown", "touchstart", "keydown"].forEach(evt => {
+      document.addEventListener(evt, () => {
+        if (!fsOverlay.classList.contains("active")) {
+          playSecondsCounter = 0;
+        }
+      }, { passive: true });
+    });
+
+    setInterval(() => {
+      if (isPlaying && !fsOverlay.classList.contains("active")) {
+        playSecondsCounter++;
+        if (playSecondsCounter >= 10) {
+          fsOverlay.classList.add("active");
+        }
+      } else if (!isPlaying) {
+        playSecondsCounter = 0;
+      }
+    }, 1000);
+
+    // Page Navigation
     function showPage(pageId) {
       document.querySelectorAll(".app-page").forEach(p => p.classList.remove("active-page"));
       const target = document.getElementById(pageId);
@@ -1104,21 +1390,22 @@
       btn.addEventListener("click", () => showPage(btn.dataset.back));
     });
 
-    // Favorites & Offline Storage
-    let favoriteIds = new Set(JSON.parse(localStorage.getItem("ad_music_favs") || "[]"));
+    // Favorites & Offline Storage (Ordered array preserves 1st favorite song)
+    let favoriteOrder = JSON.parse(localStorage.getItem("ad_music_favs") || "[]");
+    let favoriteIds = new Set(favoriteOrder);
     let offlineSavedIds = new Set();
 
     function saveFavorites() {
-      localStorage.setItem("ad_music_favs", JSON.stringify(Array.from(favoriteIds)));
+      favoriteOrder = Array.from(favoriteIds);
+      localStorage.setItem("ad_music_favs", JSON.stringify(favoriteOrder));
     }
 
-    function savePlaybackState() {
-      if (!currentTrackId) return;
-      localStorage.setItem("ad_music_last", JSON.stringify({
-        id: currentTrackId,
-        time: audio.currentTime || 0,
-        cat: activeCategory
-      }));
+    function getFirstFavoriteTrack() {
+      for (const favId of favoriteOrder) {
+        const found = tracks.find(t => t.id === favId);
+        if (found) return found;
+      }
+      return tracks.find(t => favoriteIds.has(t.id)) || null;
     }
 
     const DB_NAME = "ADMusicOfflineDB";
@@ -1190,7 +1477,7 @@
       });
     }
 
-    // Web Audio API: 200% Booster + 5-Band EQ + Real Beat Visualizer
+    // Web Audio API: Up to 400% Booster + 5-Band EQ + Real Beat Visualizer
     let audioCtx = null;
     let gainNode = null;
     let analyser = null;
@@ -1225,13 +1512,13 @@
         });
 
         gainNode = audioCtx.createGain();
-        gainNode.gain.value = parseFloat(volumeSlider.value) || 1.25;
+        gainNode.gain.value = currentMasterGain;
 
         const compressor = audioCtx.createDynamicsCompressor();
-        compressor.threshold.setValueAtTime(-10, audioCtx.currentTime);
-        compressor.knee.setValueAtTime(12, audioCtx.currentTime);
-        compressor.ratio.setValueAtTime(6, audioCtx.currentTime);
-        compressor.attack.setValueAtTime(0.005, audioCtx.currentTime);
+        compressor.threshold.setValueAtTime(-12, audioCtx.currentTime);
+        compressor.knee.setValueAtTime(14, audioCtx.currentTime);
+        compressor.ratio.setValueAtTime(8, audioCtx.currentTime);
+        compressor.attack.setValueAtTime(0.004, audioCtx.currentTime);
         compressor.release.setValueAtTime(0.15, audioCtx.currentTime);
 
         analyser = audioCtx.createAnalyser();
@@ -1250,7 +1537,7 @@
         isAudioEngineReady = true;
         startVisualizerLoop();
       } catch (e) {
-        audio.volume = Math.min(1, parseFloat(volumeSlider.value) || 1);
+        audio.volume = Math.min(1, currentMasterGain);
       }
     }
 
@@ -1264,6 +1551,7 @@
         if (!isPlaying) {
           visBars.forEach(b => b.style.height = "6px");
           albumArt.style.transform = "scale(1)";
+          fsArtFrame.style.transform = "scale(1)";
           return;
         }
         analyser.getByteFrequencyData(dataArray);
@@ -1279,9 +1567,11 @@
         if (document.body.classList.contains("dj-active")) {
           const scale = 1 + beatNorm * 0.08;
           albumArt.style.transform = `scale(${scale.toFixed(3)})`;
+          fsArtFrame.style.transform = `scale(${(1 + beatNorm * 0.05).toFixed(3)})`;
           musicCard.style.boxShadow = `0 0 ${Math.round(18 + beatNorm * 28)}px rgba(0, 198, 255, ${(0.35 + beatNorm * 0.55).toFixed(2)}), 0 0 ${Math.round(25 + beatNorm * 35)}px rgba(255, 0, 128, ${(0.25 + beatNorm * 0.5).toFixed(2)})`;
         } else {
           albumArt.style.transform = "scale(1)";
+          fsArtFrame.style.transform = "scale(1)";
         }
       }
       renderFrame();
@@ -1306,12 +1596,13 @@
     const progressHandle = document.getElementById("progressHandle");
 
     const playPauseBtn = document.getElementById("playPauseBtn");
-    const iconPlay = document.getElementById("iconPlay");
-    const iconPause = document.getElementById("iconPause");
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
     const rewind10Btn = document.getElementById("rewind10Btn");
     const forward10Btn = document.getElementById("forward10Btn");
+    const longSkipBar = document.getElementById("longSkipBar");
+    const rewind5mBtn = document.getElementById("rewind5mBtn");
+    const forward5mBtn = document.getElementById("forward5mBtn");
     const shuffleBtn = document.getElementById("shuffleBtn");
     const loopBtn = document.getElementById("loopBtn");
     const repeatOneBadge = document.getElementById("repeatOneBadge");
@@ -1321,6 +1612,10 @@
     const volIconMute = document.getElementById("volIconMute");
     const volumeSlider = document.getElementById("volumeSlider");
     const volPct = document.getElementById("volPct");
+    const turboVolBox = document.getElementById("turboVolBox");
+    const turboSlider = document.getElementById("turboSlider");
+    const turboPct = document.getElementById("turboPct");
+
     const fadeBtn = document.getElementById("fadeBtn");
     const speedBtn = document.getElementById("speedBtn");
     const sleepBtn = document.getElementById("sleepBtn");
@@ -1379,28 +1674,53 @@
 
     function formatTime(sec) {
       if (isNaN(sec) || !isFinite(sec)) return "0:00";
-      const m = Math.floor(sec / 60);
-      const s = Math.floor(sec % 60);
+      const total = Math.floor(sec);
+      const h = Math.floor(total / 3600);
+      const m = Math.floor((total % 3600) / 60);
+      const s = total % 60;
+      if (h > 0) {
+        return `${h}:${m < 10 ? "0" : ""}${m}:${s < 10 ? "0" : ""}${s}`;
+      }
       return `${m}:${s < 10 ? "0" : ""}${s}`;
+    }
+
+    function updateLongSkipVisibility() {
+      if (audio.duration && isFinite(audio.duration) && audio.duration >= 3600) {
+        longSkipBar.classList.add("visible");
+      } else {
+        longSkipBar.classList.remove("visible");
+      }
+    }
+
+    audio.addEventListener("loadedmetadata", updateLongSkipVisibility);
+    audio.addEventListener("durationchange", updateLongSkipVisibility);
+
+    rewind5mBtn.addEventListener("click", () => {
+      if (!audio.duration) return;
+      audio.currentTime = Math.max(0, audio.currentTime - 300);
+    });
+
+    forward5mBtn.addEventListener("click", () => {
+      if (!audio.duration) return;
+      audio.currentTime = Math.min(audio.duration, audio.currentTime + 300);
+    });
+
+    function getTracksByCategory(cat) {
+      return tracks.filter(t => {
+        if (cat === "Favorites") return favoriteIds.has(t.id);
+        if (cat === "Offline") return offlineSavedIds.has(t.id);
+        if (cat === "All") return true;
+        return (t.category || "").toLowerCase() === cat.toLowerCase();
+      });
     }
 
     function getFilteredTracks() {
       const query = searchInput.value.trim().toLowerCase();
-      return tracks.filter(t => {
-        let catMatch = true;
-        if (activeCategory === "Favorites") {
-          catMatch = favoriteIds.has(t.id);
-        } else if (activeCategory === "Offline") {
-          catMatch = offlineSavedIds.has(t.id);
-        } else if (activeCategory !== "All") {
-          catMatch = (t.category || "").toLowerCase() === activeCategory.toLowerCase();
-        }
-        const textMatch = !query || t.title.toLowerCase().includes(query);
-        return catMatch && textMatch;
+      return getTracksByCategory(activeCategory).filter(t => {
+        return !query || t.title.toLowerCase().includes(query);
       });
     }
 
-    // Render Drive Folders as Album Cards
     function renderAlbumsGrid() {
       const trackCats = tracks.map(t => t.category).filter(Boolean);
       const uniqueFolders = Array.from(new Set([...folderCategories, ...trackCats]));
@@ -1424,6 +1744,9 @@
       albumCountLabel.textContent = `${albums.length} Albums`;
       albumGrid.innerHTML = "";
 
+      let lastTapKey = null;
+      let lastTapTime = 0;
+
       albums.forEach(alb => {
         const card = document.createElement("div");
         card.className = `ad-album-card ${alb.key === activeCategory ? "active" : ""}`;
@@ -1439,10 +1762,38 @@
           </div>
         `;
 
-        card.addEventListener("click", () => {
+        function playFolderImmediately() {
           activeCategory = alb.key;
           renderAlbumsGrid();
           renderPlaylist();
+          const folderSongs = getTracksByCategory(alb.key);
+          if (folderSongs.length > 0) {
+            loadAndPlayTrack(folderSongs[0]);
+            showPage("playerPage");
+          } else {
+            setStatus(`"${alb.name}" folder me abhi koi gaana nahi hai.`, "#ff6b6b");
+          }
+        }
+
+        // Single click opens folder song list; double click/tap plays that folder immediately
+        card.addEventListener("click", () => {
+          const now = Date.now();
+          if (lastTapKey === alb.key && (now - lastTapTime) < 420) {
+            lastTapKey = null;
+            lastTapTime = 0;
+            playFolderImmediately();
+            return;
+          }
+          lastTapKey = alb.key;
+          lastTapTime = now;
+          activeCategory = alb.key;
+          renderAlbumsGrid();
+          renderPlaylist();
+        });
+
+        card.addEventListener("dblclick", (e) => {
+          e.preventDefault();
+          playFolderImmediately();
         });
 
         albumGrid.appendChild(card);
@@ -1537,16 +1888,24 @@
         }
 
         navTrackSummary.textContent = `${tracks.length} Songs • ${Math.max(1, folderCategories.length)} Albums`;
-        const saved = JSON.parse(localStorage.getItem("ad_music_last") || "null");
-        const initialTrack = (saved && tracks.find(t => t.id === saved.id)) || tracks[0];
-        selectTrackUI(initialTrack);
+
+        // Always select 1st Favorite Song on launch if available
+        const firstFav = getFirstFavoriteTrack();
+        if (firstFav) {
+          activeCategory = "Favorites";
+          renderAlbumsGrid();
+          selectTrackUI(firstFav);
+        } else {
+          selectTrackUI(tracks[0]);
+        }
       } catch (err) {
         const backup = JSON.parse(localStorage.getItem("ad_music_tracks_backup") || "[]");
         if (backup.length > 0) {
           tracks = backup;
-          activeCategory = offlineSavedIds.size > 0 ? "Offline" : "All";
+          const firstFav = getFirstFavoriteTrack();
+          activeCategory = firstFav ? "Favorites" : (offlineSavedIds.size > 0 ? "Offline" : "All");
           renderAlbumsGrid();
-          selectTrackUI(tracks[0]);
+          selectTrackUI(firstFav || tracks[0]);
           navTrackSummary.textContent = `${offlineSavedIds.size} Offline Saved`;
           setStatus("Offline Mode: Saved tracks ready.", "#00ff88");
         } else {
@@ -1562,8 +1921,10 @@
     function updateAlbumArt(thumbUrl) {
       if (thumbUrl) {
         albumArt.innerHTML = `<img src="${thumbUrl}" alt="Cover" onerror="this.parentElement.innerHTML='AD';" />`;
+        fsArtFrame.innerHTML = `<img src="${thumbUrl}" alt="Cover" onerror="this.parentElement.innerHTML='<span style=font-size:4rem;font-weight:900;>AD</span>';" />`;
       } else {
         albumArt.innerHTML = "AD";
+        fsArtFrame.innerHTML = `<span style="font-size:4rem;font-weight:900;letter-spacing:3px;">AD</span>`;
       }
     }
 
@@ -1670,11 +2031,14 @@
       currentTrackId = track.id;
       trackTitle.textContent = track.title;
       artistName.textContent = `${track.artist} • ${track.category || "Music"}`;
+      fsTitle.textContent = track.title;
+      fsArtist.textContent = `${track.artist} • ${track.category || "Music"}`;
       updateAlbumArt(track.thumb);
       progressFill.style.width = "0%";
       progressHandle.style.left = "0%";
       currentTimeEl.textContent = "0:00";
       remainingTimeEl.textContent = "-0:00";
+      longSkipBar.classList.remove("visible");
       renderPlaylist();
       updateMediaSession(track);
     }
@@ -1687,11 +2051,12 @@
       } catch (e) {}
     }
 
-    async function loadAndPlayTrack(track, resumeTime = 0) {
+    async function loadAndPlayTrack(track) {
       if (!track || isLoadingAudio) return;
       initAudioEngine();
       pauseTrack();
       selectTrackUI(track);
+      playSecondsCounter = 0;
 
       try {
         isLoadingAudio = true;
@@ -1706,21 +2071,18 @@
 
         audio.src = blobUrl;
         audio.playbackRate = speeds[speedIndex];
-        if (resumeTime > 0) audio.currentTime = resumeTime;
 
-        const targetGain = parseFloat(volumeSlider.value) || 1.25;
         if (crossfadeEnabled && isAudioEngineReady && gainNode && !audio.muted) {
           gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
-          gainNode.gain.linearRampToValueAtTime(targetGain, audioCtx.currentTime + 1.5);
+          gainNode.gain.linearRampToValueAtTime(currentMasterGain, audioCtx.currentTime + 1.5);
         }
 
         await audio.play();
         isPlaying = true;
         setStatus("");
         musicCard.classList.add("is-playing");
-        iconPlay.style.display = "none";
-        iconPause.style.display = "block";
         if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
+        updateLongSkipVisibility();
         renderPlaylist();
 
         const nextTrack = getNextTrack();
@@ -1735,11 +2097,9 @@
     function pauseTrack() {
       audio.pause();
       isPlaying = false;
+      playSecondsCounter = 0;
       musicCard.classList.remove("is-playing");
-      iconPlay.style.display = "block";
-      iconPause.style.display = "none";
       if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
-      savePlaybackState();
       renderPlaylist();
     }
 
@@ -1775,17 +2135,20 @@
       } else if (audio.src && audio.src.startsWith("blob:")) {
         audio.play().then(() => {
           isPlaying = true;
+          playSecondsCounter = 0;
           musicCard.classList.add("is-playing");
-          iconPlay.style.display = "none";
-          iconPause.style.display = "block";
           if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
           renderPlaylist();
         });
       } else {
-        const saved = JSON.parse(localStorage.getItem("ad_music_last") || "null");
-        const current = tracks.find(t => t.id === currentTrackId) || getFilteredTracks()[0] || tracks[0];
-        const resumeAt = (saved && saved.id === current.id && saved.time > 5) ? saved.time : 0;
-        loadAndPlayTrack(current, resumeAt);
+        // Always prioritize 1st Favorite Song when starting fresh playback
+        const firstFav = getFirstFavoriteTrack();
+        const startTrack = firstFav || tracks.find(t => t.id === currentTrackId) || getFilteredTracks()[0] || tracks[0];
+        if (firstFav && startTrack.id === firstFav.id) {
+          activeCategory = "Favorites";
+          renderAlbumsGrid();
+        }
+        loadAndPlayTrack(startTrack);
       }
     });
 
@@ -1827,19 +2190,17 @@
       loopBtn.title = labels[repeatMode];
     });
 
-    function updateVolumeUI(val) {
+    // === VOLUME (0%-200%) + TURBO BOOST (200%-400%) ===
+    function applyMasterGain(gainVal) {
+      currentMasterGain = gainVal;
       if (isAudioEngineReady && gainNode) {
         audio.volume = 1;
-        gainNode.gain.setValueAtTime(val, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(gainVal, audioCtx.currentTime);
       } else {
-        audio.volume = Math.min(1, val);
+        audio.volume = Math.min(1, gainVal);
       }
-      volumeSlider.value = val;
-      const pct = Math.round(val * 100);
-      volPct.textContent = `${pct}%`;
-      volPct.classList.toggle("boosted", pct > 100);
 
-      const muted = val === 0 || audio.muted;
+      const muted = gainVal === 0 || audio.muted;
       volIconHigh.style.display = muted ? "none" : "block";
       volIconMute.style.display = muted ? "block" : "none";
     }
@@ -1848,19 +2209,62 @@
       initAudioEngine();
       const val = parseFloat(e.target.value);
       audio.muted = false;
-      if (val > 0) lastVolume = val;
-      updateVolumeUI(val);
+      const pct = Math.round(val * 100);
+      volPct.textContent = `${pct}%`;
+      volPct.classList.toggle("boosted", pct > 100);
+
+      if (val >= 2) {
+        turboVolBox.classList.add("unlocked");
+        const turboVal = parseFloat(turboSlider.value) || 2;
+        turboPct.textContent = `${Math.round(turboVal * 100)}%`;
+        lastMasterGain = turboVal;
+        applyMasterGain(turboVal);
+      } else {
+        turboVolBox.classList.remove("unlocked");
+        turboSlider.value = 2;
+        turboPct.textContent = "200%";
+        if (val > 0) lastMasterGain = val;
+        applyMasterGain(val);
+      }
+    });
+
+    turboSlider.addEventListener("input", (e) => {
+      initAudioEngine();
+      const turboVal = parseFloat(e.target.value);
+      audio.muted = false;
+      turboPct.textContent = `${Math.round(turboVal * 100)}%`;
+      lastMasterGain = turboVal;
+      applyMasterGain(turboVal);
     });
 
     muteBtn.addEventListener("click", () => {
       initAudioEngine();
-      if (audio.muted || parseFloat(volumeSlider.value) === 0) {
+      if (audio.muted || currentMasterGain === 0) {
         audio.muted = false;
-        updateVolumeUI(lastVolume || 1.25);
+        const restore = lastMasterGain || 1.25;
+        if (restore >= 2) {
+          volumeSlider.value = 2;
+          volPct.textContent = "200%";
+          volPct.classList.add("boosted");
+          turboVolBox.classList.add("unlocked");
+          turboSlider.value = restore;
+          turboPct.textContent = `${Math.round(restore * 100)}%`;
+        } else {
+          volumeSlider.value = restore;
+          const pct = Math.round(restore * 100);
+          volPct.textContent = `${pct}%`;
+          volPct.classList.toggle("boosted", pct > 100);
+          turboVolBox.classList.remove("unlocked");
+        }
+        applyMasterGain(restore);
       } else {
-        lastVolume = parseFloat(volumeSlider.value);
+        lastMasterGain = currentMasterGain;
         audio.muted = true;
-        updateVolumeUI(0);
+        volumeSlider.value = 0;
+        volPct.textContent = "0%";
+        volPct.classList.remove("boosted");
+        turboVolBox.classList.remove("unlocked");
+        applyMasterGain(0);
       }
     });
 
@@ -1900,7 +2304,6 @@
       fetchDriveSongs();
     });
 
-    let lastSaveTick = 0;
     audio.addEventListener("timeupdate", () => {
       if (!audio.duration || isSeeking) return;
       const percent = (audio.currentTime / audio.duration) * 100;
@@ -1909,15 +2312,9 @@
       currentTimeEl.textContent = formatTime(audio.currentTime);
       remainingTimeEl.textContent = `-${formatTime(audio.duration - audio.currentTime)}`;
 
-      if (Date.now() - lastSaveTick > 5000) {
-        lastSaveTick = Date.now();
-        savePlaybackState();
-      }
-
       const timeLeft = audio.duration - audio.currentTime;
       if (crossfadeEnabled && isAudioEngineReady && gainNode && !audio.muted && repeatMode !== 2 && timeLeft <= 4 && timeLeft > 0.2) {
-        const baseGain = parseFloat(volumeSlider.value) || 1.25;
-        const fadedGain = Math.max(0.05, baseGain * (timeLeft / 4));
+        const fadedGain = Math.max(0.05, currentMasterGain * (timeLeft / 4));
         gainNode.gain.setValueAtTime(fadedGain, audioCtx.currentTime);
       }
     });
