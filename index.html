@@ -630,7 +630,53 @@
 
       <div class="ad-pill-controls">
         <button type="button" class="ad-mini-pill" id="speedBtn" title="Playback Speed">1x</button>
-        <button type="button" class="ad-mini-pill" id="sleepBtn" title="Sleep Timer">Sleep: Off</button>
+        <button type="button" class="ad-mini-pill" id="sleepBtn" title="Sleep Timer">Sleep: Off</button>/* === DJ LIGHT EFFECTS === */
+body.dj-active::before {
+  content: "";
+  position: fixed;
+  inset: -50%;
+  background: conic-gradient(from 0deg, #00c6ff22, #ff007f22, #7000ff22, #00ff8822, #00c6ff22);
+  animation: djSpin 8s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body.dj-active .player-card,
+body.dj-active > div:first-of-type {
+  position: relative;
+  animation: djCardGlow 2.5s ease-in-out infinite alternate;
+  border: 1px solid rgba(0, 198, 255, 0.5) !important;
+}
+
+@keyframes djSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes djCardGlow {
+  0%   { box-shadow: 0 0 18px rgba(0, 198, 255, 0.55), 0 0 35px rgba(0, 114, 255, 0.3); }
+  33%  { box-shadow: 0 0 22px rgba(255, 0, 128, 0.65), 0 0 40px rgba(140, 0, 255, 0.35); }
+  66%  { box-shadow: 0 0 22px rgba(0, 255, 170, 0.6),  0 0 40px rgba(0, 198, 255, 0.35); }
+  100% { box-shadow: 0 0 25px rgba(138, 43, 226, 0.7), 0 0 45px rgba(255, 0, 128, 0.4); }
+}
+
+.dj-toggle-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: #00c6ff;
+  border: 1px solid rgba(0, 198, 255, 0.4);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 6px;
+}
+
+body.dj-active .dj-toggle-btn {
+  background: linear-gradient(90deg, #00c6ff, #ff007f);
+  color: #fff;
+  border-color: transparent;
+}
       </div>
     </div>
   </div>
