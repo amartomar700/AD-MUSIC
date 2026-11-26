@@ -152,7 +152,7 @@
       text-overflow: ellipsis;
     }
 
-    /* === NOW PLAYING STRIP ON SUB-PAGES (SO USER SEES ACTIVE SONG WITHOUT AUTO-BACK) === */
+    /* === NOW PLAYING STRIP ON SUB-PAGES === */
     .ad-subpage-now-strip {
       width: 100%;
       background: rgba(0, 198, 255, 0.1);
@@ -782,7 +782,7 @@
       margin-top: 6px;
     }
 
-    /* === DEDICATED ALBUMS PAGE (WITH PLAY BUTTON IN FRONT OF EACH ALBUM NAME) === */
+    /* === DEDICATED ALBUMS PAGE === */
     .ad-albums-section-title {
       width: 100%;
       font-size: 0.74rem;
@@ -871,7 +871,6 @@
       margin-top: 3px;
     }
 
-    /* Dedicated Play Button in front of Album Name inside Album Box */
     .ad-album-play-btn {
       width: 42px;
       height: 42px;
@@ -1211,42 +1210,36 @@
 
     <!-- ==================== 6 BOXES BELOW PLAYER ==================== -->
     <div class="ad-six-box-grid">
-      <!-- Box 1: Equalizer -->
       <button type="button" class="ad-nav-card-btn" id="openEqPageBtn">
         <span class="ad-nav-icon">🎛️</span>
         <span class="ad-nav-label">Equalizer</span>
         <span class="ad-nav-sub" id="eqCurrentPresetLabel">Normal</span>
       </button>
 
-      <!-- Box 2: Albums -->
       <button type="button" class="ad-nav-card-btn" id="openAlbumsPageBtn">
         <span class="ad-nav-icon">💿</span>
         <span class="ad-nav-label">Albums</span>
         <span class="ad-nav-sub" id="navAlbumSummary">0 Albums</span>
       </button>
 
-      <!-- Box 3: Offline Music -->
       <button type="button" class="ad-nav-card-btn" id="openOfflinePageBtn">
         <span class="ad-nav-icon">📥</span>
         <span class="ad-nav-label">Offline</span>
         <span class="ad-nav-sub" id="navOfflineSummary">0 Saved</span>
       </button>
 
-      <!-- Box 4: Favorite Music -->
       <button type="button" class="ad-nav-card-btn" id="openFavPageBtn">
         <span class="ad-nav-icon">❤️</span>
         <span class="ad-nav-label">Favorites</span>
         <span class="ad-nav-sub" id="navFavSummary">0 Liked</span>
       </button>
 
-      <!-- Box 5: All Tracks -->
       <button type="button" class="ad-nav-card-btn" id="openAllTracksBtn">
         <span class="ad-nav-icon">🎵</span>
         <span class="ad-nav-label">All Tracks</span>
         <span class="ad-nav-sub" id="navTrackSummary">Loading...</span>
       </button>
 
-      <!-- Box 6: Sync Drive -->
       <button type="button" class="ad-nav-card-btn" id="syncDriveBoxBtn">
         <span class="ad-nav-icon">↻</span>
         <span class="ad-nav-label">Sync Drive</span>
@@ -1368,6 +1361,7 @@
 
     const audio = new Audio();
     const audioCache = {};
+    const pendingFetches = {}; // Duplicate download rokne ke liye
     let tracks = [];
     let folderCategories = [];
     let currentTrackId = null;
@@ -1528,7 +1522,7 @@
       });
     }
 
-    // Web Audio API: Up to 400% Booster + 5-Band EQ + Real Beat Visualizer
+    // Web Audio API: Up to 400% Booster + 5-Band EQ + Real Beat Visualizer + Outro Silence Skip
     let audioCtx = null;
     let gainNode = null;
     let analyser = null;
@@ -1592,6 +1586,49 @@
       }
     }
 
+    // === SMART SILENCE DETECTOR (SKIPS 6-10s MUTE OUTRO AT SONG END) ===
+    let silenceStartTime = 0;
+
+    function checkOutroSilence() {
+      if (!isPlaying || !analyser || !audio.duration || isSeeking) {
+        silenceStartTime = 0;
+        return;
+      }
+
+      const timeLeft = audio.duration - audio.currentTime;
+      // Sirf gaane ke aakhiri 15 second mein check karein (aur gaana > 45s ka ho)
+      if (audio.duration > 45 && audio.currentTime > 15 && timeLeft <= 15 && timeLeft > 0.4) {
+        const freqData = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(freqData);
+
+        let sum = 0;
+        for (let i = 0; i < freqData.length; i++) {
+          sum += freqData[i];
+        }
+        const avgLevel = sum / freqData.length;
+
+        if (avgLevel < 2) {
+          if (silenceStartTime === 0) {
+            silenceStartTime = Date.now();
+          } else if (Date.now() - silenceStartTime >= 1200) {
+            silenceStartTime = 0;
+            if (repeatMode === 2) {
+              audio.currentTime = 0;
+              audio.play();
+            } else {
+              const next = getNextTrack();
+              if (next) loadAndPlayTrack(next);
+              else pauseTrack();
+            }
+          }
+        } else {
+          silenceStartTime = 0;
+        }
+      } else {
+        silenceStartTime = 0;
+      }
+    }
+
     const visBars = document.querySelectorAll("#visualizerBars .uiverse-bar");
     function startVisualizerLoop() {
       if (!analyser) return;
@@ -1605,6 +1642,7 @@
           return;
         }
         analyser.getByteFrequencyData(dataArray);
+        checkOutroSilence();
 
         visBars.forEach((bar, i) => {
           const val = dataArray[i * 2] || 0;
@@ -1838,7 +1876,6 @@
           </button>
         `;
 
-        // Clicking the Play Button inside the Album Box plays ONLY this album's songs & stays on current page until Back is pressed
         const playBtn = card.querySelector(".ad-album-play-btn");
         playBtn.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -1854,7 +1891,6 @@
           }
         });
 
-        // Clicking the Album Card opens that album's song list (staying there until user taps Back)
         card.addEventListener("click", () => {
           activeCategory = alb.key;
           previousPageId = "albumsPage";
@@ -1917,7 +1953,7 @@
         };
 
         const sep = SCRIPT_URL.includes("?") ? "&" : "?";
-        script.src = `${SCRIPT_URL}${sep}${params ? params + "&" : ""}callback=${callbackName}`;
+        script.src = `${SCRIPT_URL}${sep}${params ? params + "&" : ""}t=${Date.now()}&callback=${callbackName}`;
         document.body.appendChild(script);
       });
     }
@@ -2037,7 +2073,6 @@
           </div>
         `;
 
-        // Clicking a song plays it and STAYS on current page until user taps Back
         li.addEventListener("click", (e) => {
           if (e.target.closest(".fav-btn")) {
             e.stopPropagation();
@@ -2095,7 +2130,7 @@
       for (let i = 0; i < byteChars.length; i++) {
         byteNumbers[i] = byteChars.charCodeAt(i);
       }
-      return new Blob([new Uint8Array(byteNumbers)], { type: res.mimeType || "audio/webm" });
+      return new Blob([new Uint8Array(byteNumbers)], { type: res.mimeType || "audio/mpeg" });
     }
 
     function selectTrackUI(track) {
@@ -2114,30 +2149,61 @@
       updateMediaSession(track);
     }
 
-    async function preloadTrack(track) {
-      if (!track || audioCache[track.id]) return;
-      try {
-        const blob = await fetchTrackBlob(track);
-        audioCache[track.id] = URL.createObjectURL(blob);
-      } catch (e) {}
+    // === ZERO-BUFFER ADVANCE PRELOADER ===
+    async function getOrFetchBlobUrl(track) {
+      if (!track) return null;
+      if (audioCache[track.id]) return audioCache[track.id];
+
+      if (pendingFetches[track.id]) {
+        return await pendingFetches[track.id];
+      }
+
+      pendingFetches[track.id] = (async () => {
+        try {
+          const blob = await fetchTrackBlob(track);
+          const url = URL.createObjectURL(blob);
+          audioCache[track.id] = url;
+          return url;
+        } finally {
+          delete pendingFetches[track.id];
+        }
+      })();
+
+      return await pendingFetches[track.id];
+    }
+
+    async function preloadUpcomingTracks() {
+      const list = getTracksByCategory(activeCategory);
+      if (list.length <= 1) return;
+      const idx = list.findIndex(t => t.id === currentTrackId);
+      if (idx === -1) return;
+
+      const next1 = list[(idx + 1) % list.length];
+      const next2 = list.length > 2 ? list[(idx + 2) % list.length] : null;
+
+      if (next1) getOrFetchBlobUrl(next1).catch(() => {});
+      if (next2) {
+        setTimeout(() => getOrFetchBlobUrl(next2).catch(() => {}), 1500);
+      }
     }
 
     async function loadAndPlayTrack(track) {
-      if (!track || isLoadingAudio) return;
+      if (!track) return;
       initAudioEngine();
       pauseTrack();
       selectTrackUI(track);
+      silenceStartTime = 0;
+
+      const targetId = track.id;
 
       try {
         isLoadingAudio = true;
-        setStatus(offlineSavedIds.has(track.id) ? "Loading from offline storage..." : "Buffering audio from Drive...", "#00c6ff");
-
-        let blobUrl = audioCache[track.id];
-        if (!blobUrl) {
-          const blob = await fetchTrackBlob(track);
-          blobUrl = URL.createObjectURL(blob);
-          audioCache[track.id] = blobUrl;
+        if (!audioCache[track.id]) {
+          setStatus(offlineSavedIds.has(track.id) ? "Loading offline..." : "Buffering...", "#00c6ff");
         }
+
+        const blobUrl = await getOrFetchBlobUrl(track);
+        if (currentTrackId !== targetId) return;
 
         audio.src = blobUrl;
         audio.playbackRate = speeds[speedIndex];
@@ -2157,10 +2223,11 @@
         renderAlbumsGrid();
         renderPlaylist();
 
-        const nextTrack = getNextTrack();
-        if (nextTrack) preloadTrack(nextTrack);
+        preloadUpcomingTracks();
       } catch (err) {
-        setStatus("Play error: " + err.message, "#ff6b6b");
+        if (currentTrackId === targetId) {
+          setStatus("Play error: " + err.message, "#ff6b6b");
+        }
       } finally {
         isLoadingAudio = false;
       }
@@ -2169,6 +2236,7 @@
     function pauseTrack() {
       audio.pause();
       isPlaying = false;
+      silenceStartTime = 0;
       musicCard.classList.remove("is-playing");
       if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
       updateSubpageNowStrips();
@@ -2380,7 +2448,6 @@
       });
     });
 
-    // When a song finishes, it ONLY plays the next song inside the SAME locked album/category
     audio.addEventListener("timeupdate", () => {
       if (!audio.duration || isSeeking) return;
       const percent = (audio.currentTime / audio.duration) * 100;
