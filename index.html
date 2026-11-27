@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AD Music — Cloud & GD Studio Player</title>
-  <link rel="icon" type="image/png" href="logo.png" />
-  <link rel="apple-touch-icon" href="logo.png" />
+  <meta name="theme-color" content="#101318" />
+  <title>AD Music — Studio Player</title>
+  <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/1wUh_mjG-ags9qmvEvmyjueuuweJLxR-2=s128" />
+  <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1wUh_mjG-ags9qmvEvmyjueuuweJLxR-2=s256" />
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -15,10 +16,10 @@
     <div class="neo-card auth-card">
       <div class="auth-brand">
         <div class="logo-ring glow-spin-slow">
-          <img src="logo.png" alt="AD Music" class="brand-logo-img" />
+          <img src="https://lh3.googleusercontent.com/d/1wUh_mjG-ags9qmvEvmyjueuuweJLxR-2=s256" alt="AD Music" class="brand-logo-img" />
         </div>
         <h1>AD Music</h1>
-        <p class="muted small">Hybrid Cloud &bull; GD &bull; Pro DJ Studio</p>
+        <p class="muted small">Cloud &bull; GD &bull; Pro DJ Studio</p>
       </div>
 
       <div class="auth-tabs">
@@ -43,15 +44,15 @@
 
   <!-- Update Banner -->
   <div id="updateBanner" class="update-banner hidden">
-    <span>New AD Music update (<strong id="remoteVersionText">v3.0.0</strong>) is ready!</span>
+    <span>New AD Music update (<strong id="remoteVersionText">v3.1.0</strong>) is ready!</span>
     <button type="button" id="bannerUpdateNowBtn" class="neo-btn neo-btn-primary">Update Now</button>
   </div>
 
-  <!-- Top Header with Logo -->
+  <!-- Top Header with AD Music Logo -->
   <header class="top-header">
     <div class="header-left">
       <div class="logo-ring sm">
-        <img src="logo.png" alt="AD Music" class="brand-logo-img" />
+        <img src="https://lh3.googleusercontent.com/d/1wUh_mjG-ags9qmvEvmyjueuuweJLxR-2=s128" alt="AD Music" class="brand-logo-img" />
       </div>
       <div>
         <div class="brand-title">AD Music</div>
@@ -84,63 +85,77 @@
   </nav>
 
   <main class="main-container">
-    <!-- VIEW 1: NEUMORPHIC NOW PLAYING (Main Hero UI) -->
+    <!-- VIEW 1: NEONWAVE NOW PLAYING + PC SIDE QUEUE -->
     <section id="nowPlayingView" class="view active">
-      <div class="now-playing-stage">
-        <div class="time-readout" id="remainingTimeLabel">-0:00</div>
-
-        <!-- Circular Progress Ring + Spiral Visualizer + Logo Center -->
-        <div class="dial-wrapper" id="circularDial">
-          <svg class="dial-svg" viewBox="0 0 260 260">
-            <circle class="dial-track" cx="130" cy="130" r="112" />
-            <circle class="dial-progress" id="dialProgressCircle" cx="130" cy="130" r="112" />
-          </svg>
-          <div class="dial-inner">
-            <canvas id="visualizerCanvas" width="180" height="180"></canvas>
-            <img id="playerCover" src="logo.png" alt="Cover" class="dial-center-art" />
+      <div class="pc-studio-layout">
+        <!-- Left/Center: NeonWave Player Card -->
+        <div class="player">
+          <div class="topbar">
+            <div class="brand"><i class="brand-mark"></i> AD MUSIC</div>
+            <div class="timer" id="remainingTimeLabel">-0:00</div>
           </div>
-          <div class="dial-knob" id="dialKnob"></div>
-        </div>
 
-        <!-- Track Info -->
-        <div class="track-meta">
-          <div class="track-title-row">
-            <h2 id="playerTitle">Select a Track</h2>
-            <span id="sourceTypeBadge" class="source-pill">GD</span>
+          <div class="visual-wrap" id="visual">
+            <div class="visualizer">
+              <div class="orbit one"></div>
+              <div class="orbit two"></div>
+              <div class="orbit three"></div>
+              <div class="wave"></div>
+              <div class="wave w2"></div>
+              <div class="wave w3"></div>
+              <div class="ring"></div>
+              <div class="cover has-image" id="cover">
+                <img id="playerCover" src="https://lh3.googleusercontent.com/d/1wUh_mjG-ags9qmvEvmyjueuuweJLxR-2=s256" alt="Album cover" />
+              </div>
+            </div>
           </div>
-          <p id="playerArtist" class="muted">AD Music Library</p>
-          <div class="time-row">
-            <span id="currentTimeLabel">0:00</span>
-            <input type="range" id="seekBar" min="0" max="100" value="0" class="neo-slider" />
-            <span id="durationLabel">0:00</span>
+
+          <div class="track">
+            <h1><span id="playerTitleText">Select a Track</span> <span id="sourceTypeBadge" class="badge-tag">GD</span></h1>
+            <p id="playerArtist">AD Music Library</p>
           </div>
+
+          <div class="progress-area">
+            <div class="time-row">
+              <span id="currentTimeLabel">0:00</span>
+              <span id="durationLabel">0:00</span>
+            </div>
+            <input id="seekBar" type="range" min="0" max="100" value="0" aria-label="Seek through track" />
+          </div>
+
+          <div class="controls" aria-label="Playback controls">
+            <button type="button" class="control" id="shuffleBtn" title="Shuffle">🔀</button>
+            <button type="button" class="control" id="prevBtn" title="Previous">⏮</button>
+            <button type="button" class="control main" id="playPauseBtn" title="Play">▶</button>
+            <button type="button" class="control" id="nextBtn" title="Next">⏭</button>
+            <button type="button" class="control" id="repeatBtn" title="Repeat">🔁</button>
+          </div>
+
+          <!-- 3 Action Pills (Share Removed) -->
+          <div class="secondary three-cols">
+            <button type="button" class="pill" id="playerFavBtn">♡ Favorite</button>
+            <button type="button" class="pill" id="downloadOfflineBtn">⬇ Offline</button>
+            <button type="button" class="pill" id="liveRadioBtn">▣ Radio</button>
+          </div>
+
+          <div class="volume">
+            <span aria-hidden="true">🔈</span>
+            <input id="masterVolume" type="range" min="0" max="1" step="0.01" value="0.85" aria-label="Volume" />
+            <span aria-hidden="true">🔊</span>
+            <span class="vol-value" id="volumeValue">85%</span>
+          </div>
+          <div class="status" id="playerStatusText">Ready to stream</div>
         </div>
 
-        <!-- Neumorphic Transport Controls with Glowing Rotating Play Button -->
-        <div class="transport-row">
-          <button type="button" id="shuffleBtn" class="neo-circle-btn sm" title="Shuffle">🔀</button>
-          <button type="button" id="prevBtn" class="neo-circle-btn md" title="Previous">⏮</button>
-          <button type="button" id="playPauseBtn" class="neo-play-btn" title="Play / Pause">
-            <span class="play-ring"></span>
-            <span id="playPauseIcon" class="play-icon">▶</span>
-          </button>
-          <button type="button" id="nextBtn" class="neo-circle-btn md" title="Next">⏭</button>
-          <button type="button" id="repeatBtn" class="neo-circle-btn sm" title="Repeat">🔁</button>
-        </div>
-
-        <!-- Secondary Action Strip -->
-        <div class="quick-actions-row">
-          <button type="button" id="playerFavBtn" class="neo-pill-btn">♡ Favorite</button>
-          <button type="button" id="downloadOfflineBtn" class="neo-pill-btn">⬇️ Offline</button>
-          <button type="button" id="liveRadioBtn" class="neo-pill-btn">📻 Radio</button>
-          <button type="button" id="shareSongBtn" class="neo-pill-btn">🔗 Share</button>
-        </div>
-
-        <div class="volume-strip">
-          <span>🔈</span>
-          <input type="range" id="masterVolume" min="0" max="1" step="0.02" value="1" class="neo-slider" />
-          <span>🔊</span>
-        </div>
+        <!-- Right Panel on PC: Quick Up-Next & Category Tracks -->
+        <aside class="pc-queue-panel neo-card">
+          <div class="queue-header">
+            <h3>Quick Queue</h3>
+            <span id="quickCountBadge" class="muted small">0 tracks</span>
+          </div>
+          <input type="search" id="quickSearchInput" class="neo-input sm-input" placeholder="Filter queue..." />
+          <div id="quickQueueList" class="song-list compact-list"></div>
+        </aside>
       </div>
     </section>
 
@@ -151,7 +166,7 @@
         <select id="categoryFilter" class="neo-input">
           <option value="ALL">All Categories</option>
         </select>
-        <button type="button" id="refreshLibraryBtn" class="neo-btn">↻ Refresh</button>
+        <button type="button" id="refreshLibraryBtn" class="neo-btn">↻ Sync</button>
       </div>
 
       <div class="sub-tabs">
@@ -185,7 +200,7 @@
       </div>
     </section>
 
-    <!-- VIEW 3: PRO NEUMORPHIC EQUALIZER (Screenshot Style) -->
+    <!-- VIEW 3: PRO EQUALIZER -->
     <section id="equalizerView" class="view">
       <div class="neo-card eq-studio-card">
         <div class="eq-presets-bar">
@@ -196,7 +211,6 @@
           <button type="button" class="eq-preset-tab" data-preset="club">Club</button>
         </div>
 
-        <!-- 4 Vertical Glowing Faders -->
         <div class="vertical-faders-grid">
           <div class="fader-col">
             <div class="fader-track-wrap">
@@ -235,10 +249,9 @@
           </div>
         </div>
 
-        <!-- Rotary Bass & Treble Knobs -->
         <div class="rotary-knobs-row">
           <div class="knob-unit">
-            <div class="rotary-dial" id="bassKnobDial">
+            <div class="rotary-dial">
               <div class="rotary-cap" id="bassKnobCap">
                 <span class="rotary-indicator"></span>
               </div>
@@ -248,7 +261,7 @@
           </div>
 
           <div class="knob-unit">
-            <div class="rotary-dial" id="trebleKnobDial">
+            <div class="rotary-dial">
               <div class="rotary-cap" id="trebleKnobCap">
                 <span class="rotary-indicator"></span>
               </div>
@@ -260,18 +273,15 @@
       </div>
     </section>
 
-    <!-- VIEW 4: DJ PRO STUDIO (Dual Full Main Players + Dual EQ + Admin Lock) -->
+    <!-- VIEW 4: DJ PRO STUDIO -->
     <section id="djView" class="view">
-      <!-- Locked Overlay for Unauthorized Users -->
       <div id="djLockedPanel" class="neo-card locked-box">
         <div class="lock-big">🔒</div>
         <h2>DJ PRO Studio Locked</h2>
         <p class="muted">Dual-Deck Pro DJ Mixer &amp; Dual Equalizer is a PRO feature. Ask Admin to unlock DJ PRO access for your account.</p>
       </div>
 
-      <!-- Unlocked Dual Main Players + Dual EQ -->
       <div id="djStudioPanel" class="dj-dual-grid hidden">
-        <!-- LEFT MAIN PLAYER A + EQ A -->
         <div class="neo-card dj-deck-card">
           <div class="deck-header">
             <span class="pro-tag">PLAYER A</span>
@@ -280,15 +290,15 @@
 
           <div class="dj-platter-wrap">
             <div id="platterA" class="dj-platter">
-              <img src="logo.png" alt="Deck A" class="platter-logo" />
+              <img src="https://lh3.googleusercontent.com/d/1wUh_mjG-ags9qmvEvmyjueuuweJLxR-2=s128" alt="Deck A" class="platter-logo" />
               <span id="deckALabel" class="platter-text">DECK A</span>
             </div>
           </div>
 
           <h4 id="deckATrackTitle" class="center-text">Load Track A</h4>
           <div class="transport-row compact">
-            <button type="button" id="deckACueBtn" class="neo-circle-btn sm">CUE</button>
-            <button type="button" id="deckAPlayBtn" class="neo-play-btn sm">▶</button>
+            <button type="button" id="deckACueBtn" class="control">CUE</button>
+            <button type="button" id="deckAPlayBtn" class="control main sm-main">▶</button>
           </div>
 
           <div class="stack small-gap">
@@ -298,7 +308,6 @@
             <input type="range" id="deckAVol" min="0" max="1" step="0.02" value="1" class="neo-slider" />
           </div>
 
-          <!-- Deck A 3-Band EQ -->
           <div class="deck-eq-box">
             <div class="deck-eq-title">Deck A Equalizer</div>
             <div class="deck-eq-row">
@@ -309,7 +318,6 @@
           </div>
         </div>
 
-        <!-- CENTER CROSSFADER -->
         <div class="neo-card dj-mixer-center">
           <h3>CROSSFADER</h3>
           <div id="crossfaderVal" class="xfade-readout">50 / 50</div>
@@ -317,7 +325,6 @@
           <p class="muted small center-text">Drag vinyl platters to scratch</p>
         </div>
 
-        <!-- RIGHT MAIN PLAYER B + EQ B -->
         <div class="neo-card dj-deck-card">
           <div class="deck-header">
             <span class="pro-tag">PLAYER B</span>
@@ -326,15 +333,15 @@
 
           <div class="dj-platter-wrap">
             <div id="platterB" class="dj-platter">
-              <img src="logo.png" alt="Deck B" class="platter-logo" />
+              <img src="https://lh3.googleusercontent.com/d/1wUh_mjG-ags9qmvEvmyjueuuweJLxR-2=s128" alt="Deck B" class="platter-logo" />
               <span id="deckBLabel" class="platter-text">DECK B</span>
             </div>
           </div>
 
           <h4 id="deckBTrackTitle" class="center-text">Load Track B</h4>
           <div class="transport-row compact">
-            <button type="button" id="deckBCueBtn" class="neo-circle-btn sm">CUE</button>
-            <button type="button" id="deckBPlayBtn" class="neo-play-btn sm">▶</button>
+            <button type="button" id="deckBCueBtn" class="control">CUE</button>
+            <button type="button" id="deckBPlayBtn" class="control main sm-main">▶</button>
           </div>
 
           <div class="stack small-gap">
@@ -344,7 +351,6 @@
             <input type="range" id="deckBVol" min="0" max="1" step="0.02" value="1" class="neo-slider" />
           </div>
 
-          <!-- Deck B 3-Band EQ -->
           <div class="deck-eq-box">
             <div class="deck-eq-title">Deck B Equalizer</div>
             <div class="deck-eq-row">
@@ -357,7 +363,7 @@
       </div>
     </section>
 
-    <!-- VIEW 5: UPLOAD (Direct Phone/PC File Upload + Category + Cloud/GD Link) -->
+    <!-- VIEW 5: UPLOAD -->
     <section id="uploadView" class="view">
       <div class="neo-card form-card">
         <h2>Upload Track</h2>
@@ -383,13 +389,11 @@
             <option value="R2">☁️ Cloud Direct Audio Link</option>
           </select>
 
-          <!-- Direct Phone/PC File Picker -->
           <div id="filePickerGroup" class="stack">
             <label class="small muted">Select Audio File (.mp3, .m4a, .ogg, .wav — Max 25MB / 10 min)</label>
-            <input type="file" id="uploadAudioFile" accept="audio/*" class="neo-input file-input" />
+            <input type="file" id="uploadAudioFile" accept="audio/*" class="neo-input file-input-box" />
           </div>
 
-          <!-- Link Input (for GD / Cloud link) -->
           <div id="urlInputGroup" class="stack hidden">
             <label id="audioSourceLabel" class="small muted">GD Link or File ID</label>
             <div class="inline-row">
@@ -414,7 +418,7 @@
       </div>
     </section>
 
-    <!-- VIEW 6: ADMIN PANEL (Pending Songs + Codes + User Block/Revoke/DJ Lock) -->
+    <!-- VIEW 6: ADMIN PANEL -->
     <section id="adminView" class="view">
       <div class="toolbar-row">
         <h2>Admin Control Panel</h2>
@@ -445,35 +449,45 @@
       </div>
     </section>
 
-    <!-- VIEW 7: SETTINGS & INFO (No Backend URL Exposed) -->
+    <!-- VIEW 7: SETTINGS & CUSTOMIZATION -->
     <section id="settingsView" class="view">
       <div class="neo-card stack">
-        <h2>Appearance &amp; Audio</h2>
+        <h2>Player Customization</h2>
+
+        <div class="preset-swatches">
+          <span class="small muted">Quick Theme Presets:</span>
+          <button type="button" class="swatch-btn" data-accent="#ff3f82" style="background:#ff3f82" title="Neon Pink"></button>
+          <button type="button" class="swatch-btn" data-accent="#00d285" style="background:#00d285" title="Emerald Glow"></button>
+          <button type="button" class="swatch-btn" data-accent="#55d7ff" style="background:#55d7ff" title="Electric Cyan"></button>
+          <button type="button" class="swatch-btn" data-accent="#a855f7" style="background:#a855f7" title="Royal Purple"></button>
+          <button type="button" class="swatch-btn" data-accent="#f59e0b" style="background:#f59e0b" title="Warm Gold"></button>
+        </div>
+
         <div class="two-col">
           <div>
-            <label class="small muted">Theme</label>
-            <select id="settingTheme" class="neo-input">
-              <option value="dark">Neumorphic Dark</option>
-              <option value="light">Soft Light</option>
-            </select>
+            <label class="small muted">Custom Glow Color</label>
+            <input type="color" id="settingAccent" value="#ff3f82" class="neo-input color-input" />
           </div>
           <div>
-            <label class="small muted">Glow Accent Color</label>
-            <input type="color" id="settingAccent" value="#00d285" class="neo-input color-input" />
+            <label class="small muted">Surface Mode</label>
+            <select id="settingTheme" class="neo-input">
+              <option value="dark">Dark Studio</option>
+              <option value="light">Soft Light</option>
+            </select>
           </div>
         </div>
 
         <div class="two-col">
           <div>
-            <label class="small muted">Visualizer Ring</label>
+            <label class="small muted">Wave Visualizer Rings</label>
             <select id="settingVisualizer" class="neo-input">
               <option value="on">Active</option>
-              <option value="off">Off</option>
+              <option value="off">Minimal</option>
             </select>
           </div>
           <div>
             <label class="small muted">Offline Storage</label>
-            <button type="button" id="settingsClearCacheBtn" class="neo-btn danger-text">Clear Offline Audio</button>
+            <button type="button" id="settingsClearCacheBtn" class="neo-btn danger-text">Clear Offline Cache</button>
           </div>
         </div>
       </div>
@@ -481,10 +495,10 @@
       <div class="neo-card stack">
         <div class="about-header">
           <div class="logo-ring sm">
-            <img src="logo.png" alt="AD Music" class="brand-logo-img" />
+            <img src="https://lh3.googleusercontent.com/d/1wUh_mjG-ags9qmvEvmyjueuuweJLxR-2=s128" alt="AD Music" class="brand-logo-img" />
           </div>
           <div>
-            <h3>AD Music v3.0.0</h3>
+            <h3>AD Music v3.1.0</h3>
             <p class="muted small">Created by Amar Tomar &bull; Maruti Technologies</p>
           </div>
         </div>
