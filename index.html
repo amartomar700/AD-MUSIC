@@ -140,7 +140,7 @@
       </div>
     </main>
 
-    <!-- VIEW 2: TRACKS & ALBUMS (4 Buttons: All Track, Albums, Fvt Song, Offline) -->
+    <!-- VIEW 2: TRACKS & ALBUMS (Full-Width Search + 4 Visible Tabs) -->
     <section id="libraryView" class="view">
       <div class="card-panel scroll-panel stack">
         <div class="inline-between">
@@ -151,35 +151,34 @@
           <button type="button" id="refreshLibraryBtn" class="neo-pill-btn">↻ Sync</button>
         </div>
 
-        <div class="inline-row">
-          <input type="text" id="searchInput" class="neo-input" placeholder="Search songs, artists, albums..." />
-          <select id="categoryFilter" class="neo-select">
-            <option value="ALL">All Categories</option>
-          </select>
+        <!-- Full Width Search Input (Category Dropdown Removed) -->
+        <div style="width:100%;margin-bottom:6px;">
+          <input type="text" id="searchInput" class="neo-input" style="width:100%;box-sizing:border-box;" placeholder="Search songs, artists, albums..." />
         </div>
 
-        <div class="sub-tabs" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
-          <button type="button" class="sub-tab active" data-lib-tab="allSongsPanel">All Track</button>
-          <button type="button" class="sub-tab" data-lib-tab="albumsPanel">Albums</button>
-          <button type="button" class="sub-tab" data-lib-tab="favoritesPanel">Fvt Song</button>
-          <button type="button" class="sub-tab" data-lib-tab="offlinePanel">Offline</button>
+        <!-- 4 Visible Tabs Above Song List -->
+        <div class="sub-tabs" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;min-height:38px;margin-bottom:10px;position:relative;z-index:5;overflow:visible;flex-shrink:0;">
+          <button type="button" class="sub-tab active" data-lib-tab="allSongsPanel" style="height:36px;padding:0 6px;font-size:12px;white-space:nowrap;">All Track</button>
+          <button type="button" class="sub-tab" data-lib-tab="albumsPanel" style="height:36px;padding:0 6px;font-size:12px;white-space:nowrap;">Albums</button>
+          <button type="button" class="sub-tab" data-lib-tab="favoritesPanel" style="height:36px;padding:0 6px;font-size:12px;white-space:nowrap;">Fvt Song</button>
+          <button type="button" class="sub-tab" data-lib-tab="offlinePanel" style="height:36px;padding:0 6px;font-size:12px;white-space:nowrap;">Offline</button>
         </div>
 
-        <div id="allSongsPanel" class="lib-panel stack">
+        <div id="allSongsPanel" class="lib-panel stack" style="margin-top:4px;">
           <div id="songList" class="stack"></div>
         </div>
 
-        <div id="albumsPanel" class="lib-panel stack hidden">
+        <div id="albumsPanel" class="lib-panel stack hidden" style="margin-top:4px;">
           <button type="button" id="backToAlbumsBtn" class="neo-pill-btn hidden">← Back to Albums</button>
           <div id="albumGrid" class="stack"></div>
           <div id="albumSongList" class="stack hidden"></div>
         </div>
 
-        <div id="favoritesPanel" class="lib-panel stack hidden">
+        <div id="favoritesPanel" class="lib-panel stack hidden" style="margin-top:4px;">
           <div id="favoritesList" class="stack"></div>
         </div>
 
-        <div id="offlinePanel" class="lib-panel stack hidden">
+        <div id="offlinePanel" class="lib-panel stack hidden" style="margin-top:4px;">
           <p id="offlineStats" class="muted small">0 tracks saved offline</p>
           <div id="offlineList" class="stack"></div>
         </div>
