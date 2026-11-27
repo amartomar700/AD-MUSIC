@@ -1,10 +1,10 @@
-/* AD Music v3.3.0 — Clean Folder Albums, Auto-Generated Album Covers, Album Play & Offline Delete */
+/* AD Music v3.4.0 — Glowing Spinning Logo Play/Pause, Track Cover Art, Random Shuffle & Folder Albums */
 (() => {
   "use strict";
 
-  const APP_VERSION = "3.3.0";
+  const APP_VERSION = "3.4.0";
   const OFFLINE_CACHE_NAME = "ad-music-offline-audio-v1";
-  const SONGS_CACHE_KEY = "admusic_cached_songs_v3";
+  const SONGS_CACHE_KEY = "admusic_cached_songs_v34";
   const CIRCUMFERENCE = 641;
   const API_URL = "https://script.google.com/macros/s/AKfycbwSr-j8h-BR8mgzU2c-9K0yuLokz7qcTAV8uxsW3ih8XLOADPCamdIg6OxIt7sNsZqQ/exec";
 
@@ -42,7 +42,7 @@
     queue: [],
     currentIndex: -1,
     isPlaying: false,
-    shuffle: false,
+    shuffle: true, // Songs har baar randomly play honge
     repeat: false,
     liveRadio: false,
     selectedCategory: "ALL",
@@ -74,6 +74,15 @@
     setTimeout(() => el.remove(), 3000);
   }
 
+  function shuffleArray(list) {
+    const arr = [...list];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
   function extractDriveId(input) {
     if (!input) return null;
     const raw = input.trim();
@@ -94,8 +103,8 @@
     const c = (rawCover || "").trim();
     if (!c) return "";
     const id = extractDriveId(c);
-    if (id && c.includes("drive.google.com")) {
-      return `https://lh3.googleusercontent.com/d/${encodeURIComponent(id)}=s400`;
+    if (id && (c.includes("drive.google.com") || c.includes("googleusercontent.com"))) {
+      return `https://lh3.googleusercontent.com/d/${encodeURIComponent(id)}=s600`;
     }
     return c;
   }
@@ -137,7 +146,6 @@
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   }
 
-  // Prevents double album names like "masti / masti" -> returns clean "masti"
   function getCleanAlbumName(song) {
     const cat = String(song.category || "").trim();
     const alb = String(song.album || "").trim();
@@ -147,7 +155,6 @@
     return `${cat} — ${alb}`;
   }
 
-  // Auto-generates unique gradient cover art from title/album name when no image exists
   function autoCoverHtml(label, coverUrl) {
     const clean = String(label || "AD").trim();
     let hash = 0;
@@ -254,9 +261,12 @@
     state.songs = (rawList || []).map((s) => ({
       ...s,
       cleanAlbum: getCleanAlbumName(s),
-      resolvedCover: resolveCoverUrl(s.coverUrl),
+      resolvedCover: resolveCoverUrl(s.coverUrl || s.thumbnail || s.thumb || s.image),
       resolved: resolveAudioSource(s)
     }));
+    if (!state.queue.length && state.songs.length) {
+      state.queue = shuffleArray(state.songs);
+    }
     populateCategories();
     renderAllViews();
     populateDJSelectors();
@@ -354,7 +364,6 @@
     list.forEach((song, idx) => box.appendChild(createSongRow(song, idx, list, isOfflineView)));
   }
 
-  // Folder-Style Album List (Matches Screenshot 2 + Auto Thumbnail + Play Album + Download Album)
   function renderAlbums() {
     const grid = $("albumGrid");
     const songBox = $("albumSongList");
@@ -374,7 +383,6 @@
     map.forEach((tracks, albumName) => {
       const row = document.createElement("div");
       row.className = `album-list-row ${state.activeAlbumName === albumName ? "active-album" : ""}`;
-      // Pick first available cover inside this album's songs, or auto-generate from album name
       const inheritedCover = tracks.find((t) => t.resolvedCover)?.resolvedCover || "";
 
       row.innerHTML = `
@@ -398,7 +406,6 @@
           downloadAlbumOffline(albumName, tracks);
           return;
         }
-        // Open album tracks view with a Play Album header bar
         grid.classList.add("hidden");
         songBox.classList.remove("hidden");
         $("backToAlbumsBtn").classList.remove("hidden");
@@ -427,7 +434,7 @@
   function playAlbumTracks(albumName, tracks) {
     if (!tracks.length) return;
     state.activeAlbumName = albumName;
-    state.queue = [...tracks]; // Locks playback strictly to this album's songs
+    state.queue = state.shuffle ? shuffleArray(tracks) : [...tracks];
     playSongAtIndex(0);
     toast(`Playing Album: ${albumName} (${tracks.length} songs)`, "success");
     document.querySelector('[data-view="nowPlayingView"]').click();
@@ -454,10 +461,11 @@
     renderAlbums();
   }
 
-  // --- Playback & Timing Circular Dial ---
+  // --- Playback, Center Track Cover & Glowing Spinning Logo ---
   function setPlayingVisuals(playing) {
     state.isPlaying = playing;
     $("playPauseIcon").textContent = playing ? "Ⅱ" : "▶";
+    $("playPauseBtn").classList.toggle("is-playing", playing);
     $("visualWrap").classList.toggle("playing", playing);
   }
 
@@ -482,6 +490,8 @@
     audio.volume = Number($("masterVolume").value);
     $("dialProgressCircle").style.strokeDashoffset = CIRCUMFERENCE;
 
+    updatePlayerBar(song, src.type);
+
     initWebAudioForMain();
     if (audioCtx && audioCtx.state === "suspended") await audioCtx.resume();
 
@@ -497,12 +507,14 @@
           await audio.play();
           setPlayingVisuals(true);
         } catch (err) {
+          setPlayingVisuals(false);
           toast("Unable to play audio: " + err.message, "error");
         }
+      } else {
+        setPlayingVisuals(false);
       }
     }
 
-    updatePlayerBar(song, src.type);
     renderAllViews();
   }
 
@@ -512,21 +524,47 @@
     $("sourceTypeBadge").textContent = srcType;
     $("playerFavBtn").classList.toggle("active", state.favorites.has(song.id));
 
-    const hasImg = Boolean(song.resolvedCover);
-    $("coverCircle").classList.toggle("has-image", hasImg);
-    $("playerCover").src = song.resolvedCover || "";
+    const coverImg = $("playerCover");
+    const fallbackEl = $("coverFallback");
+    const thumbUrl = (song.resolvedCover || "").trim();
+
+    if (thumbUrl) {
+      coverImg.src = thumbUrl;
+      coverImg.classList.remove("hidden");
+      fallbackEl.classList.add("hidden");
+      coverImg.onerror = () => {
+        coverImg.src = "logo.png";
+      };
+    } else {
+      coverImg.src = "logo.png";
+      coverImg.classList.remove("hidden");
+      fallbackEl.classList.add("hidden");
+    }
+  }
+
+  function getRandomNextIndex() {
+    const total = state.queue.length;
+    if (total <= 1) return 0;
+    let randIdx;
+    do {
+      randIdx = Math.floor(Math.random() * total);
+    } while (randIdx === state.currentIndex);
+    return randIdx;
   }
 
   function nextTrack() {
     if (!state.queue.length) return;
     if (state.shuffle || state.liveRadio) {
-      return playSongAtIndex(Math.floor(Math.random() * state.queue.length));
+      return playSongAtIndex(getRandomNextIndex());
     }
     playSongAtIndex(state.currentIndex + 1);
   }
 
   function prevTrack() {
     if (!state.queue.length) return;
+    if (state.shuffle) {
+      return playSongAtIndex(getRandomNextIndex());
+    }
     playSongAtIndex(state.currentIndex - 1);
   }
 
@@ -925,8 +963,9 @@
 
     $("playPauseBtn").onclick = async () => {
       if (!state.currentSong) {
-        if (state.songs.length) {
-          state.queue = getFilteredSongs();
+        const pool = getFilteredSongs();
+        if (pool.length) {
+          state.queue = state.shuffle ? shuffleArray(pool) : pool;
           playSongAtIndex(0);
         }
         return;
@@ -945,9 +984,14 @@
     $("rewind10Btn").onclick = () => skipSeconds(-10);
     $("forward10Btn").onclick = () => skipSeconds(10);
 
+    $("shuffleBtn").classList.toggle("active", state.shuffle);
     $("shuffleBtn").onclick = () => {
       state.shuffle = !state.shuffle;
       $("shuffleBtn").classList.toggle("active", state.shuffle);
+      if (state.shuffle && state.queue.length > 1) {
+        state.queue = shuffleArray(state.queue);
+      }
+      toast(state.shuffle ? "Random Shuffle ON" : "Sequential Order", "info");
     };
     $("repeatBtn").onclick = () => {
       state.repeat = !state.repeat;
@@ -960,8 +1004,8 @@
       $("liveRadioBadge").classList.toggle("hidden", !state.liveRadio);
       if (state.liveRadio && !state.isPlaying && state.songs.length) {
         state.activeAlbumName = null;
-        state.queue = state.songs;
-        playSongAtIndex(Math.floor(Math.random() * state.songs.length));
+        state.queue = shuffleArray(state.songs);
+        playSongAtIndex(0);
       }
     };
 
@@ -983,6 +1027,8 @@
       $("dialProgressCircle").style.strokeDashoffset = CIRCUMFERENCE - (CIRCUMFERENCE * pct) / 100;
     };
     audio.onended = () => { if (!state.repeat) nextTrack(); };
+    audio.onpause = () => setPlayingVisuals(false);
+    audio.onplay = () => setPlayingVisuals(true);
 
     $("playerFavBtn").onclick = () => { if (state.currentSong) toggleFavorite(state.currentSong.id); };
     $("downloadOfflineBtn").onclick = () => { if (state.currentSong) downloadSongOffline(state.currentSong); };
