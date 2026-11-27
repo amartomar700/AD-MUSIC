@@ -44,7 +44,7 @@
     <button type="button" id="bannerUpdateNowBtn" class="neo-btn neo-btn-primary sm-btn">Update</button>
   </div>
 
-  <!-- Top Header: Sirf Player Name "AD Music" -->
+  <!-- Top Header -->
   <header class="top-header">
     <div class="brand-title">AD Music</div>
     <div class="header-right">
@@ -114,7 +114,7 @@
 
         <!-- Track Name & Artist Above Play Button -->
         <div class="track-info-center">
-          <h1 id="playerTitle">Select a Track</h1>
+          <h1 id="playerTitle">Syncing Library...</h1>
           <p id="playerArtist">AD Music Library</p>
         </div>
 
@@ -150,12 +150,20 @@
           <button type="button" id="repeatBtn" class="pill-btn">🔁 Loop</button>
         </div>
 
-        <!-- Volume -->
-        <div class="volume-row">
-          <span>🔈</span>
-          <input type="range" id="masterVolume" min="0" max="1" step="0.01" value="0.85" class="neo-slider" />
-          <span>🔊</span>
-          <span class="vol-val" id="volumeValue">85%</span>
+        <!-- Volume (0% - 200%) + Auto Turbo Boost (200% - 400%) -->
+        <div class="volume-stack">
+          <div class="volume-row">
+            <span>🔈</span>
+            <input type="range" id="masterVolume" min="0" max="2" step="0.05" value="1" class="neo-slider" />
+            <span>🔊</span>
+            <span class="vol-val" id="volumeValue">100%</span>
+          </div>
+
+          <div id="turboVolBox" class="turbo-vol-box hidden">
+            <span class="turbo-badge">🔥 TURBO</span>
+            <input type="range" id="turboVolumeSlider" min="2" max="4" step="0.05" value="2" class="neo-slider turbo-slider" />
+            <span class="vol-val turbo-val" id="turboVolumeValue">200%</span>
+          </div>
         </div>
       </div>
     </section>
