@@ -89,9 +89,9 @@
       };
     }
 
-    // Google Drive streaming & Apps Script proxy fallback
+    // Google Drive direct stream + Apps Script Base64 proxy fallback
     const id = driveId || rawUrl;
-    const driveDirect = `https://drive.google.com/uc?export=download&id=${encodeURIComponent(id)}`;
+    const driveDirect = `https://drive.usercontent.google.com/download?id=${encodeURIComponent(id)}&export=download&confirm=t`;
     const proxyUrl = state.apiUrl
       ? `${state.apiUrl}?action=stream&id=${encodeURIComponent(id)}`
       : driveDirect;
@@ -103,6 +103,27 @@
       proxyUrl,
       downloadUrl: driveDirect
     };
+  }
+
+  // Converts Apps Script Base64 stream response into a playable Audio Blob URL
+  async function fetchDriveProxyBlobUrl(proxyUrl) {
+    const res = await fetch(proxyUrl);
+    const text = await res.text();
+    if (!text || text.trim().startsWith("{")) {
+      let errMsg = "Drive file inaccessible";
+      try {
+        const parsed = JSON.parse(text);
+        if (parsed.error) errMsg = parsed.error;
+      } catch (_) {}
+      throw new Error(errMsg);
+    }
+    const byteChars = atob(text.trim());
+    const byteNums = new Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) {
+      byteNums[i] = byteChars.charCodeAt(i);
+    }
+    const blob = new Blob([new Uint8Array(byteNums)], { type: "audio/mpeg" });
+    return { blob, blobUrl: URL.createObjectURL(blob) };
   }
 
   function normalizeTitle(title) {
@@ -415,13 +436,24 @@
       if (audio.crossOrigin) {
         audio.crossOrigin = null;
         audio.src = playableUrl;
-        await audio.play().catch(() => {});
-        state.isPlaying = true;
-      } else if (src.proxyUrl && playableUrl !== src.proxyUrl) {
-        audio.src = src.proxyUrl;
-        await audio.play().catch(() => toast("Unable to play audio source.", "error"));
-        state.isPlaying = !audio.paused;
-      } else {
+        try {
+          await audio.play();
+          state.isPlaying = true;
+        } catch (_) {}
+      }
+
+      if (!state.isPlaying && src.proxyUrl && playableUrl !== src.proxyUrl) {
+        try {
+          toast("Loading via Drive stream proxy...", "info");
+          const { blobUrl } = await fetchDriveProxyBlobUrl(src.proxyUrl);
+          audio.crossOrigin = null;
+          audio.src = blobUrl;
+          await audio.play();
+          state.isPlaying = true;
+        } catch (proxyErr) {
+          toast("Unable to play audio source: " + proxyErr.message, "error");
+        }
+      } else if (!state.isPlaying) {
         toast("Playback failed: " + err.message, "error");
       }
     }
@@ -490,15 +522,20 @@
     try {
       toast(`Caching "${song.title}" for offline use...`);
       const cache = await caches.open(OFFLINE_CACHE_NAME);
-      const res = await fetch(src.downloadUrl);
-      if (!res.ok) throw new Error("Network response not ok");
-      await cache.put(src.streamUrl, res);
+      if (src.type === "DRIVE" && src.proxyUrl) {
+        const { blob } = await fetchDriveProxyBlobUrl(src.proxyUrl);
+        await cache.put(src.streamUrl, new Response(blob, { headers: { "Content-Type": "audio/mpeg" } }));
+      } else {
+        const res = await fetch(src.downloadUrl);
+        if (!res.ok) throw new Error("Network response not ok");
+        await cache.put(src.streamUrl, res);
+      }
       state.offlineIds.add(song.id);
       localStorage.setItem("admusic_offline_ids", JSON.stringify([...state.offlineIds]));
       renderAllViews();
       toast(`Saved "${song.title}" offline!`, "success");
     } catch (err) {
-      toast("Offline save failed (CORS or network): " + err.message, "error");
+      toast("Offline save failed: " + err.message, "error");
     }
   }
 
@@ -966,7 +1003,16 @@
         if (!d.song) return toast(`Load a track into Deck ${k} first.`, "error");
         ensureDjAudioCtx();
         if (d.audio.paused) {
-          await d.audio.play();
+          try {
+            await d.audio.play();
+          } catch (_) {
+            const src = d.song.resolved || resolveAudioSource(d.song);
+            if (src.proxyUrl) {
+              const { blobUrl } = await fetchDriveProxyBlobUrl(src.proxyUrl);
+              d.audio.src = blobUrl;
+              await d.audio.play();
+            }
+          }
           d.playing = true;
           $(`deck${k}PlayBtn`).textContent = "⏸ Pause";
         } else {
