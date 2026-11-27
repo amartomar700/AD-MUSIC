@@ -4,12 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0b0f17" />
- <meta name="theme-color" content="#0b0f17" />
   <title>AD Music — Cloud & GD Player</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='30' fill='%230d1322' stroke='%2338bdf8' stroke-width='4'/><text x='50%25' y='56%25' text-anchor='middle' font-family='Arial' font-weight='900' font-size='26' fill='%23ffffff'>AD</text></svg>" />
-  <link rel="stylesheet" href="style.css" />
-</head>
-  <title>AD Music — Cloud & GD Player</title>
+  <link rel="icon" type="image/png" href="./logo.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -17,7 +13,9 @@
   <!-- Auth / Lock Screen Overlay -->
   <div id="authOverlay" class="auth-overlay">
     <div class="auth-card">
-      <div class="ad-emblem"><span>A</span><span class="cyan">D</span></div>
+      <div class="ad-emblem">
+        <img src="./logo.png" alt="AD" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" onerror="this.remove()" />
+      </div>
       <h1>AD Music</h1>
       <p class="muted small">Cloud &bull; GD &bull; Hi-Fi Audio</p>
 
@@ -110,14 +108,14 @@
           <span id="durationLabel" class="time-txt">0:00</span>
         </div>
 
-        <!-- Main Transport + Glowing Rotating AD Logo -->
+        <!-- Main Transport + Custom logo.png Play Button -->
         <div class="transport-row">
           <button type="button" id="prevBtn" class="ctrl-btn" title="Previous">⏮</button>
           <button type="button" id="rewind10Btn" class="ctrl-btn skip-txt" title="Rewind 10s">-10s</button>
           <button type="button" id="playPauseBtn" class="play-ad-btn" title="Play / Pause">
-            <div class="ad-disc-inner">
-              <span class="ad-disc-txt">A<span class="cyan">D</span></span>
-              <span id="playPauseIcon" class="play-mini-ico">▶</span>
+            <div class="ad-disc-inner" style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;border-radius:50%;overflow:hidden;">
+              <img src="./logo.png" alt="Play" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.style.display='none'" />
+              <span id="playPauseIcon" class="play-mini-ico" style="position:absolute;bottom:4px;right:6px;background:rgba(11,15,23,0.82);padding:1px 5px;border-radius:999px;font-size:10px;line-height:1.2;">▶</span>
             </div>
           </button>
           <button type="button" id="forward10Btn" class="ctrl-btn skip-txt" title="Forward 10s">+10s</button>
@@ -142,7 +140,7 @@
       </div>
     </main>
 
-    <!-- VIEW 2: TRACKS & ALBUMS -->
+    <!-- VIEW 2: TRACKS & ALBUMS (4 Buttons: All Track, Albums, Fvt Song, Offline) -->
     <section id="libraryView" class="view">
       <div class="card-panel scroll-panel stack">
         <div class="inline-between">
@@ -160,12 +158,11 @@
           </select>
         </div>
 
-        <div class="sub-tabs">
-          <button type="button" class="sub-tab active" data-lib-tab="allSongsPanel">All Songs</button>
+        <div class="sub-tabs" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+          <button type="button" class="sub-tab active" data-lib-tab="allSongsPanel">All Track</button>
           <button type="button" class="sub-tab" data-lib-tab="albumsPanel">Albums</button>
-          <button type="button" class="sub-tab" data-lib-tab="favoritesPanel">Favorites</button>
+          <button type="button" class="sub-tab" data-lib-tab="favoritesPanel">Fvt Song</button>
           <button type="button" class="sub-tab" data-lib-tab="offlinePanel">Offline</button>
-          <button type="button" class="sub-tab" data-lib-tab="radioPanel">Live Radio</button>
         </div>
 
         <div id="allSongsPanel" class="lib-panel stack">
@@ -185,10 +182,6 @@
         <div id="offlinePanel" class="lib-panel stack hidden">
           <p id="offlineStats" class="muted small">0 tracks saved offline</p>
           <div id="offlineList" class="stack"></div>
-        </div>
-
-        <div id="radioPanel" class="lib-panel stack hidden">
-          <div id="radioStationList" class="stack"></div>
         </div>
       </div>
     </section>
@@ -291,7 +284,7 @@
               </select>
             </div>
             <div class="inline-between">
-              <span class="small muted">AD Music v4.0.0</span>
+              <span class="small muted">AD Music v4.1.0</span>
               <button type="button" id="checkUpdatesBtn" class="neo-pill-btn">Check Updates</button>
             </div>
             <p id="versionCheckStatus" class="muted small"></p>
