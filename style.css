@@ -1,4 +1,4 @@
-/* AD Music v3.4.0 — Mobile-Fit Compact UI + Glowing Spinning Logo + Folder-List Albums */
+/* AD Music v3.4.0 — Mobile-Fit Compact UI + Glowing Spinning Logo + 400% Turbo Boost */
 :root {
   --bg: #101318;
   --panel: #191e25;
@@ -457,6 +457,13 @@ button, input, select { font: inherit; color: inherit; }
 
 .pill-btn.active { color: var(--pink); border-color: var(--pink); }
 
+/* Volume & 200%-400% Turbo Boost */
+.volume-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .volume-row {
   display: flex;
   align-items: center;
@@ -465,7 +472,46 @@ button, input, select { font: inherit; color: inherit; }
   font-size: 14px;
 }
 
-.vol-val { font-size: 11px; min-width: 30px; text-align: right; color: var(--muted); }
+.vol-val {
+  font-size: 11px;
+  min-width: 38px;
+  text-align: right;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.vol-val.boosted {
+  color: #00ff88;
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.55);
+}
+
+.turbo-vol-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, rgba(255, 0, 128, 0.14), rgba(0, 255, 136, 0.14));
+  border: 1px solid rgba(0, 255, 136, 0.45);
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.2);
+}
+
+.turbo-badge {
+  font-size: 10px;
+  font-weight: 900;
+  color: #00ff88;
+  white-space: nowrap;
+}
+
+.turbo-slider::-webkit-slider-thumb {
+  background: #00ff88 !important;
+  box-shadow: 0 0 10px #00ff88 !important;
+}
+
+.turbo-val {
+  color: #ff4d79 !important;
+  text-shadow: 0 0 8px rgba(255, 77, 121, 0.6);
+}
 
 /* Cards, Inputs, Library & Folder-List Albums */
 .neo-card {
