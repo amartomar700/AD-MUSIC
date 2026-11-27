@@ -1,16 +1,16 @@
-/* AD Music v3.6.0 — Clean Header, Fast Preload Streaming, Dynamic Center Cover & Settings Hub */
+/* AD Music v4.0.0 — Clean Player (No DJ PRO), Zero-Scroll UI, Fast Preload & Settings Hub */
 (() => {
   "use strict";
 
-  const APP_VERSION = "3.6.0";
+  const APP_VERSION = "4.0.0";
   const OFFLINE_CACHE_NAME = "ad-music-offline-audio-v1";
-  const SONGS_CACHE_KEY = "admusic_cached_songs_v36";
+  const SONGS_CACHE_KEY = "admusic_cached_songs_v40";
   const CIRCUMFERENCE = 641;
   // Apne naye deployed Code.gs ka /exec URL yahan paste karein:
   const API_URL = "https://script.google.com/macros/s/AKfycbwSr-j8h-BR8mgzU2c-9K0yuLokz7qcTAV8uxsW3ih8XLOADPCamdIg6OxIt7sNsZqQ/exec";
 
   const THEME_PRESETS = {
-    neonwave: { pink: "#ff3f82", cyan: "#55d7ff" },
+    neonwave: { pink: "#ff3f82", cyan: "#38bdf8" },
     emerald: { pink: "#00d285", cyan: "#00cec9" },
     gold: { pink: "#ffb300", cyan: "#ff6f00" },
     violet: { pink: "#a855f7", cyan: "#38bdf8" }
@@ -25,7 +25,7 @@
   };
 
   const COVER_GRADIENTS = [
-    "linear-gradient(135deg, #ff3f82, #55d7ff)",
+    "linear-gradient(135deg, #ff3f82, #38bdf8)",
     "linear-gradient(135deg, #00d285, #0984e3)",
     "linear-gradient(135deg, #a855f7, #ec4899)",
     "linear-gradient(135deg, #f59e0b, #ef4444)",
@@ -48,14 +48,14 @@
     shuffle: true,
     repeat: false,
     liveRadio: false,
+    turboMode: false,
     selectedCategory: "ALL",
     searchQuery: "",
     settings: JSON.parse(localStorage.getItem("admusic_settings") || JSON.stringify({
       primaryColor: "#ff3f82",
-      secondaryColor: "#55d7ff",
+      secondaryColor: "#38bdf8",
       themePreset: "neonwave",
-      visualizer: "on",
-      cardRadius: 28
+      visualizer: "on"
     }))
   };
 
@@ -214,7 +214,7 @@
     return fallback;
   }
 
-  // --- Audio, Equalizer & 200%-400% Turbo Volume Booster ---
+  // --- Audio, Equalizer & 400% Volume Booster ---
   const audio = new Audio();
   audio.preload = "auto";
   let audioCtx = null, sourceNode = null, gainNode = null, compressorNode = null, bandFilters = [], bassFilter = null, trebleFilter = null, webAudioReady = false;
@@ -309,14 +309,6 @@
     if ($("userEmailDisplay")) $("userEmailDisplay").textContent = state.user.email || "";
     if ($("roleBadge")) $("roleBadge").textContent = (state.user.role || "user").toUpperCase();
     if ($("adminSubTabBtn")) $("adminSubTabBtn").classList.toggle("hidden", state.user.role !== "admin");
-    updateDjLockState();
-  }
-
-  function updateDjLockState() {
-    const unlocked = state.user?.role === "admin" || Boolean(state.user?.djUnlocked);
-    if ($("djLockIcon")) $("djLockIcon").textContent = unlocked ? "🔓" : "🔒";
-    if ($("djLockedPanel")) $("djLockedPanel").classList.toggle("hidden", unlocked);
-    if ($("djStudioPanel")) $("djStudioPanel").classList.toggle("hidden", !unlocked);
   }
 
   function logoutUser(msg) {
@@ -368,7 +360,6 @@
 
     populateCategories();
     renderAllViews();
-    populateDJSelectors();
   }
 
   async function loadSongs(forceFresh = true, showToast = false) {
@@ -394,11 +385,6 @@
         $("liveBanner").classList.remove("hidden");
       }
 
-      if (typeof data.djUnlocked === "boolean") {
-        state.user.djUnlocked = data.djUnlocked;
-        localStorage.setItem("admusic_user", JSON.stringify(state.user));
-        updateDjLockState();
-      }
       if (typeof data.pendingCount === "number" && state.user.role === "admin") {
         if ($("pendingBadge")) {
           $("pendingBadge").textContent = data.pendingCount;
@@ -418,7 +404,7 @@
     const box = $("radioStationList");
     if (!box) return;
     if (!state.radioStations.length) {
-      box.innerHTML = `<p class="muted small">No live radio stations configured yet.</p>`;
+      box.innerHTML = `<p class="muted small">No live radio stations added yet.</p>`;
       return;
     }
     box.innerHTML = "";
@@ -801,90 +787,6 @@
     }
   }
 
-  // --- DJ PRO Studio ---
-  const decks = {
-    A: { audio: new Audio(), playing: false, angle: 0, song: null, vol: 1, ctx: null, filters: {} },
-    B: { audio: new Audio(), playing: false, angle: 0, song: null, vol: 1, ctx: null, filters: {} }
-  };
-
-  function setupDeckEq(k) {
-    const d = decks[k];
-    if (d.ctx) return;
-    try {
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      d.ctx = new Ctx();
-      const src = d.ctx.createMediaElementSource(d.audio);
-      const low = d.ctx.createBiquadFilter(); low.type = "lowshelf"; low.frequency.value = 200;
-      const mid = d.ctx.createBiquadFilter(); mid.type = "peaking"; mid.frequency.value = 1200;
-      const high = d.ctx.createBiquadFilter(); high.type = "highshelf"; high.frequency.value = 6000;
-      src.connect(low); low.connect(mid); mid.connect(high); high.connect(d.ctx.destination);
-      d.filters = { low, mid, high };
-    } catch (_) {}
-  }
-
-  function applyDjCrossfader() {
-    if (!$("djCrossfader")) return;
-    const x = Number($("djCrossfader").value);
-    decks.A.audio.volume = Math.min(1, decks.A.vol * Math.cos(x * 0.5 * Math.PI));
-    decks.B.audio.volume = Math.min(1, decks.B.vol * Math.cos((1 - x) * 0.5 * Math.PI));
-    if ($("crossfaderVal")) $("crossfaderVal").textContent = `${Math.round((1 - x) * 100)} / ${Math.round(x * 100)}`;
-  }
-
-  function populateDJSelectors() {
-    if (!$("deckASelect") || !$("deckBSelect")) return;
-    const opts = `<option value="">-- Select Track --</option>` +
-      state.songs.map((s) => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.title)} — ${escapeHtml(s.artist)}</option>`).join("");
-    $("deckASelect").innerHTML = opts;
-    $("deckBSelect").innerHTML = opts;
-  }
-
-  function loadDeck(k, songId) {
-    const song = state.songs.find((s) => s.id === songId);
-    if (!song) return;
-    const d = decks[k];
-    const src = song.resolved || resolveAudioSource(song);
-    d.song = song;
-    d.audio.src = src.streamUrl;
-    d.playing = false;
-    $(`deck${k}TrackTitle`).textContent = `${song.title} — ${song.artist}`;
-    $(`deck${k}Label`).textContent = song.title.slice(0, 10).toUpperCase();
-    $(`deck${k}PlayBtn`).textContent = "▶";
-    applyDjCrossfader();
-  }
-
-  function bindTurntableScratch(k) {
-    const platter = $(`platter${k}`);
-    if (!platter) return;
-    let dragging = false, lastX = 0;
-    const start = (x) => { dragging = true; lastX = x; };
-    const move = (x) => {
-      if (!dragging) return;
-      const dx = x - lastX;
-      lastX = x;
-      decks[k].angle += dx * 1.8;
-      platter.style.transform = `rotate(${decks[k].angle}deg)`;
-      if (Number.isFinite(decks[k].audio.duration)) {
-        decks[k].audio.currentTime = Math.max(0, Math.min(decks[k].audio.duration, decks[k].audio.currentTime + dx * 0.03));
-      }
-    };
-    const end = () => { dragging = false; };
-    platter.addEventListener("mousedown", (e) => start(e.clientX));
-    window.addEventListener("mousemove", (e) => move(e.clientX));
-    window.addEventListener("mouseup", end);
-    platter.addEventListener("touchstart", (e) => start(e.touches[0].clientX), { passive: true });
-    platter.addEventListener("touchmove", (e) => move(e.touches[0].clientX), { passive: true });
-    platter.addEventListener("touchend", end);
-  }
-
-  setInterval(() => {
-    ["A", "B"].forEach((k) => {
-      if (decks[k].playing && !decks[k].audio.paused && $(`platter${k}`)) {
-        decks[k].angle = (decks[k].angle + 3 * decks[k].audio.playbackRate) % 360;
-        $(`platter${k}`).style.transform = `rotate(${decks[k].angle}deg)`;
-      }
-    });
-  }, 30);
-
   // --- Admin ---
   async function loadAdminData() {
     if (state.user?.role !== "admin") return;
@@ -974,24 +876,17 @@
           <strong>${escapeHtml(u.name)} (${escapeHtml(u.email)})</strong>
           <div class="muted small">
             Code: <code>${escapeHtml(u.accessCode || "-")}</code> &bull;
-            ${u.blocked ? "BLOCKED" : "Active"} &bull;
-            DJ: ${u.djUnlocked ? "Unlocked" : "Locked"}
+            ${u.blocked ? "BLOCKED" : "Active"}
           </div>
         </div>
         <div class="inline-row">
-          <button type="button" class="neo-btn toggle-dj-btn">${u.djUnlocked ? "Lock DJ" : "Unlock DJ"}</button>
           <button type="button" class="neo-btn ${u.blocked ? "neo-btn-primary" : "danger-text"} toggle-block-btn">${u.blocked ? "Unblock" : "Block"}</button>
         </div>
       `;
 
-      item.querySelector(".toggle-dj-btn").onclick = async () => {
-        await apiCall("setUserDj", { targetUserId: u.id, djUnlocked: !u.djUnlocked });
-        toast(`DJ PRO updated for ${u.name}.`, "success");
-        loadAdminData();
-      };
       item.querySelector(".toggle-block-btn").onclick = async () => {
         await apiCall("setUserBlock", { targetUserId: u.id, blocked: !u.blocked });
-        toast(`User status updated.`, "success");
+        toast("User access updated.", "success");
         loadAdminData();
       };
       box.appendChild(item);
@@ -1001,14 +896,10 @@
   function applySettings() {
     document.documentElement.style.setProperty("--pink", state.settings.primaryColor);
     document.documentElement.style.setProperty("--cyan", state.settings.secondaryColor);
-    document.documentElement.style.setProperty("--card-radius", `${state.settings.cardRadius}px`);
     if ($("settingPrimaryColor")) $("settingPrimaryColor").value = state.settings.primaryColor;
     if ($("settingSecondaryColor")) $("settingSecondaryColor").value = state.settings.secondaryColor;
     if ($("settingThemePreset")) $("settingThemePreset").value = state.settings.themePreset;
     if ($("settingVisualizer")) $("settingVisualizer").value = state.settings.visualizer;
-    if ($("settingCardRadius")) $("settingCardRadius").value = state.settings.cardRadius;
-    if ($("radiusVal")) $("radiusVal").textContent = state.settings.cardRadius;
-    if ($("visualWrap")) $("visualWrap").classList.toggle("static-mode", state.settings.visualizer === "off");
     localStorage.setItem("admusic_settings", JSON.stringify(state.settings));
   }
 
@@ -1167,27 +1058,23 @@
 
     $("masterVolume").oninput = (e) => {
       const val = parseFloat(e.target.value);
-      const pct = Math.round(val * 100);
+      const effectiveGain = state.turboMode ? val * 2 : val;
+      const pct = Math.round(effectiveGain * 100);
       $("volumeValue").textContent = `${pct}%`;
       $("volumeValue").classList.toggle("boosted", pct > 100);
-
-      if (val >= 2) {
-        $("turboVolBox").classList.remove("hidden");
-        const turboVal = parseFloat($("turboVolumeSlider").value) || 2;
-        $("turboVolumeValue").textContent = `${Math.round(turboVal * 100)}%`;
-        applyMasterGain(turboVal);
-      } else {
-        $("turboVolBox").classList.add("hidden");
-        $("turboVolumeSlider").value = 2;
-        $("turboVolumeValue").textContent = "200%";
-        applyMasterGain(val);
-      }
+      applyMasterGain(effectiveGain);
     };
 
-    $("turboVolumeSlider").oninput = (e) => {
-      const turboVal = parseFloat(e.target.value);
-      $("turboVolumeValue").textContent = `${Math.round(turboVal * 100)}%`;
-      applyMasterGain(turboVal);
+    $("turboBoostBtn").onclick = () => {
+      state.turboMode = !state.turboMode;
+      $("turboBoostBtn").classList.toggle("active", state.turboMode);
+      const val = parseFloat($("masterVolume").value) || 1;
+      const effectiveGain = state.turboMode ? val * 2 : val;
+      const pct = Math.round(effectiveGain * 100);
+      $("volumeValue").textContent = `${pct}%`;
+      $("volumeValue").classList.toggle("boosted", pct > 100);
+      applyMasterGain(effectiveGain);
+      toast(state.turboMode ? "Turbo Boost ON (Up to 400%)" : "Turbo Boost OFF", "info");
     };
 
     $("seekBar").oninput = (e) => {
@@ -1222,46 +1109,6 @@
     for (let i = 0; i < 4; i++) { if ($(`eqBand${i}`)) $(`eqBand${i}`).oninput = syncEqVisuals; }
     if ($("eqBassKnob")) $("eqBassKnob").oninput = syncEqVisuals;
     if ($("eqTrebleKnob")) $("eqTrebleKnob").oninput = syncEqVisuals;
-
-    ["A", "B"].forEach((k) => {
-      if (!$(`deck${k}Select`)) return;
-      $(`deck${k}Select`).onchange = (e) => loadDeck(k, e.target.value);
-      $(`deck${k}PlayBtn`).onclick = async () => {
-        const d = decks[k];
-        if (!d.song) return toast(`Load Track ${k} first.`, "error");
-        setupDeckEq(k);
-        if (d.audio.paused) {
-          try { await d.audio.play(); } catch (_) {
-            const src = d.song.resolved || resolveAudioSource(d.song);
-            const { blobUrl } = await fetchGdProxyBlobUrl(src.proxyUrl, d.song.id);
-            d.audio.src = blobUrl;
-            await d.audio.play();
-          }
-          d.playing = true;
-          $(`deck${k}PlayBtn`).textContent = "Ⅱ";
-        } else {
-          d.audio.pause();
-          d.playing = false;
-          $(`deck${k}PlayBtn`).textContent = "▶";
-        }
-      };
-      $(`deck${k}CueBtn`).onclick = () => { decks[k].audio.currentTime = 0; };
-      $(`deck${k}Pitch`).oninput = (e) => {
-        const r = Number(e.target.value);
-        decks[k].audio.playbackRate = r;
-        $(`deck${k}PitchVal`).textContent = `${r.toFixed(2)}x`;
-      };
-      $(`deck${k}Vol`).oninput = (e) => {
-        decks[k].vol = Number(e.target.value);
-        $(`deck${k}VolVal`).textContent = `${Math.round(decks[k].vol * 100)}%`;
-        applyDjCrossfader();
-      };
-      $(`deck${k}EqLow`).oninput = (e) => { if (decks[k].filters.low) decks[k].filters.low.gain.value = Number(e.target.value); };
-      $(`deck${k}EqMid`).oninput = (e) => { if (decks[k].filters.mid) decks[k].filters.mid.gain.value = Number(e.target.value); };
-      $(`deck${k}EqHigh`).oninput = (e) => { if (decks[k].filters.high) decks[k].filters.high.gain.value = Number(e.target.value); };
-      bindTurntableScratch(k);
-    });
-    if ($("djCrossfader")) $("djCrossfader").oninput = applyDjCrossfader;
 
     if ($("uploadSourceType")) {
       $("uploadSourceType").onchange = (e) => {
@@ -1372,7 +1219,6 @@
       };
     }
     if ($("settingVisualizer")) $("settingVisualizer").onchange = (e) => { state.settings.visualizer = e.target.value; applySettings(); };
-    if ($("settingCardRadius")) $("settingCardRadius").oninput = (e) => { state.settings.cardRadius = Number(e.target.value); applySettings(); };
 
     if ($("settingsClearCacheBtn")) $("settingsClearCacheBtn").onclick = clearOfflineCache;
     if ($("checkUpdatesBtn")) $("checkUpdatesBtn").onclick = checkUpdates;
