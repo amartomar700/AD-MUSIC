@@ -1,4 +1,4 @@
-/* AD Music v4.1.0 — Fast Auto-Cover, 2-Track RAM Preload, Trailing Silence Auto-Next & 4-Tab Tracks */
+/* AD Music v4.1.0 — Fast Auto-Cover, 2-Track RAM Preload, Trailing Silence Auto-Next & No Update Banner */
 (() => {
   "use strict";
 
@@ -160,7 +160,6 @@
           const blob = new Blob([new Uint8Array(byteNums)], { type: payload.mimeType || "audio/mpeg" });
           const blobUrl = URL.createObjectURL(blob);
           if (cacheKey) {
-            // Keep RAM cache clean (max 6 songs in memory)
             if (state.blobUrlCache.size >= 6) {
               const oldestKey = state.blobUrlCache.keys().next().value;
               if (oldestKey && oldestKey !== state.currentSong?.id) {
@@ -327,7 +326,6 @@
       if (!Number.isFinite(audio.duration) || audio.duration <= 15) return;
 
       const remaining = audio.duration - audio.currentTime;
-      // Only monitor within last 10 seconds (ignore final 0.4s natural end)
       if (remaining > 10 || remaining <= 0.4) {
         silenceStartTime = null;
         return;
@@ -343,7 +341,6 @@
       }
       const rms = Math.sqrt(sumSquares / analyserData.length);
 
-      // Threshold < 0.004 treats muted/silent tail as silence
       if (rms < 0.004) {
         if (!silenceStartTime) {
           silenceStartTime = performance.now();
@@ -413,7 +410,6 @@
   }
 
   function hydrateSongs(rawList) {
-    // Only use explicit separate coverUrl (.webp/.jpg); skip any MP3 extraction
     const mapped = (rawList || []).map((s) => ({
       ...s,
       cleanAlbum: getCleanAlbumName(s),
@@ -557,11 +553,12 @@
   function populateCategories() {
     const sel = $("categoryFilter");
     const datalist = $("categorySuggestions");
-    if (!sel) return;
     const cats = [...new Set(state.songs.map((s) => s.category || "General"))].sort();
-    sel.innerHTML = `<option value="ALL">All Categories</option>` +
-      cats.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
-    sel.value = state.selectedCategory;
+    if (sel) {
+      sel.innerHTML = `<option value="ALL">All Categories</option>` +
+        cats.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+      sel.value = state.selectedCategory;
+    }
     if (datalist) datalist.innerHTML = cats.map((c) => `<option value="${escapeHtml(c)}">`).join("");
   }
 
@@ -717,8 +714,6 @@
   async function preloadSingleSongToRam(song) {
     if (!song || state.blobUrlCache.has(song.id) || state.preloadingIds.has(song.id)) return;
     const src = song.resolved || resolveAudioSource(song);
-
-    // Offline cached songs are already instant on disk
     if (state.offlineIds.has(song.id)) return;
 
     state.preloadingIds.add(song.id);
@@ -762,7 +757,6 @@
     const song = state.queue[safeIdx];
     state.currentSong = song;
 
-    // Reset trailing silence detector for new song
     silenceStartTime = null;
     silenceSkipTriggered = false;
 
@@ -781,8 +775,6 @@
 
     updatePlayerBar(song, src.type);
     applyMasterGain(currentMasterGain);
-
-    // Start preloading next 2 tracks immediately in RAM
     preloadUpcomingTracks(2);
 
     try {
@@ -842,19 +834,8 @@
     }
   }
 
-  function getRandomNextIndex() {
-    const total = state.queue.length;
-    if (total <= 1) return 0;
-    let randIdx;
-    do {
-      randIdx = Math.floor(Math.random() * total);
-    } while (randIdx === state.currentIndex);
-    return randIdx;
-  }
-
   function nextTrack() {
     if (!state.queue.length) return;
-    // Always advance sequentially in queue (shuffle already randomizes queue order so next 2 preloaded songs stay valid)
     playSongAtIndex(state.currentIndex + 1);
   }
 
@@ -942,41 +923,6 @@
       const trebVal = Number($("eqTrebleKnob").value);
       $("trebleKnobVal").textContent = formatDb(trebVal);
       if (trebleFilter) trebleFilter.gain.value = trebVal;
-    }
-  }
-
-  // --- Ensure 4 Buttons in Tracks View (All Track, Albums, Fvt Song, Offline) ---
-  function ensureTracksFourButtons() {
-    const libraryView = $("libraryView");
-    if (!libraryView) return;
-
-    const tabSpecs = [
-      { target: "allTracksPanel", label: "All Track" },
-      { target: "albumsPanel", label: "Albums" },
-      { target: "favoritesPanel", label: "Fvt Song" },
-      { target: "offlinePanel", label: "Offline" }
-    ];
-
-    let tabBar = libraryView.querySelector(".sub-tabs, .lib-tabs");
-    const existingTabs = libraryView.querySelectorAll(".sub-tab");
-
-    if (existingTabs.length < 4) {
-      if (!tabBar) {
-        tabBar = document.createElement("div");
-        tabBar.className = "sub-tabs";
-        tabBar.style.cssText = "display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;";
-        libraryView.insertBefore(tabBar, libraryView.firstChild);
-      }
-      tabBar.innerHTML = tabSpecs
-        .map((t, idx) => `<button type="button" class="sub-tab ${idx === 0 ? "active" : ""}" data-lib-tab="${t.target}">${t.label}</button>`)
-        .join("");
-    } else {
-      existingTabs.forEach((tab, idx) => {
-        if (tabSpecs[idx]) {
-          tab.textContent = tabSpecs[idx].label;
-          if (!tab.dataset.libTab) tab.dataset.libTab = tabSpecs[idx].target;
-        }
-      });
     }
   }
 
@@ -1094,32 +1040,6 @@
     if ($("settingThemePreset")) $("settingThemePreset").value = state.settings.themePreset;
     if ($("settingVisualizer")) $("settingVisualizer").value = state.settings.visualizer;
     localStorage.setItem("admusic_settings", JSON.stringify(state.settings));
-  }
-
-  async function checkUpdates() {
-    if (!$("versionCheckStatus")) return;
-    $("versionCheckStatus").textContent = "Checking for updates...";
-    try {
-      const data = await apiCall("getVersion");
-      const remote = data.version || APP_VERSION;
-      if (remote !== APP_VERSION) {
-        if ($("remoteVersionText")) $("remoteVersionText").textContent = `v${remote}`;
-        if ($("updateBanner")) $("updateBanner").classList.remove("hidden");
-        $("versionCheckStatus").textContent = `Update available: v${remote}`;
-      } else {
-        $("versionCheckStatus").textContent = `Up to date (v${APP_VERSION}).`;
-      }
-    } catch (err) {
-      $("versionCheckStatus").textContent = err.message;
-    }
-  }
-
-  async function applyUpdateNow() {
-    if ("caches" in window) {
-      const keys = await caches.keys();
-      await Promise.all(keys.filter((k) => k !== OFFLINE_CACHE_NAME).map((k) => caches.delete(k)));
-    }
-    window.location.reload();
   }
 
   function bindEvents() {
@@ -1418,15 +1338,11 @@
     if ($("settingVisualizer")) $("settingVisualizer").onchange = (e) => { state.settings.visualizer = e.target.value; applySettings(); };
 
     if ($("settingsClearCacheBtn")) $("settingsClearCacheBtn").onclick = clearOfflineCache;
-    if ($("checkUpdatesBtn")) $("checkUpdatesBtn").onclick = checkUpdates;
-    if ($("updateNowBtn")) $("updateNowBtn").onclick = applyUpdateNow;
-    if ($("bannerUpdateNowBtn")) $("bannerUpdateNowBtn").onclick = applyUpdateNow;
     if ($("logoutBtn")) $("logoutBtn").onclick = () => logoutUser("Signed out.");
   }
 
   function init() {
     enforceCenterCoverStyles();
-    ensureTracksFourButtons();
     applySettings();
     syncEqVisuals();
     bindEvents();
@@ -1435,7 +1351,6 @@
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
     if (state.user) {
       loadSongs(true, false);
-      checkUpdates();
     }
   }
 
