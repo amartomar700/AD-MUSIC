@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>AD Music — Studio Player</title>
+  <link rel="icon" type="image/png" href="logo.png" />
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -12,7 +13,7 @@
   <div id="authOverlay" class="auth-overlay">
     <div class="neo-card auth-card">
       <div class="auth-brand">
-        <div class="ad-monogram-circle lg">AD</div>
+        <img src="logo.png" alt="AD Music" class="auth-logo-img" />
         <h1>AD Music</h1>
         <p class="muted small">Cloud &bull; GD &bull; Pro DJ Studio</p>
       </div>
@@ -39,11 +40,11 @@
 
   <!-- Update Banner -->
   <div id="updateBanner" class="update-banner hidden">
-    <span>Update (<strong id="remoteVersionText">v3.2.0</strong>) ready!</span>
+    <span>Update (<strong id="remoteVersionText">v3.4.0</strong>) ready!</span>
     <button type="button" id="bannerUpdateNowBtn" class="neo-btn neo-btn-primary sm-btn">Update</button>
   </div>
 
-  <!-- Top Header: Sirf Player Name "AD Music" (No Logo on Header) -->
+  <!-- Top Header: Sirf Player Name "AD Music" -->
   <header class="top-header">
     <div class="brand-title">AD Music</div>
     <div class="header-right">
@@ -88,7 +89,7 @@
   </nav>
 
   <main class="main-container">
-    <!-- VIEW 1: NOW PLAYING (Dedicated Clean Player Screen) -->
+    <!-- VIEW 1: NOW PLAYING -->
     <section id="nowPlayingView" class="view active">
       <div class="player-card">
         <div class="player-topbar">
@@ -96,7 +97,7 @@
           <span class="timer" id="remainingTimeLabel">-0:00</span>
         </div>
 
-        <!-- Timing-Synced Circular Progress Ring + Center Round Thumbnail -->
+        <!-- Timing-Synced Circular Progress Ring + Center Round Track Thumbnail -->
         <div class="dial-wrapper" id="visualWrap">
           <svg class="dial-svg" viewBox="0 0 240 240">
             <circle class="dial-track" cx="120" cy="120" r="102" />
@@ -104,9 +105,9 @@
           </svg>
           <div class="dial-pulse-ring"></div>
           <div class="cover-circle" id="coverCircle">
-            <img id="playerCover" alt="Track Thumbnail" />
-            <div id="coverFallback" class="cover-fallback-art">
-              <span class="ad-monogram">AD</span>
+            <img id="playerCover" src="logo.png" alt="Track Thumbnail" />
+            <div id="coverFallback" class="cover-fallback-art hidden">
+              <img src="logo.png" alt="AD" class="fallback-logo-img" />
             </div>
           </div>
         </div>
@@ -126,14 +127,14 @@
           <input type="range" id="seekBar" min="0" max="100" value="0" class="neo-slider" />
         </div>
 
-        <!-- Transport Controls: Prev | -10s | Play (with AD Logo) | +10s | Next -->
+        <!-- Transport Controls: Prev | -10s | Glowing Rotating AD Logo Play/Pause | +10s | Next -->
         <div class="controls-row">
           <button type="button" id="prevBtn" class="control-btn" title="Previous Track">⏮</button>
           <button type="button" id="rewind10Btn" class="control-btn skip-btn" title="Back 10 Seconds">-10s</button>
 
-          <button type="button" id="playPauseBtn" class="control-btn main" title="Play / Pause">
-            <span class="play-ad-tag">AD</span>
-            <span id="playPauseIcon">▶</span>
+          <button type="button" id="playPauseBtn" class="control-btn main logo-play-btn" title="Play / Pause" aria-label="Play or Pause">
+            <img src="logo.png" alt="AD" class="play-logo-spin" />
+            <span id="playPauseIcon" class="play-state-badge">▶</span>
           </button>
 
           <button type="button" id="forward10Btn" class="control-btn skip-btn" title="Forward 10 Seconds">+10s</button>
@@ -142,7 +143,7 @@
 
         <!-- Quick Secondary Pills -->
         <div class="secondary-pills">
-          <button type="button" id="shuffleBtn" class="pill-btn">🔀 Shuffle</button>
+          <button type="button" id="shuffleBtn" class="pill-btn active">🔀 Shuffle</button>
           <button type="button" id="playerFavBtn" class="pill-btn">♡ Fav</button>
           <button type="button" id="downloadOfflineBtn" class="pill-btn">⬇ Save</button>
           <button type="button" id="liveRadioBtn" class="pill-btn">📻 Radio</button>
@@ -481,9 +482,9 @@
 
       <div class="neo-card stack">
         <div class="about-header">
-          <div class="ad-monogram-circle">AD</div>
+          <img src="logo.png" alt="AD Music" class="about-logo-img" />
           <div>
-            <h3>AD Music v3.2.0</h3>
+            <h3>AD Music v3.4.0</h3>
             <p class="muted small">Created by Amar Tomar &bull; Maruti Technologies</p>
           </div>
         </div>
