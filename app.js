@@ -1,10 +1,18 @@
-/* AD Music v3.0.0 — Neumorphic Studio UI, Direct Phone/PC Upload, Pro EQ & DJ Lock/Unlock */
+/* AD Music v3.1.0 — Instant Cached Loading, NeonWave UI, Thumbnails & Settings Customization */
 (() => {
   "use strict";
 
-  const APP_VERSION = "3.0.0";
+  const APP_VERSION = "3.1.0";
   const OFFLINE_CACHE_NAME = "ad-music-offline-audio-v1";
+  const SONGS_CACHE_KEY = "admusic_cached_songs_v3";
   const API_URL = "https://script.google.com/macros/s/AKfycbwSr-j8h-BR8mgzU2c-9K0yuLokz7qcTAV8uxsW3ih8XLOADPCamdIg6OxIt7sNsZqQ/exec";
+
+  const THEME_PRESETS = {
+    neonwave: { pink: "#ff3f82", cyan: "#55d7ff" },
+    emerald: { pink: "#00d285", cyan: "#00cec9" },
+    gold: { pink: "#ffb300", cyan: "#ff6f00" },
+    violet: { pink: "#a855f7", cyan: "#38bdf8" }
+  };
 
   const EQ_PRESETS = {
     normal: [2, 11, 18, 8],
@@ -28,10 +36,13 @@
     liveRadio: false,
     selectedCategory: "ALL",
     searchQuery: "",
+    quickQuery: "",
     settings: JSON.parse(localStorage.getItem("admusic_settings") || JSON.stringify({
-      theme: "dark",
-      accent: "#00d285",
-      visualizer: "on"
+      primaryColor: "#ff3f82",
+      secondaryColor: "#55d7ff",
+      themePreset: "neonwave",
+      visualizer: "on",
+      cardRadius: 34
     }))
   };
 
@@ -50,10 +61,9 @@
     el.className = `toast ${type}`;
     el.textContent = msg;
     $("toastContainer").appendChild(el);
-    setTimeout(() => el.remove(), 3500);
+    setTimeout(() => el.remove(), 3200);
   }
 
-  // --- Hybrid Source Resolver (Cloud vs GD) ---
   function extractDriveId(input) {
     if (!input) return null;
     const raw = input.trim();
@@ -70,38 +80,35 @@
     return null;
   }
 
+  function resolveCoverUrl(rawCover) {
+    const c = (rawCover || "").trim();
+    if (!c) return "";
+    const id = extractDriveId(c);
+    if (id && c.includes("drive.google.com")) {
+      return `https://lh3.googleusercontent.com/d/${encodeURIComponent(id)}=s400`;
+    }
+    return c;
+  }
+
   function resolveAudioSource(song) {
     const rawUrl = (song.audioUrl || song.url || "").trim();
     const explicitType = (song.sourceType || "").toUpperCase();
     const driveId = extractDriveId(rawUrl) || (song.driveId ? song.driveId.trim() : null);
 
     if (explicitType === "R2" || (!driveId && /^https?:\/\//i.test(rawUrl) && !rawUrl.includes("google.com"))) {
-      return {
-        type: "CLOUD",
-        streamUrl: rawUrl,
-        downloadUrl: rawUrl
-      };
+      return { type: "CLOUD", streamUrl: rawUrl, downloadUrl: rawUrl };
     }
 
     const id = driveId || rawUrl;
     const gdDirect = `https://drive.usercontent.google.com/download?id=${encodeURIComponent(id)}&export=download&confirm=t`;
     const proxyUrl = `${API_URL}?action=stream&id=${encodeURIComponent(id)}`;
-
-    return {
-      type: "GD",
-      driveId: id,
-      streamUrl: gdDirect,
-      proxyUrl,
-      downloadUrl: gdDirect
-    };
+    return { type: "GD", driveId: id, streamUrl: gdDirect, proxyUrl, downloadUrl: gdDirect };
   }
 
   async function fetchGdProxyBlobUrl(proxyUrl) {
     const res = await fetch(proxyUrl);
     const text = await res.text();
-    if (!text || text.trim().startsWith("{")) {
-      throw new Error("GD audio stream unavailable");
-    }
+    if (!text || text.trim().startsWith("{")) throw new Error("GD audio unavailable");
     const byteChars = atob(text.trim());
     const byteNums = new Array(byteChars.length);
     for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
@@ -120,16 +127,10 @@
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   }
 
-  // --- Main Audio + 6-Node Equalizer (4 Bands + Bass/Treble Knobs) ---
+  // --- Audio & Equalizer ---
   const audio = new Audio();
   audio.preload = "metadata";
-  let audioCtx = null;
-  let sourceNode = null;
-  let analyser = null;
-  let bandFilters = [];
-  let bassFilter = null;
-  let trebleFilter = null;
-  let webAudioReady = false;
+  let audioCtx = null, sourceNode = null, bandFilters = [], bassFilter = null, trebleFilter = null, webAudioReady = false;
 
   function initWebAudioForMain() {
     if (webAudioReady) return;
@@ -137,9 +138,6 @@
       const Ctx = window.AudioContext || window.webkitAudioContext;
       audioCtx = new Ctx();
       sourceNode = audioCtx.createMediaElementSource(audio);
-      analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 64;
-
       const freqs = [230, 910, 3600, 14000];
       bandFilters = freqs.map((freq, idx) => {
         const f = audioCtx.createBiquadFilter();
@@ -149,7 +147,6 @@
         f.gain.value = Number($(`eqBand${idx}`).value);
         return f;
       });
-
       bassFilter = audioCtx.createBiquadFilter();
       bassFilter.type = "lowshelf";
       bassFilter.frequency.value = 120;
@@ -162,56 +159,13 @@
 
       sourceNode.connect(bassFilter);
       bassFilter.connect(bandFilters[0]);
-      for (let i = 0; i < bandFilters.length - 1; i++) {
-        bandFilters[i].connect(bandFilters[i + 1]);
-      }
+      for (let i = 0; i < bandFilters.length - 1; i++) bandFilters[i].connect(bandFilters[i + 1]);
       bandFilters[bandFilters.length - 1].connect(trebleFilter);
-      trebleFilter.connect(analyser);
-      analyser.connect(audioCtx.destination);
+      trebleFilter.connect(audioCtx.destination);
       webAudioReady = true;
-      drawSpiralVisualizer();
-    } catch (err) {
-      console.warn("Web Audio EQ fallback:", err);
-    }
+    } catch (_) {}
   }
 
-  function drawSpiralVisualizer() {
-    const canvas = $("visualizerCanvas");
-    const ctx = canvas.getContext("2d");
-    let phase = 0;
-
-    const render = () => {
-      requestAnimationFrame(render);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      if (state.settings.visualizer === "off") return;
-
-      let energy = 0.15;
-      if (analyser && state.isPlaying) {
-        const data = new Uint8Array(analyser.frequencyBinCount);
-        analyser.getByteFrequencyData(data);
-        const sum = data.reduce((a, b) => a + b, 0);
-        energy = Math.max(0.2, sum / (data.length * 180));
-      }
-
-      phase += state.isPlaying ? 0.045 : 0.008;
-      const cx = canvas.width / 2;
-      const cy = canvas.height / 2;
-
-      for (let ring = 0; ring < 5; ring++) {
-        ctx.beginPath();
-        ctx.strokeStyle = state.settings.accent;
-        ctx.globalAlpha = 0.22 + ring * 0.1;
-        ctx.lineWidth = 1.4;
-        const r = 52 + ring * 6 + Math.sin(phase + ring) * (8 * energy);
-        ctx.ellipse(cx, cy, r, r * 0.86, phase + ring * 0.4, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
-    };
-    render();
-  }
-
-  // --- API Helper ---
   async function apiCall(action, payload = {}) {
     const body = JSON.stringify({
       action,
@@ -226,13 +180,12 @@
     });
     const data = await res.json();
     if (!data.ok) {
-      if (data.blocked) logoutUser("Your account has been blocked by an administrator.");
+      if (data.blocked) logoutUser("Account blocked by administrator.");
       throw new Error(data.error || "Request failed");
     }
     return data;
   }
 
-  // --- Auth & DJ PRO Lock State ---
   function renderAuthState() {
     if (!state.user) {
       $("authOverlay").classList.remove("hidden");
@@ -261,31 +214,48 @@
     if (msg) toast(msg, "error");
   }
 
-  // --- Library ---
+  // --- Instant Cache + Fast Background Library Sync ---
+  function hydrateSongs(rawList) {
+    state.songs = (rawList || []).map((s) => ({
+      ...s,
+      resolvedCover: resolveCoverUrl(s.coverUrl),
+      resolved: resolveAudioSource(s)
+    }));
+    populateCategories();
+    renderAllViews();
+    populateDJSelectors();
+  }
+
   async function loadSongs() {
     if (!state.user) return;
+
+    // 1. Load instantly from localStorage cache so there is 0ms wait
+    const cached = localStorage.getItem(SONGS_CACHE_KEY);
+    if (cached && !state.songs.length) {
+      try {
+        hydrateSongs(JSON.parse(cached));
+      } catch (_) {}
+    }
+
+    // 2. Sync fresh list in background
     try {
+      $("libraryStats").textContent = state.songs.length
+        ? `${state.songs.length} tracks • Syncing latest...`
+        : "Syncing library...";
       const data = await apiCall("getSongs");
-      state.songs = (data.songs || []).map((s) => ({
-        ...s,
-        resolved: resolveAudioSource(s)
-      }));
+      localStorage.setItem(SONGS_CACHE_KEY, JSON.stringify(data.songs || []));
+      hydrateSongs(data.songs || []);
 
       if (typeof data.djUnlocked === "boolean") {
         state.user.djUnlocked = data.djUnlocked;
         localStorage.setItem("admusic_user", JSON.stringify(state.user));
         updateDjLockState();
       }
-
       if (typeof data.pendingCount === "number" && state.user.role === "admin") {
         const badge = $("pendingBadge");
         badge.textContent = data.pendingCount;
         badge.classList.toggle("hidden", data.pendingCount === 0);
       }
-
-      populateCategories();
-      renderAllViews();
-      populateDJSelectors();
     } catch (err) {
       toast(err.message, "error");
     }
@@ -310,7 +280,14 @@
     });
   }
 
-  function createSongRow(song, index, list) {
+  function thumbHtml(coverUrl) {
+    if (coverUrl) {
+      return `<img src="${escapeHtml(coverUrl)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><span class="ad-monogram" style="display:none">AD</span>`;
+    }
+    return `<span class="ad-monogram">AD</span>`;
+  }
+
+  function createSongRow(song, index, list, compact = false) {
     const row = document.createElement("div");
     row.className = `song-row ${state.currentSong?.id === song.id ? "playing" : ""}`;
     const isFav = state.favorites.has(song.id);
@@ -318,15 +295,17 @@
     const srcType = song.resolved?.type || "GD";
 
     row.innerHTML = `
-      <div class="song-thumb">${song.coverUrl ? `<img src="${escapeHtml(song.coverUrl)}" alt="" style="width:100%;height:100%;object-fit:cover">` : `<img src="logo.png" alt="" style="width:28px;height:28px;border-radius:50%">`}</div>
+      <div class="song-thumb">${thumbHtml(song.resolvedCover)}</div>
       <div class="song-info">
         <h4>${escapeHtml(song.title)}</h4>
         <p>${escapeHtml(song.artist)} &bull; ${escapeHtml(song.album || "Singles")} &bull; ${formatTime(Number(song.durationSec || 0))}</p>
       </div>
       <div class="song-actions">
-        <span class="source-pill ${srcType === "GD" ? "drive" : ""}">${srcType}</span>
-        <button type="button" class="neo-pill-btn fav-btn">${isFav ? "❤️" : "♡"}</button>
-        <button type="button" class="neo-pill-btn dl-btn">${isOffline ? "✅" : "⬇️"}</button>
+        <span class="hd-badge">${srcType}</span>
+        ${compact ? "" : `
+          <button type="button" class="neo-pill-btn fav-btn">${isFav ? "❤️" : "♡"}</button>
+          <button type="button" class="neo-pill-btn dl-btn">${isOffline ? "✅" : "⬇️"}</button>
+        `}
       </div>
     `;
 
@@ -335,15 +314,15 @@
       if (e.target.closest(".dl-btn")) return downloadSongOffline(song);
       state.queue = list;
       playSongAtIndex(index);
-      document.querySelector('[data-view="nowPlayingView"]').click();
+      if (!compact) document.querySelector('[data-view="nowPlayingView"]').click();
     });
     return row;
   }
 
-  function renderSongCollection(containerId, list) {
+  function renderSongCollection(containerId, list, compact = false) {
     const box = $(containerId);
     box.innerHTML = list.length ? "" : `<p class="muted small">No tracks found.</p>`;
-    list.forEach((song, idx) => box.appendChild(createSongRow(song, idx, list)));
+    list.slice(0, compact ? 80 : 500).forEach((song, idx) => box.appendChild(createSongRow(song, idx, list, compact)));
   }
 
   function renderAlbums() {
@@ -364,8 +343,9 @@
     map.forEach((tracks, folderName) => {
       const card = document.createElement("div");
       card.className = "album-card";
+      const cover = tracks.find((t) => t.resolvedCover)?.resolvedCover || "";
       card.innerHTML = `
-        <div class="album-art">📁</div>
+        <div class="album-art">${thumbHtml(cover)}</div>
         <h4>${escapeHtml(folderName)}</h4>
         <p class="muted small">${tracks.length} track(s)</p>
       `;
@@ -387,14 +367,20 @@
     renderSongCollection("favoritesList", state.songs.filter((s) => state.favorites.has(s.id)));
     renderSongCollection("offlineList", state.songs.filter((s) => state.offlineIds.has(s.id)));
     renderAlbums();
+
+    const qq = state.quickQuery.toLowerCase();
+    const quickList = qq
+      ? state.songs.filter((s) => [s.title, s.artist, s.album].some((f) => (f || "").toLowerCase().includes(qq)))
+      : state.songs;
+    $("quickCount").textContent = `${quickList.length} tracks`;
+    renderSongCollection("quickQueueList", quickList, true);
   }
 
-  // --- Playback & Glowing Dial Progress ---
+  // --- Playback ---
   function setPlayingVisuals(playing) {
     state.isPlaying = playing;
-    $("playPauseIcon").textContent = playing ? "⏸" : "▶";
-    $("playPauseBtn").classList.toggle("is-playing", playing);
-    $("playerCover").classList.toggle("spinning", playing);
+    $("playPauseBtn").textContent = playing ? "Ⅱ" : "▶";
+    $("visualWrap").classList.toggle("playing", playing);
   }
 
   async function playSongAtIndex(index) {
@@ -445,9 +431,12 @@
     $("playerTitle").textContent = song.title;
     $("playerArtist").textContent = `${song.artist} • ${song.album || "Singles"}`;
     $("sourceTypeBadge").textContent = srcType;
-    $("sourceTypeBadge").className = `source-pill ${srcType === "GD" ? "drive" : ""}`;
-    $("playerFavBtn").textContent = state.favorites.has(song.id) ? "❤️ Favorited" : "♡ Favorite";
-    $("playerCover").src = song.coverUrl || "logo.png";
+    $("playerFavBtn").textContent = state.favorites.has(song.id) ? "♥ Favorite" : "♡ Favorite";
+    $("playerFavBtn").classList.toggle("active", state.favorites.has(song.id));
+
+    const hasImg = Boolean(song.resolvedCover);
+    $("coverCircle").classList.toggle("has-image", hasImg);
+    $("playerCover").src = song.resolvedCover || "";
   }
 
   function nextTrack() {
@@ -463,13 +452,13 @@
     playSongAtIndex(state.currentIndex - 1);
   }
 
-  // --- Favorites & Offline ---
   function toggleFavorite(songId) {
     if (state.favorites.has(songId)) state.favorites.delete(songId);
     else state.favorites.add(songId);
     localStorage.setItem("admusic_favorites", JSON.stringify([...state.favorites]));
     if (state.currentSong?.id === songId) {
-      $("playerFavBtn").textContent = state.favorites.has(songId) ? "❤️ Favorited" : "♡ Favorite";
+      $("playerFavBtn").textContent = state.favorites.has(songId) ? "♥ Favorite" : "♡ Favorite";
+      $("playerFavBtn").classList.toggle("active", state.favorites.has(songId));
     }
     renderAllViews();
   }
@@ -503,7 +492,7 @@
     toast("Offline cache cleared.", "success");
   }
 
-  // --- Pro Equalizer Vertical Sliders & Rotary Knobs ---
+  // --- Equalizer ---
   function formatDb(val) {
     const n = Number(val);
     return (n >= 0 ? "+" : "-") + String(Math.abs(n)).padStart(2, "0");
@@ -517,7 +506,6 @@
       $(`fillBand${i}`).style.height = `${Math.max(6, Math.min(100, pct))}%`;
       if (bandFilters[i]) bandFilters[i].gain.value = val;
     }
-
     const bassVal = Number($("eqBassKnob").value);
     $("bassKnobVal").textContent = formatDb(bassVal);
     $("bassKnobCap").style.transform = `rotate(${(bassVal / 18) * 135}deg)`;
@@ -529,7 +517,7 @@
     if (trebleFilter) trebleFilter.gain.value = trebVal;
   }
 
-  // --- DJ PRO Dual-Deck Players + Dual EQ ---
+  // --- DJ PRO Studio ---
   const decks = {
     A: { audio: new Audio(), playing: false, angle: 0, song: null, vol: 1, ctx: null, filters: {} },
     B: { audio: new Audio(), playing: false, angle: 0, song: null, vol: 1, ctx: null, filters: {} }
@@ -552,10 +540,8 @@
 
   function applyDjCrossfader() {
     const x = Number($("djCrossfader").value);
-    const gainA = Math.cos(x * 0.5 * Math.PI);
-    const gainB = Math.cos((1 - x) * 0.5 * Math.PI);
-    decks.A.audio.volume = Math.min(1, decks.A.vol * gainA);
-    decks.B.audio.volume = Math.min(1, decks.B.vol * gainB);
+    decks.A.audio.volume = Math.min(1, decks.A.vol * Math.cos(x * 0.5 * Math.PI));
+    decks.B.audio.volume = Math.min(1, decks.B.vol * Math.cos((1 - x) * 0.5 * Math.PI));
     $("crossfaderVal").textContent = `${Math.round((1 - x) * 100)} / ${Math.round(x * 100)}`;
   }
 
@@ -612,7 +598,7 @@
     });
   }, 30);
 
-  // --- Admin Dashboard (Block + Revoke Code + DJ PRO Lock/Unlock per User) ---
+  // --- Admin ---
   async function loadAdminData() {
     if (state.user?.role !== "admin") return;
     try {
@@ -702,12 +688,8 @@
           </div>
         </div>
         <div class="inline-row">
-          <button type="button" class="neo-btn toggle-dj-btn">
-            ${u.djUnlocked ? "Lock DJ 🔒" : "Unlock DJ 🔓"}
-          </button>
-          <button type="button" class="neo-btn ${u.blocked ? "neo-btn-primary" : "danger-text"} toggle-block-btn">
-            ${u.blocked ? "Unblock" : "Block"}
-          </button>
+          <button type="button" class="neo-btn toggle-dj-btn">${u.djUnlocked ? "Lock DJ 🔒" : "Unlock DJ 🔓"}</button>
+          <button type="button" class="neo-btn ${u.blocked ? "neo-btn-primary" : "danger-text"} toggle-block-btn">${u.blocked ? "Unblock" : "Block"}</button>
           ${u.codeActive ? `<button type="button" class="neo-btn danger-text revoke-user-code-btn">Revoke Code</button>` : ""}
         </div>
       `;
@@ -717,13 +699,11 @@
         toast(`DJ PRO ${!u.djUnlocked ? "unlocked" : "locked"} for ${u.name}.`, "success");
         loadAdminData();
       };
-
       item.querySelector(".toggle-block-btn").onclick = async () => {
         await apiCall("setUserBlock", { targetUserId: u.id, blocked: !u.blocked });
         toast(`User ${u.blocked ? "unblocked" : "blocked"}.`, "success");
         loadAdminData();
       };
-
       const revBtn = item.querySelector(".revoke-user-code-btn");
       if (revBtn) {
         revBtn.onclick = async () => {
@@ -732,12 +712,25 @@
           loadAdminData();
         };
       }
-
       box.appendChild(item);
     });
   }
 
-  // --- Version & Settings ---
+  // --- Customization Settings ---
+  function applySettings() {
+    document.documentElement.style.setProperty("--pink", state.settings.primaryColor);
+    document.documentElement.style.setProperty("--cyan", state.settings.secondaryColor);
+    document.documentElement.style.setProperty("--card-radius", `${state.settings.cardRadius}px`);
+    $("settingPrimaryColor").value = state.settings.primaryColor;
+    $("settingSecondaryColor").value = state.settings.secondaryColor;
+    $("settingThemePreset").value = state.settings.themePreset;
+    $("settingVisualizer").value = state.settings.visualizer;
+    $("settingCardRadius").value = state.settings.cardRadius;
+    $("radiusVal").textContent = state.settings.cardRadius;
+    $("visualWrap").classList.toggle("static-mode", state.settings.visualizer === "off");
+    localStorage.setItem("admusic_settings", JSON.stringify(state.settings));
+  }
+
   async function checkUpdates() {
     $("versionCheckStatus").textContent = "Checking for updates...";
     try {
@@ -763,16 +756,7 @@
     window.location.reload();
   }
 
-  function applySettings() {
-    document.documentElement.setAttribute("data-theme", state.settings.theme);
-    document.documentElement.style.setProperty("--accent", state.settings.accent);
-    $("settingTheme").value = state.settings.theme;
-    $("settingAccent").value = state.settings.accent;
-    $("settingVisualizer").value = state.settings.visualizer;
-    localStorage.setItem("admusic_settings", JSON.stringify(state.settings));
-  }
-
-  // --- Event Bindings ---
+  // --- Events ---
   function bindEvents() {
     document.querySelectorAll(".nav-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -839,8 +823,9 @@
     };
 
     $("searchInput").oninput = (e) => { state.searchQuery = e.target.value; renderAllViews(); };
+    $("quickSearchInput").oninput = (e) => { state.quickQuery = e.target.value; renderAllViews(); };
     $("categoryFilter").onchange = (e) => { state.selectedCategory = e.target.value; renderAllViews(); };
-    $("refreshLibraryBtn").onclick = loadSongs;
+    $("refreshLibraryBtn").onclick = () => { localStorage.removeItem(SONGS_CACHE_KEY); loadSongs(); };
     $("backToAlbumsBtn").onclick = renderAlbums;
 
     $("playPauseBtn").onclick = async () => {
@@ -881,33 +866,27 @@
       }
     };
 
-    $("masterVolume").oninput = (e) => { audio.volume = Number(e.target.value); };
+    $("masterVolume").oninput = (e) => {
+      audio.volume = Number(e.target.value);
+      $("volumeValue").textContent = `${Math.round(audio.volume * 100)}%`;
+    };
     $("seekBar").oninput = (e) => {
-      if (Number.isFinite(audio.duration)) {
-        audio.currentTime = (Number(e.target.value) / 100) * audio.duration;
-      }
+      if (Number.isFinite(audio.duration)) audio.currentTime = (Number(e.target.value) / 100) * audio.duration;
     };
 
     audio.ontimeupdate = () => {
       if (!Number.isFinite(audio.duration) || audio.duration <= 0) return;
-      const pct = (audio.currentTime / audio.duration) * 100;
-      $("seekBar").value = pct;
+      $("seekBar").value = (audio.currentTime / audio.duration) * 100;
       $("currentTimeLabel").textContent = formatTime(audio.currentTime);
       $("durationLabel").textContent = formatTime(audio.duration);
       $("remainingTimeLabel").textContent = `-${formatTime(audio.duration - audio.currentTime)}`;
-      const offset = 704 - (704 * pct) / 100;
-      $("dialProgressCircle").style.strokeDashoffset = offset;
     };
     audio.onended = () => { if (!state.repeat) nextTrack(); };
 
     $("playerFavBtn").onclick = () => { if (state.currentSong) toggleFavorite(state.currentSong.id); };
     $("downloadOfflineBtn").onclick = () => { if (state.currentSong) downloadSongOffline(state.currentSong); };
-    $("shareSongBtn").onclick = () => {
-      navigator.clipboard?.writeText(window.location.href);
-      toast("Track link copied!", "success");
-    };
 
-    // Equalizer Events
+    // Equalizer
     document.querySelectorAll(".eq-preset-tab").forEach((tab) => {
       tab.addEventListener("click", () => {
         document.querySelectorAll(".eq-preset-tab").forEach((t) => t.classList.remove("active"));
@@ -917,14 +896,11 @@
         syncEqVisuals();
       });
     });
-
-    for (let i = 0; i < 4; i++) {
-      $(`eqBand${i}`).oninput = syncEqVisuals;
-    }
+    for (let i = 0; i < 4; i++) $(`eqBand${i}`).oninput = syncEqVisuals;
     $("eqBassKnob").oninput = syncEqVisuals;
     $("eqTrebleKnob").oninput = syncEqVisuals;
 
-    // DJ Decks + Dual EQ
+    // DJ Decks
     ["A", "B"].forEach((k) => {
       $(`deck${k}Select`).onchange = (e) => loadDeck(k, e.target.value);
       $(`deck${k}PlayBtn`).onclick = async () => {
@@ -939,7 +915,7 @@
             await d.audio.play();
           }
           d.playing = true;
-          $(`deck${k}PlayBtn`).textContent = "⏸";
+          $(`deck${k}PlayBtn`).textContent = "Ⅱ";
         } else {
           d.audio.pause();
           d.playing = false;
@@ -964,7 +940,7 @@
     });
     $("djCrossfader").oninput = applyDjCrossfader;
 
-    // Upload Source Switch & Direct Phone/PC File Auto-Read
+    // Upload
     $("uploadSourceType").onchange = (e) => {
       const mode = e.target.value;
       $("filePickerGroup").classList.toggle("hidden", mode !== "FILE");
@@ -975,25 +951,17 @@
     $("uploadAudioFile").onchange = (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
-      if (!$("uploadTitle").value.trim()) {
-        $("uploadTitle").value = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]+/g, " ");
-      }
+      if (!$("uploadTitle").value.trim()) $("uploadTitle").value = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]+/g, " ");
       const tempAudio = new Audio(URL.createObjectURL(file));
-      tempAudio.onloadedmetadata = () => {
-        $("uploadDuration").value = Math.min(600, Math.round(tempAudio.duration));
-      };
+      tempAudio.onloadedmetadata = () => { $("uploadDuration").value = Math.min(600, Math.round(tempAudio.duration)); };
     };
 
-    $("probeDurationBtn").onclick = async () => {
+    $("probeDurationBtn").onclick = () => {
       const raw = $("uploadSourceUrl").value.trim();
       if (!raw) return toast("Enter an audio link first.", "error");
       const src = resolveAudioSource({ audioUrl: raw, sourceType: $("uploadSourceType").value });
       const probe = new Audio(src.streamUrl);
-      probe.onloadedmetadata = () => {
-        $("uploadDuration").value = Math.round(probe.duration);
-        toast(`Verified duration: ${Math.round(probe.duration)}s`, "success");
-      };
-      probe.onerror = () => toast("Could not read metadata.", "error");
+      probe.onloadedmetadata = () => { $("uploadDuration").value = Math.round(probe.duration); toast(`Duration: ${Math.round(probe.duration)}s`, "success"); };
     };
 
     $("uploadForm").onsubmit = async (e) => {
@@ -1013,50 +981,43 @@
       try {
         if (mode === "FILE") {
           const file = $("uploadAudioFile").files?.[0];
-          if (!file) return toast("Please choose an audio file from Phone/PC.", "error");
-          if (file.size > 25 * 1024 * 1024) return toast("Max file size 25MB for direct upload.", "error");
-
-          $("uploadStatusMsg").textContent = "Uploading file to GD folder...";
+          if (!file) return toast("Select an audio file first.", "error");
+          if (file.size > 25 * 1024 * 1024) return toast("Max file size 25MB.", "error");
+          $("uploadStatusMsg").textContent = "Uploading to GD...";
           const base64 = await new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => resolve(String(reader.result).split(",")[1]);
             reader.onerror = reject;
             reader.readAsDataURL(file);
           });
-
           await apiCall("uploadSongFile", {
-            fileBase64: base64,
-            mimeType: file.type || "audio/mpeg",
-            fileName: file.name,
+            fileBase64: base64, mimeType: file.type || "audio/mpeg", fileName: file.name,
             title, artist, album, category, coverUrl, durationSec
           });
         } else {
           $("uploadStatusMsg").textContent = "Submitting track...";
           await apiCall("uploadSong", {
-            sourceType: mode,
-            audioUrl: $("uploadSourceUrl").value.trim(),
+            sourceType: mode, audioUrl: $("uploadSourceUrl").value.trim(),
             title, artist, album, category, coverUrl, durationSec
           });
         }
-
         $("uploadForm").reset();
         $("uploadSourceType").dispatchEvent(new Event("change"));
         $("uploadStatusMsg").textContent = "Submitted for Admin Approval!";
-        toast("Upload submitted for Admin Approval!", "success");
+        toast("Submitted for Admin Approval!", "success");
       } catch (err) {
         $("uploadStatusMsg").textContent = err.message;
         toast(err.message, "error");
       }
     };
 
-    // Admin & Settings
+    // Admin & Settings Customization
     $("adminRefreshBtn").onclick = loadAdminData;
     $("createCodeForm").onsubmit = async (e) => {
       e.preventDefault();
       try {
         const res = await apiCall("createAccessCode", {
-          role: $("newCodeRole").value,
-          maxUses: Number($("newCodeMaxUses").value)
+          role: $("newCodeRole").value, maxUses: Number($("newCodeMaxUses").value)
         });
         toast(`Generated code: ${res.code}`, "success");
         loadAdminData();
@@ -1065,9 +1026,20 @@
       }
     };
 
-    $("settingTheme").onchange = (e) => { state.settings.theme = e.target.value; applySettings(); };
-    $("settingAccent").oninput = (e) => { state.settings.accent = e.target.value; applySettings(); };
+    $("settingPrimaryColor").oninput = (e) => { state.settings.primaryColor = e.target.value; applySettings(); };
+    $("settingSecondaryColor").oninput = (e) => { state.settings.secondaryColor = e.target.value; applySettings(); };
+    $("settingThemePreset").onchange = (e) => {
+      const preset = THEME_PRESETS[e.target.value];
+      if (preset) {
+        state.settings.themePreset = e.target.value;
+        state.settings.primaryColor = preset.pink;
+        state.settings.secondaryColor = preset.cyan;
+        applySettings();
+      }
+    };
     $("settingVisualizer").onchange = (e) => { state.settings.visualizer = e.target.value; applySettings(); };
+    $("settingCardRadius").oninput = (e) => { state.settings.cardRadius = Number(e.target.value); applySettings(); };
+
     $("settingsClearCacheBtn").onclick = clearOfflineCache;
     $("checkUpdatesBtn").onclick = checkUpdates;
     $("updateNowBtn").onclick = applyUpdateNow;
@@ -1081,7 +1053,6 @@
     syncEqVisuals();
     bindEvents();
     renderAuthState();
-    drawSpiralVisualizer();
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
     if (state.user) {
       loadSongs();
