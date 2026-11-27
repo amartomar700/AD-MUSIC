@@ -2,9 +2,8 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>AD Music — Studio Player</title>
-  <link rel="icon" type="image/png" href="logo.png" />
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -13,10 +12,7 @@
   <div id="authOverlay" class="auth-overlay">
     <div class="neo-card auth-card">
       <div class="auth-brand">
-        <div class="ad-logo-badge lg">
-          <img src="logo.png" alt="AD" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
-          <span class="ad-monogram">AD</span>
-        </div>
+        <div class="ad-monogram-circle lg">AD</div>
         <h1>AD Music</h1>
         <p class="muted small">Cloud &bull; GD &bull; Pro DJ Studio</p>
       </div>
@@ -43,133 +39,127 @@
 
   <!-- Update Banner -->
   <div id="updateBanner" class="update-banner hidden">
-    <span>New AD Music update (<strong id="remoteVersionText">v3.1.0</strong>) is ready!</span>
-    <button type="button" id="bannerUpdateNowBtn" class="neo-btn neo-btn-primary">Update Now</button>
+    <span>Update (<strong id="remoteVersionText">v3.2.0</strong>) ready!</span>
+    <button type="button" id="bannerUpdateNowBtn" class="neo-btn neo-btn-primary sm-btn">Update</button>
   </div>
 
-  <!-- Top Header -->
+  <!-- Top Header: Sirf Player Name "AD Music" (No Logo on Header) -->
   <header class="top-header">
-    <div class="header-left">
-      <div class="ad-logo-badge">
-        <img src="logo.png" alt="AD" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
-        <span class="ad-monogram">AD</span>
-      </div>
-      <div>
-        <div class="brand-title">AD Music</div>
-        <div class="brand-sub">Studio Audio</div>
-      </div>
-    </div>
-
+    <div class="brand-title">AD Music</div>
     <div class="header-right">
-      <span id="liveRadioBadge" class="pill-badge hidden">LIVE RADIO</span>
+      <span id="liveRadioBadge" class="hd-badge hidden">LIVE</span>
       <button type="button" id="userBadgeBtn" class="neo-pill-btn">
         <span id="userDisplayName">Guest</span>
-        <span id="roleBadge" class="role-tag">USER</span>
+        <span id="roleBadge" class="hd-badge">USER</span>
       </button>
     </div>
   </header>
 
-  <!-- Navigation -->
-  <nav class="main-nav">
-    <button type="button" class="nav-btn active" data-view="nowPlayingView">Now Playing</button>
-    <button type="button" class="nav-btn" data-view="libraryView">Library</button>
-    <button type="button" class="nav-btn" data-view="equalizerView">Equalizer</button>
-    <button type="button" id="djNavBtn" class="nav-btn" data-view="djView">
-      DJ <span class="pro-tag">PRO</span> <span id="djLockIcon">🔒</span>
+  <!-- Compact Icon Navigation Bar -->
+  <nav class="icon-nav" aria-label="Main Navigation">
+    <button type="button" class="nav-btn active" data-view="nowPlayingView" title="Now Playing">
+      <span class="nav-ico">🎵</span>
+      <span class="nav-lbl">Player</span>
     </button>
-    <button type="button" class="nav-btn" data-view="uploadView">Upload</button>
-    <button type="button" id="adminNavBtn" class="nav-btn hidden" data-view="adminView">
-      Admin <span id="pendingBadge" class="count-badge hidden">0</span>
+    <button type="button" class="nav-btn" data-view="libraryView" title="Tracks & Library">
+      <span class="nav-ico">📚</span>
+      <span class="nav-lbl">Tracks</span>
     </button>
-    <button type="button" class="nav-btn" data-view="settingsView">Settings</button>
+    <button type="button" class="nav-btn" data-view="equalizerView" title="Equalizer">
+      <span class="nav-ico">🎚️</span>
+      <span class="nav-lbl">EQ</span>
+    </button>
+    <button type="button" id="djNavBtn" class="nav-btn" data-view="djView" title="DJ PRO">
+      <span class="nav-ico">🎧</span>
+      <span class="nav-lbl">DJ <b class="pro-mini">PRO</b> <span id="djLockIcon">🔒</span></span>
+    </button>
+    <button type="button" class="nav-btn" data-view="uploadView" title="Upload">
+      <span class="nav-ico">☁️</span>
+      <span class="nav-lbl">Upload</span>
+    </button>
+    <button type="button" id="adminNavBtn" class="nav-btn hidden" data-view="adminView" title="Admin">
+      <span class="nav-ico">🛡️</span>
+      <span class="nav-lbl">Admin <span id="pendingBadge" class="count-badge hidden">0</span></span>
+    </button>
+    <button type="button" class="nav-btn" data-view="settingsView" title="Settings">
+      <span class="nav-ico">⚙️</span>
+      <span class="nav-lbl">Settings</span>
+    </button>
   </nav>
 
   <main class="main-container">
-    <!-- VIEW 1: NOW PLAYING (NeonWave Orbit UI + PC Widescreen Split) -->
+    <!-- VIEW 1: NOW PLAYING (Dedicated Clean Player Screen) -->
     <section id="nowPlayingView" class="view active">
-      <div class="pc-studio-layout">
-        <!-- Left/Center: NeonWave Player Card -->
-        <div class="player-card" id="playerCard">
-          <div class="player-topbar">
-            <div class="brand-tag"><i class="brand-dot"></i> AD MUSIC</div>
-            <div class="timer" id="remainingTimeLabel">-0:00</div>
-          </div>
+      <div class="player-card">
+        <div class="player-topbar">
+          <span id="sourceTypeBadge" class="hd-badge">GD</span>
+          <span class="timer" id="remainingTimeLabel">-0:00</span>
+        </div>
 
-          <!-- NeonWave Orbit & Pulse Visualizer -->
-          <div class="visual-wrap" id="visualWrap">
-            <div class="visualizer">
-              <div class="orbit one"></div>
-              <div class="orbit two"></div>
-              <div class="orbit three"></div>
-              <div class="wave"></div>
-              <div class="wave w2"></div>
-              <div class="wave w3"></div>
-              <div class="ring"></div>
-              <div class="cover-circle" id="coverCircle">
-                <img id="playerCover" alt="Cover" />
-                <div id="coverFallback" class="cover-fallback-art">
-                  <span class="ad-monogram lg">AD</span>
-                </div>
-              </div>
+        <!-- Timing-Synced Circular Progress Ring + Center Round Thumbnail -->
+        <div class="dial-wrapper" id="visualWrap">
+          <svg class="dial-svg" viewBox="0 0 240 240">
+            <circle class="dial-track" cx="120" cy="120" r="102" />
+            <circle class="dial-progress" id="dialProgressCircle" cx="120" cy="120" r="102" />
+          </svg>
+          <div class="dial-pulse-ring"></div>
+          <div class="cover-circle" id="coverCircle">
+            <img id="playerCover" alt="Track Thumbnail" />
+            <div id="coverFallback" class="cover-fallback-art">
+              <span class="ad-monogram">AD</span>
             </div>
-          </div>
-
-          <!-- Track Title & Artist -->
-          <div class="track-info-center">
-            <h1>
-              <span id="playerTitle">Select a Track</span>
-              <span id="sourceTypeBadge" class="hd-badge">GD</span>
-            </h1>
-            <p id="playerArtist">AD Music Library</p>
-          </div>
-
-          <!-- Progress Seek Bar -->
-          <div class="progress-area">
-            <div class="time-row">
-              <span id="currentTimeLabel">0:00</span>
-              <span id="durationLabel">0:00</span>
-            </div>
-            <input type="range" id="seekBar" min="0" max="100" value="0" class="neo-slider" />
-          </div>
-
-          <!-- NeonWave Transport Controls -->
-          <div class="controls-row">
-            <button type="button" id="shuffleBtn" class="control-btn" title="Shuffle">🔀</button>
-            <button type="button" id="prevBtn" class="control-btn" title="Previous">⏮</button>
-            <button type="button" id="playPauseBtn" class="control-btn main" title="Play / Pause">▶</button>
-            <button type="button" id="nextBtn" class="control-btn" title="Next">⏭</button>
-            <button type="button" id="repeatBtn" class="control-btn" title="Repeat">🔁</button>
-          </div>
-
-          <!-- 3 Secondary Pills (Share Removed) -->
-          <div class="secondary-pills">
-            <button type="button" id="playerFavBtn" class="pill-btn">♡ Favorite</button>
-            <button type="button" id="downloadOfflineBtn" class="pill-btn">⬇ Offline</button>
-            <button type="button" id="liveRadioBtn" class="pill-btn">▣ Radio</button>
-          </div>
-
-          <!-- Volume -->
-          <div class="volume-row">
-            <span>🔈</span>
-            <input type="range" id="masterVolume" min="0" max="1" step="0.01" value="0.85" class="neo-slider" />
-            <span>🔊</span>
-            <span class="vol-val" id="volumeValue">85%</span>
           </div>
         </div>
 
-        <!-- Right Side on PC: Quick Up-Next Queue & Search -->
-        <aside class="pc-queue-panel neo-card">
-          <div class="queue-header">
-            <h3>Up Next &amp; Quick Play</h3>
-            <span id="quickCount" class="muted small">0 tracks</span>
+        <!-- Track Name & Artist Above Play Button -->
+        <div class="track-info-center">
+          <h1 id="playerTitle">Select a Track</h1>
+          <p id="playerArtist">AD Music Library</p>
+        </div>
+
+        <!-- Seek Bar -->
+        <div class="progress-area">
+          <div class="time-row">
+            <span id="currentTimeLabel">0:00</span>
+            <span id="durationLabel">0:00</span>
           </div>
-          <input type="search" id="quickSearchInput" class="neo-input" placeholder="Quick filter tracks..." />
-          <div id="quickQueueList" class="quick-queue-list"></div>
-        </aside>
+          <input type="range" id="seekBar" min="0" max="100" value="0" class="neo-slider" />
+        </div>
+
+        <!-- Transport Controls: Prev | -10s | Play (with AD Logo) | +10s | Next -->
+        <div class="controls-row">
+          <button type="button" id="prevBtn" class="control-btn" title="Previous Track">⏮</button>
+          <button type="button" id="rewind10Btn" class="control-btn skip-btn" title="Back 10 Seconds">-10s</button>
+
+          <button type="button" id="playPauseBtn" class="control-btn main" title="Play / Pause">
+            <span class="play-ad-tag">AD</span>
+            <span id="playPauseIcon">▶</span>
+          </button>
+
+          <button type="button" id="forward10Btn" class="control-btn skip-btn" title="Forward 10 Seconds">+10s</button>
+          <button type="button" id="nextBtn" class="control-btn" title="Next Track">⏭</button>
+        </div>
+
+        <!-- Quick Secondary Pills -->
+        <div class="secondary-pills">
+          <button type="button" id="shuffleBtn" class="pill-btn">🔀 Shuffle</button>
+          <button type="button" id="playerFavBtn" class="pill-btn">♡ Fav</button>
+          <button type="button" id="downloadOfflineBtn" class="pill-btn">⬇ Save</button>
+          <button type="button" id="liveRadioBtn" class="pill-btn">📻 Radio</button>
+          <button type="button" id="repeatBtn" class="pill-btn">🔁 Loop</button>
+        </div>
+
+        <!-- Volume -->
+        <div class="volume-row">
+          <span>🔈</span>
+          <input type="range" id="masterVolume" min="0" max="1" step="0.01" value="0.85" class="neo-slider" />
+          <span>🔊</span>
+          <span class="vol-val" id="volumeValue">85%</span>
+        </div>
       </div>
     </section>
 
-    <!-- VIEW 2: LIBRARY & ALBUMS -->
+    <!-- VIEW 2: SEPARATE TRACKS & LIBRARY PAGE -->
     <section id="libraryView" class="view">
       <div class="toolbar-row">
         <input type="search" id="searchInput" class="neo-input" placeholder="Search songs, artists, albums..." />
@@ -204,7 +194,7 @@
       <div id="offlineTab" class="lib-panel hidden">
         <div class="toolbar-row">
           <span id="offlineStats" class="muted small">0 track(s) cached</span>
-          <button type="button" id="clearOfflineBtn" class="neo-btn danger-text">Clear Offline Cache</button>
+          <button type="button" id="clearOfflineBtn" class="neo-btn danger-text">Clear Cache</button>
         </div>
         <div id="offlineList" class="song-list"></div>
       </div>
@@ -286,7 +276,7 @@
       <div id="djStudioPanel" class="dj-dual-grid hidden">
         <div class="neo-card dj-deck-card">
           <div class="deck-header">
-            <span class="pro-tag">PLAYER A</span>
+            <span class="hd-badge">PLAYER A</span>
             <select id="deckASelect" class="neo-input"></select>
           </div>
           <div class="dj-platter-wrap">
@@ -325,7 +315,7 @@
 
         <div class="neo-card dj-deck-card">
           <div class="deck-header">
-            <span class="pro-tag">PLAYER B</span>
+            <span class="hd-badge">PLAYER B</span>
             <select id="deckBSelect" class="neo-input"></select>
           </div>
           <div class="dj-platter-wrap">
@@ -443,7 +433,7 @@
       </div>
     </section>
 
-    <!-- VIEW 7: SETTINGS & UI CUSTOMIZATION -->
+    <!-- VIEW 7: SETTINGS & CUSTOMIZATION -->
     <section id="settingsView" class="view">
       <div class="neo-card stack">
         <h2>UI &amp; Theme Customization</h2>
@@ -453,7 +443,7 @@
             <input type="color" id="settingPrimaryColor" value="#ff3f82" class="neo-input color-input" />
           </div>
           <div>
-            <label class="small muted">Secondary Wave Color</label>
+            <label class="small muted">Secondary Glow Color</label>
             <input type="color" id="settingSecondaryColor" value="#55d7ff" class="neo-input color-input" />
           </div>
         </div>
@@ -469,18 +459,18 @@
             </select>
           </div>
           <div>
-            <label class="small muted">Visualizer Orbit Animation</label>
+            <label class="small muted">Pulse Ring Animation</label>
             <select id="settingVisualizer" class="neo-input">
-              <option value="on">Active (Orbit + Pulse)</option>
-              <option value="off">Minimal (Static Ring)</option>
+              <option value="on">Active</option>
+              <option value="off">Static</option>
             </select>
           </div>
         </div>
 
         <div class="two-col">
           <div>
-            <label class="small muted">Card Corner Radius (<span id="radiusVal">34</span>px)</label>
-            <input type="range" id="settingCardRadius" min="16" max="42" value="34" class="neo-slider" />
+            <label class="small muted">Card Corner Radius (<span id="radiusVal">28</span>px)</label>
+            <input type="range" id="settingCardRadius" min="16" max="38" value="28" class="neo-slider" />
           </div>
           <div>
             <label class="small muted">Offline Audio Cache</label>
@@ -491,12 +481,9 @@
 
       <div class="neo-card stack">
         <div class="about-header">
-          <div class="ad-logo-badge">
-            <img src="logo.png" alt="AD" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
-            <span class="ad-monogram">AD</span>
-          </div>
+          <div class="ad-monogram-circle">AD</div>
           <div>
-            <h3>AD Music v3.1.0</h3>
+            <h3>AD Music v3.2.0</h3>
             <p class="muted small">Created by Amar Tomar &bull; Maruti Technologies</p>
           </div>
         </div>
