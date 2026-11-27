@@ -220,13 +220,13 @@
     .uiverse-track-info {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       width: 100%;
     }
 
     .uiverse-album-art {
-      width: 66px;
-      height: 66px;
+      width: 62px;
+      height: 62px;
       border-radius: 16px;
       background: linear-gradient(135deg, #00c6ff, #0072ff);
       box-shadow: 0 4px 14px rgba(0, 114, 255, 0.35);
@@ -235,7 +235,7 @@
       align-items: center;
       justify-content: center;
       font-weight: 800;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       letter-spacing: 1px;
       color: #fff;
       overflow: hidden;
@@ -256,7 +256,7 @@
     }
 
     .uiverse-track-title {
-      font-size: 1.08rem;
+      font-size: 1.04rem;
       font-weight: 600;
       white-space: nowrap;
       text-overflow: ellipsis;
@@ -264,7 +264,7 @@
     }
 
     .uiverse-artist-name {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: #d1d1d6;
       margin-top: 3px;
       white-space: nowrap;
@@ -272,17 +272,59 @@
       overflow: hidden;
     }
 
+    /* === PLAYER LIKE & DOWNLOAD BUTTONS === */
+    .ad-player-quick-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .ad-player-act-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #d1d1d6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .ad-player-act-btn:active {
+      transform: scale(0.92);
+    }
+
+    .ad-player-act-btn.fav-active {
+      color: #ff2d55;
+      border-color: rgba(255, 45, 85, 0.5);
+      background: rgba(255, 45, 85, 0.18);
+      box-shadow: 0 0 10px rgba(255, 45, 85, 0.35);
+    }
+
+    .ad-player-act-btn.saved-active {
+      color: #00ff88;
+      border-color: rgba(0, 255, 136, 0.5);
+      background: rgba(0, 255, 136, 0.16);
+      box-shadow: 0 0 10px rgba(0, 255, 136, 0.35);
+    }
+
     .uiverse-volume-bars {
       display: flex;
       align-items: flex-end;
       gap: 2px;
-      width: 38px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       flex-shrink: 0;
     }
 
     .uiverse-volume-bars .uiverse-bar {
-      width: 3px;
+      width: 2.5px;
       height: 6px;
       background: linear-gradient(180deg, #00c6ff, #0072ff);
       border-radius: 2px;
@@ -455,7 +497,7 @@
       width: 100%;
     }
 
-    /* === TURBO VOLUME SLIDER (200% - 400%, OPENS WHEN 1ST VOLUME IS FULL) === */
+    /* === TURBO VOLUME SLIDER (200% - 400%) === */
     .ad-turbo-vol-box {
       display: none;
       align-items: center;
@@ -811,7 +853,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
       cursor: pointer;
       transition: all 0.2s ease;
       min-width: 0;
@@ -830,14 +872,14 @@
     }
 
     .ad-album-cover {
-      width: 50px;
-      height: 50px;
+      width: 48px;
+      height: 48px;
       border-radius: 14px;
       background: linear-gradient(135deg, #00c6ff, #0072ff);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.35rem;
+      font-size: 1.3rem;
       font-weight: 800;
       flex-shrink: 0;
       overflow: hidden;
@@ -857,7 +899,7 @@
     }
 
     .ad-album-name {
-      font-size: 0.94rem;
+      font-size: 0.92rem;
       font-weight: 700;
       color: #fff;
       white-space: nowrap;
@@ -866,9 +908,51 @@
     }
 
     .ad-album-count {
-      font-size: 0.74rem;
+      font-size: 0.72rem;
       color: var(--text-muted);
       margin-top: 3px;
+    }
+
+    /* === ALBUM DOWNLOAD + PLAY BUTTON GROUP === */
+    .ad-album-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .ad-album-dl-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.08);
+      color: #e5e5ea;
+      font-size: 0.85rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .ad-album-dl-btn:active {
+      transform: scale(0.92);
+    }
+
+    .ad-album-dl-btn.downloading {
+      border-color: var(--accent-1);
+      color: var(--accent-1);
+      background: rgba(0, 198, 255, 0.18);
+      font-size: 0.65rem;
+    }
+
+    .ad-album-dl-btn.all-saved {
+      border-color: #00ff88;
+      color: #00ff88;
+      background: rgba(0, 255, 136, 0.16);
+      box-shadow: 0 0 10px rgba(0, 255, 136, 0.35);
     }
 
     .ad-album-play-btn {
@@ -1075,6 +1159,13 @@
           <div class="uiverse-track-title" id="trackTitle">Syncing Drive...</div>
           <div class="uiverse-artist-name" id="artistName">AD Music</div>
         </div>
+
+        <!-- Like & Offline Download Buttons on Main Player -->
+        <div class="ad-player-quick-actions">
+          <button type="button" class="ad-player-act-btn" id="playerFavBtn" title="Like / Favorite Song">♡</button>
+          <button type="button" class="ad-player-act-btn" id="playerSaveBtn" title="Download Song Offline">↓</button>
+        </div>
+
         <div class="uiverse-volume-bars" id="visualizerBars">
           <div class="uiverse-bar"></div>
           <div class="uiverse-bar"></div>
@@ -1325,7 +1416,7 @@
     </div>
 
     <div class="ad-albums-section-title">
-      <span>Tap ▶ to play only that album</span>
+      <span>↓ Download Album | ▶ Play Album</span>
       <span id="albumCountLabel">0 Albums</span>
     </div>
     <div class="ad-album-grid" id="albumGrid"></div>
@@ -1360,23 +1451,28 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxPBqalX_xM8xz7XSxtSGbyW72vyZn1lXz085X3Bd2MEY665dDrMdBk2syCDRi9pCVz/exec";
 
     const audio = new Audio();
+    audio.preload = "auto";
+    audio.crossOrigin = "anonymous";
+
     const audioCache = {};
-    const pendingFetches = {}; // Duplicate download rokne ke liye
+    const pendingFetches = {};
+    const downloadingAlbums = {}; // Tracks album bulk download progress
+
     let tracks = [];
     let folderCategories = [];
     let currentTrackId = null;
-    let activeCategory = "All"; // Locks playback strictly to this album/category
+    let activeCategory = "All";
     let previousPageId = "playerPage";
     let isPlaying = false;
     let isShuffle = false;
     let repeatMode = 0;
     let isSeeking = false;
-    let isLoadingAudio = false;
     let currentMasterGain = 1.25;
     let lastMasterGain = 1.25;
     let crossfadeEnabled = true;
+    let webAudioConnected = false;
 
-    // Page Navigation (Manual Back ONLY — never auto-navigates away when playing)
+    // Page Navigation (Manual Back ONLY)
     function showPage(pageId) {
       document.querySelectorAll(".app-page").forEach(p => p.classList.remove("active-page"));
       const target = document.getElementById(pageId);
@@ -1428,12 +1524,34 @@
     let favoriteIds = new Set(favoriteOrder);
     let offlineSavedIds = new Set();
 
+    const playerFavBtn = document.getElementById("playerFavBtn");
+    const playerSaveBtn = document.getElementById("playerSaveBtn");
+
+    function updatePlayerQuickButtons() {
+      if (!currentTrackId) {
+        playerFavBtn.textContent = "♡";
+        playerFavBtn.classList.remove("fav-active");
+        playerSaveBtn.textContent = "↓";
+        playerSaveBtn.classList.remove("saved-active");
+        return;
+      }
+      const isFav = favoriteIds.has(currentTrackId);
+      const isSaved = offlineSavedIds.has(currentTrackId);
+
+      playerFavBtn.textContent = isFav ? "♥" : "♡";
+      playerFavBtn.classList.toggle("fav-active", isFav);
+
+      playerSaveBtn.textContent = isSaved ? "✓" : "↓";
+      playerSaveBtn.classList.toggle("saved-active", isSaved);
+    }
+
     function updateBoxCounters() {
       const favCount = tracks.filter(t => favoriteIds.has(t.id)).length;
       const offCount = tracks.filter(t => offlineSavedIds.has(t.id)).length;
       document.getElementById("navFavSummary").textContent = `${favCount} Liked`;
       document.getElementById("navOfflineSummary").textContent = `${offCount} Saved`;
       document.getElementById("navTrackSummary").textContent = `${tracks.length} Songs`;
+      updatePlayerQuickButtons();
     }
 
     function saveFavorites() {
@@ -1449,6 +1567,28 @@
       }
       return tracks.find(t => favoriteIds.has(t.id)) || null;
     }
+
+    // Player Like Button Click
+    playerFavBtn.addEventListener("click", () => {
+      if (!currentTrackId) return;
+      if (favoriteIds.has(currentTrackId)) {
+        favoriteIds.delete(currentTrackId);
+        setStatus("Removed from Favorites", "#8e8e93");
+      } else {
+        favoriteIds.add(currentTrackId);
+        setStatus("Added to Favorites ♥", "#ff2d55");
+      }
+      saveFavorites();
+      renderAlbumsGrid();
+      renderPlaylist();
+    });
+
+    // Player Download Button Click
+    playerSaveBtn.addEventListener("click", () => {
+      if (!currentTrackId) return;
+      const current = tracks.find(t => t.id === currentTrackId);
+      if (current) handleOfflineToggle(current, playerSaveBtn);
+    });
 
     const DB_NAME = "ADMusicOfflineDB";
     const STORE_NAME = "songs";
@@ -1580,6 +1720,7 @@
         analyser.connect(audioCtx.destination);
 
         isAudioEngineReady = true;
+        webAudioConnected = true;
         startVisualizerLoop();
       } catch (e) {
         audio.volume = Math.min(1, currentMasterGain);
@@ -1596,7 +1737,6 @@
       }
 
       const timeLeft = audio.duration - audio.currentTime;
-      // Sirf gaane ke aakhiri 15 second mein check karein (aur gaana > 45s ka ho)
       if (audio.duration > 45 && audio.currentTime > 15 && timeLeft <= 15 && timeLeft > 0.4) {
         const freqData = new Uint8Array(analyser.frequencyBinCount);
         analyser.getByteFrequencyData(freqData);
@@ -1644,13 +1784,23 @@
         analyser.getByteFrequencyData(dataArray);
         checkOutroSilence();
 
+        // Fallback animated visualizer if external stream has zero frequency data due to CORS
+        let totalEnergy = 0;
+        for (let i = 0; i < 8; i++) totalEnergy += dataArray[i * 2] || 0;
+
         visBars.forEach((bar, i) => {
-          const val = dataArray[i * 2] || 0;
-          const h = Math.max(6, Math.round((val / 255) * 32));
+          let h = 6;
+          if (totalEnergy > 5) {
+            const val = dataArray[i * 2] || 0;
+            h = Math.max(6, Math.round((val / 255) * 30));
+          } else {
+            const wave = Math.sin(Date.now() / 130 + i * 0.9) * 0.5 + 0.5;
+            h = Math.max(6, Math.round(8 + wave * 18));
+          }
           bar.style.height = `${h}px`;
         });
 
-        const bass = (dataArray[0] + dataArray[1] + dataArray[2]) / 3;
+        const bass = totalEnergy > 5 ? (dataArray[0] + dataArray[1] + dataArray[2]) / 3 : 90;
         const beatNorm = bass / 255;
         if (document.body.classList.contains("dj-active")) {
           const scale = 1 + beatNorm * 0.08;
@@ -1813,7 +1963,6 @@
       audio.currentTime = Math.min(audio.duration, audio.currentTime + 300);
     });
 
-    // Strictly returns ONLY songs from the locked album/category
     function getTracksByCategory(cat) {
       return tracks.filter(t => {
         if (cat === "Favorites") return favoriteIds.has(t.id);
@@ -1830,18 +1979,71 @@
       });
     }
 
-    // Render Drive Folders as Album Boxes with Play Button in front of Album Name
+    // === BULK DOWNLOAD ENTIRE ALBUM ===
+    async function handleAlbumDownload(albumName) {
+      const albumSongs = getTracksByCategory(albumName);
+      if (albumSongs.length === 0) {
+        setStatus(`"${albumName}" album mein koi gaana nahi hai.`, "#ff6b6b");
+        return;
+      }
+
+      if (downloadingAlbums[albumName]) {
+        setStatus(`"${albumName}" pehle se download ho raha hai...`, "#00c6ff");
+        return;
+      }
+
+      const unsavedSongs = albumSongs.filter(t => !offlineSavedIds.has(t.id));
+
+      // Agar poora album pehle se saved hai, toh confirm karke remove karne ka option dein
+      if (unsavedSongs.length === 0) {
+        if (confirm(`"${albumName}" ke saare ${albumSongs.length} gaane offline saved hain. Kya offline storage se hatayein?`)) {
+          for (const t of albumSongs) {
+            await removeOfflineSong(t.id);
+          }
+          setStatus(`Removed "${albumName}" from offline storage.`, "#8e8e93");
+          renderAlbumsGrid();
+          renderPlaylist();
+        }
+        return;
+      }
+
+      downloadingAlbums[albumName] = `0/${unsavedSongs.length}`;
+      renderAlbumsGrid();
+
+      let done = 0;
+      for (const song of unsavedSongs) {
+        try {
+          downloadingAlbums[albumName] = `${done + 1}/${unsavedSongs.length}`;
+          renderAlbumsGrid();
+          setStatus(`Downloading "${albumName}": ${done + 1}/${unsavedSongs.length} (${song.title})`, "#00c6ff");
+          const blob = await fetchTrackBlob(song);
+          await saveSongOffline(song, blob);
+          done++;
+        } catch (err) {
+          // Ek gaana fail ho toh baaki download jaari rakhein
+        }
+      }
+
+      delete downloadingAlbums[albumName];
+      renderAlbumsGrid();
+      renderPlaylist();
+      setStatus(`Album "${albumName}" Downloaded (${done}/${unsavedSongs.length} songs saved) ✓`, "#00ff88");
+    }
+
+    // Render Drive Folders as Album Boxes with BOTH Download (↓) & Play (▶) Buttons
     function renderAlbumsGrid() {
       const trackCats = tracks.map(t => t.category).filter(Boolean);
       const uniqueFolders = Array.from(new Set([...folderCategories, ...trackCats]));
 
       const albums = uniqueFolders.map(folder => {
         const folderTracks = tracks.filter(t => (t.category || "").toLowerCase() === folder.toLowerCase());
+        const savedCount = folderTracks.filter(t => offlineSavedIds.has(t.id)).length;
         return {
           key: folder,
           name: folder,
           icon: "💿",
           count: folderTracks.length,
+          savedCount: savedCount,
           thumb: folderTracks.find(t => t.thumb)?.thumb
         };
       });
@@ -1857,24 +2059,39 @@
 
       albums.forEach(alb => {
         const isLockedAlbum = alb.key.toLowerCase() === activeCategory.toLowerCase();
+        const isDownloading = Boolean(downloadingAlbums[alb.key]);
+        const isAllSaved = alb.count > 0 && alb.savedCount === alb.count;
+
         const card = document.createElement("div");
         card.className = `ad-album-card ${isLockedAlbum ? "active-album-lock" : ""}`;
         const coverHtml = alb.thumb
           ? `<img src="${alb.thumb}" alt="" onerror="this.parentElement.textContent='${alb.icon}';" />`
           : alb.icon;
 
+        const dlLabel = isDownloading ? downloadingAlbums[alb.key] : (isAllSaved ? "✓" : "↓");
+        const dlClass = isDownloading ? "downloading" : (isAllSaved ? "all-saved" : "");
+
         card.innerHTML = `
           <div class="ad-album-cover">${coverHtml}</div>
           <div class="ad-album-meta">
             <div class="ad-album-name">${alb.name}</div>
-            <div class="ad-album-count">${alb.count} ${alb.count === 1 ? "Song" : "Songs"}</div>
+            <div class="ad-album-count">${alb.count} ${alb.count === 1 ? "Song" : "Songs"}${alb.savedCount > 0 ? ` • ${alb.savedCount} Offline` : ""}</div>
           </div>
-          <button type="button" class="ad-album-play-btn ${isLockedAlbum && isPlaying ? "playing-this" : ""}" title="Play only ${alb.name}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M11.596 8.697l-6.363 3.692c-.54.314-1.233-.065-1.233-.696V4.308c0-.63.693-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393"/>
-            </svg>
-          </button>
+          <div class="ad-album-actions">
+            <button type="button" class="ad-album-dl-btn ${dlClass}" title="Download Full Album Offline">${dlLabel}</button>
+            <button type="button" class="ad-album-play-btn ${isLockedAlbum && isPlaying ? "playing-this" : ""}" title="Play only ${alb.name}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M11.596 8.697l-6.363 3.692c-.54.314-1.233-.065-1.233-.696V4.308c0-.63.693-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393"/>
+              </svg>
+            </button>
+          </div>
         `;
+
+        const dlBtn = card.querySelector(".ad-album-dl-btn");
+        dlBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          handleAlbumDownload(alb.key);
+        });
 
         const playBtn = card.querySelector(".ad-album-play-btn");
         playBtn.addEventListener("click", (e) => {
@@ -1885,7 +2102,7 @@
           renderPlaylist();
           if (albumSongs.length > 0) {
             loadAndPlayTrack(albumSongs[0]);
-            setStatus(`Playing only "${alb.name}" (${albumSongs.length} songs)`, "#00ff88");
+            setStatus(`Playing "${alb.name}" (${albumSongs.length} songs)`, "#00ff88");
           } else {
             setStatus(`"${alb.name}" folder me abhi koi gaana nahi hai.`, "#ff6b6b");
           }
@@ -2105,32 +2322,47 @@
       }
 
       try {
-        btn.textContent = "…";
+        if (btn) btn.textContent = "…";
         setStatus(`Saving "${track.title}" offline...`, "#00c6ff");
         const blob = await fetchTrackBlob(track);
         await saveSongOffline(track, blob);
-        setStatus(`Saved "${track.title}" for offline playback!`, "#00ff88");
+        setStatus(`Saved "${track.title}" for offline playback! ✓`, "#00ff88");
         renderAlbumsGrid();
         renderPlaylist();
       } catch (err) {
-        btn.textContent = "↓";
+        if (btn) btn.textContent = "↓";
         setStatus("Offline save failed: " + err.message, "#ff6b6b");
       }
     }
 
+    // Used for Offline Download & Fallback
     async function fetchTrackBlob(track) {
       const offlineEntry = await getOfflineSong(track.id);
       if (offlineEntry && offlineEntry.blob) return offlineEntry.blob;
 
-      const res = await callAppsScript(`fileId=${encodeURIComponent(track.id)}`);
-      if (res.error) throw new Error(res.error);
-
-      const byteChars = atob(res.base64);
-      const byteNumbers = new Array(byteChars.length);
-      for (let i = 0; i < byteChars.length; i++) {
-        byteNumbers[i] = byteChars.charCodeAt(i);
+      if (pendingFetches[track.id]) {
+        return await pendingFetches[track.id];
       }
-      return new Blob([new Uint8Array(byteNumbers)], { type: res.mimeType || "audio/mpeg" });
+
+      pendingFetches[track.id] = (async () => {
+        try {
+          const res = await callAppsScript(`fileId=${encodeURIComponent(track.id)}`);
+          if (res.error) throw new Error(res.error);
+
+          const byteChars = atob(res.base64);
+          const byteNumbers = new Array(byteChars.length);
+          for (let i = 0; i < byteChars.length; i++) {
+            byteNumbers[i] = byteChars.charCodeAt(i);
+          }
+          const blob = new Blob([new Uint8Array(byteNumbers)], { type: res.mimeType || "audio/mpeg" });
+          audioCache[track.id] = URL.createObjectURL(blob);
+          return blob;
+        } finally {
+          delete pendingFetches[track.id];
+        }
+      })();
+
+      return await pendingFetches[track.id];
     }
 
     function selectTrackUI(track) {
@@ -2144,52 +2376,30 @@
       currentTimeEl.textContent = "0:00";
       remainingTimeEl.textContent = "-0:00";
       longSkipBar.classList.remove("visible");
+      updatePlayerQuickButtons();
       updateSubpageNowStrips();
       renderPlaylist();
       updateMediaSession(track);
     }
 
-    // === ZERO-BUFFER ADVANCE PRELOADER ===
-    async function getOrFetchBlobUrl(track) {
-      if (!track) return null;
-      if (audioCache[track.id]) return audioCache[track.id];
-
-      if (pendingFetches[track.id]) {
-        return await pendingFetches[track.id];
-      }
-
-      pendingFetches[track.id] = (async () => {
-        try {
-          const blob = await fetchTrackBlob(track);
-          const url = URL.createObjectURL(blob);
-          audioCache[track.id] = url;
-          return url;
-        } finally {
-          delete pendingFetches[track.id];
-        }
-      })();
-
-      return await pendingFetches[track.id];
-    }
-
-    async function preloadUpcomingTracks() {
+    // Background pre-cache for next song
+    function preloadUpcomingTracks() {
       const list = getTracksByCategory(activeCategory);
       if (list.length <= 1) return;
       const idx = list.findIndex(t => t.id === currentTrackId);
       if (idx === -1) return;
 
       const next1 = list[(idx + 1) % list.length];
-      const next2 = list.length > 2 ? list[(idx + 2) % list.length] : null;
-
-      if (next1) getOrFetchBlobUrl(next1).catch(() => {});
-      if (next2) {
-        setTimeout(() => getOrFetchBlobUrl(next2).catch(() => {}), 1500);
+      if (next1 && !offlineSavedIds.has(next1.id) && !audioCache[next1.id]) {
+        const preAudio = new Audio();
+        preAudio.preload = "auto";
+        preAudio.src = next1.streamUrl || `https://drive.google.com/uc?export=download&id=${next1.id}`;
       }
     }
 
+    // === ZERO-LAG DIRECT STREAMING PLAYBACK ===
     async function loadAndPlayTrack(track) {
       if (!track) return;
-      initAudioEngine();
       pauseTrack();
       selectTrackUI(track);
       silenceStartTime = 0;
@@ -2197,40 +2407,99 @@
       const targetId = track.id;
 
       try {
-        isLoadingAudio = true;
-        if (!audioCache[track.id]) {
-          setStatus(offlineSavedIds.has(track.id) ? "Loading offline..." : "Buffering...", "#00c6ff");
+        // 1. Offline Saved or RAM Cached (0ms Instant Play)
+        const offlineEntry = await getOfflineSong(track.id);
+        if (offlineEntry && offlineEntry.blob) {
+          initAudioEngine();
+          audio.crossOrigin = "anonymous";
+          audio.src = URL.createObjectURL(offlineEntry.blob);
+          audio.playbackRate = speeds[speedIndex];
+          await audio.play();
+          onPlaybackStarted(track);
+          return;
         }
 
-        const blobUrl = await getOrFetchBlobUrl(track);
-        if (currentTrackId !== targetId) return;
+        if (audioCache[track.id]) {
+          initAudioEngine();
+          audio.crossOrigin = "anonymous";
+          audio.src = audioCache[track.id];
+          audio.playbackRate = speeds[speedIndex];
+          await audio.play();
+          onPlaybackStarted(track);
+          return;
+        }
 
-        audio.src = blobUrl;
+        // 2. Direct Progressive HTTP Stream from Google Drive (No Base64 Wait!)
+        setStatus("Streaming...", "#00c6ff");
+        const directUrl = track.streamUrl || `https://drive.google.com/uc?export=download&id=${track.id}`;
+
+        // Use direct stream without CORS restriction so browser streams immediately in 0.2s
+        if (!webAudioConnected) {
+          audio.removeAttribute("crossorigin");
+        }
+        audio.src = directUrl;
         audio.playbackRate = speeds[speedIndex];
 
-        if (crossfadeEnabled && isAudioEngineReady && gainNode && !audio.muted) {
-          gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
-          gainNode.gain.linearRampToValueAtTime(currentMasterGain, audioCtx.currentTime + 1.5);
-        }
-
         await audio.play();
-        isPlaying = true;
-        setStatus("");
-        musicCard.classList.add("is-playing");
-        if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
-        updateLongSkipVisibility();
-        updateSubpageNowStrips();
-        renderAlbumsGrid();
-        renderPlaylist();
-
-        preloadUpcomingTracks();
+        if (currentTrackId !== targetId) return;
+        onPlaybackStarted(track);
       } catch (err) {
-        if (currentTrackId === targetId) {
-          setStatus("Play error: " + err.message, "#ff6b6b");
+        if (currentTrackId !== targetId) return;
+        // Fallback: Try alternate Google Docs direct stream URL, then Apps Script Blob
+        try {
+          audio.removeAttribute("crossorigin");
+          audio.src = `https://docs.google.com/uc?export=open&id=${track.id}`;
+          audio.playbackRate = speeds[speedIndex];
+          await audio.play();
+          if (currentTrackId !== targetId) return;
+          onPlaybackStarted(track);
+        } catch (err2) {
+          try {
+            setStatus("Loading stream...", "#00c6ff");
+            const blob = await fetchTrackBlob(track);
+            if (currentTrackId !== targetId) return;
+            initAudioEngine();
+            audio.src = URL.createObjectURL(blob);
+            audio.playbackRate = speeds[speedIndex];
+            await audio.play();
+            onPlaybackStarted(track);
+          } catch (finalErr) {
+            if (currentTrackId === targetId) {
+              setStatus("Stream error: Drive folder ko 'Anyone with the link' karein.", "#ff6b6b");
+            }
+          }
         }
-      } finally {
-        isLoadingAudio = false;
       }
+    }
+
+    function onPlaybackStarted(track) {
+      isPlaying = true;
+      setStatus("");
+      musicCard.classList.add("is-playing");
+      if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
+      if (!isAudioEngineReady) {
+        startFallbackBars();
+      }
+      updateLongSkipVisibility();
+      updateSubpageNowStrips();
+      renderAlbumsGrid();
+      renderPlaylist();
+      preloadUpcomingTracks();
+    }
+
+    let fallbackBarTimer = null;
+    function startFallbackBars() {
+      if (fallbackBarTimer) return;
+      fallbackBarTimer = setInterval(() => {
+        if (!isPlaying || isAudioEngineReady) {
+          if (!isPlaying) visBars.forEach(b => b.style.height = "6px");
+          return;
+        }
+        visBars.forEach((bar, i) => {
+          const wave = Math.sin(Date.now() / 120 + i * 0.85) * 0.5 + 0.5;
+          bar.style.height = `${Math.max(6, Math.round(7 + wave * 20))}px`;
+        });
+      }, 90);
     }
 
     function pauseTrack() {
@@ -2244,7 +2513,6 @@
       renderPlaylist();
     }
 
-    // Plays ONLY songs belonging to the currently activeCategory / locked album
     function getNextTrack() {
       const list = getTracksByCategory(activeCategory);
       if (list.length === 0) return null;
@@ -2271,10 +2539,9 @@
 
     playPauseBtn.addEventListener("click", () => {
       if (tracks.length === 0) return;
-      initAudioEngine();
       if (isPlaying) {
         pauseTrack();
-      } else if (audio.src && audio.src.startsWith("blob:")) {
+      } else if (audio.src && audio.src.length > 0 && !audio.ended) {
         audio.play().then(() => {
           isPlaying = true;
           musicCard.classList.add("is-playing");
@@ -2282,6 +2549,9 @@
           updateSubpageNowStrips();
           renderAlbumsGrid();
           renderPlaylist();
+        }).catch(() => {
+          const startTrack = tracks.find(t => t.id === currentTrackId) || tracks[0];
+          loadAndPlayTrack(startTrack);
         });
       } else {
         const firstFav = getFirstFavoriteTrack();
@@ -2344,7 +2614,6 @@
     }
 
     volumeSlider.addEventListener("input", (e) => {
-      initAudioEngine();
       const val = parseFloat(e.target.value);
       audio.muted = false;
       const pct = Math.round(val * 100);
@@ -2367,7 +2636,6 @@
     });
 
     turboSlider.addEventListener("input", (e) => {
-      initAudioEngine();
       const turboVal = parseFloat(e.target.value);
       audio.muted = false;
       turboPct.textContent = `${Math.round(turboVal * 100)}%`;
@@ -2376,7 +2644,6 @@
     });
 
     muteBtn.addEventListener("click", () => {
-      initAudioEngine();
       if (audio.muted || currentMasterGain === 0) {
         audio.muted = false;
         const restore = lastMasterGain || 1.25;
