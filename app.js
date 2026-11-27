@@ -1,11 +1,12 @@
-/* AD Music v3.4.0 — Auto-Sync All Songs, Drive Thumbnails, Rotating AD Logo, Random Play & 400% Turbo Boost */
+/* AD Music v3.5.0 — Fixed Syntax, JSONP Audio, Drive Thumbnails, Album Play & 400% Turbo Boost */
 (() => {
   "use strict";
 
-  const APP_VERSION = "3.4.0";
+  const APP_VERSION = "3.5.0";
   const OFFLINE_CACHE_NAME = "ad-music-offline-audio-v1";
-  const SONGS_CACHE_KEY = "admusic_cached_songs_v34";
+  const SONGS_CACHE_KEY = "admusic_cached_songs_v35";
   const CIRCUMFERENCE = 641;
+  // IMPORTANT: Naye Code.gs (v3.5.0) ko Deploy karne ke baad uska /exec URL yahan paste karein
   const API_URL = "https://script.google.com/macros/s/AKfycbwSr-j8h-BR8mgzU2c-9K0yuLokz7qcTAV8uxsW3ih8XLOADPCamdIg6OxIt7sNsZqQ/exec";
 
   const THEME_PRESETS = {
@@ -42,7 +43,7 @@
     queue: [],
     currentIndex: -1,
     isPlaying: false,
-    shuffle: true, // Songs har baar randomly play honge
+    shuffle: true,
     repeat: false,
     liveRadio: false,
     selectedCategory: "ALL",
@@ -99,7 +100,6 @@
     return null;
   }
 
-  // Reliable Google Drive thumbnail URL (works on all mobile & PC browsers without CORS/cookie blocks)
   function resolveCoverUrl(rawCover) {
     const c = (rawCover || "").trim();
     if (!c) return "";
@@ -125,16 +125,48 @@
     return { type: "GD", driveId: id, streamUrl: gdDirect, proxyUrl, downloadUrl: gdDirect };
   }
 
- async function fetchGdProxyBlobUrl(proxyUrl) {
-  const res = await fetch(proxyUrl);
-  const text = await res.text();
-  if (!text || text.trim().startsWith("{")) throw new Error("GD audio unavailable");
-  const byteChars = atob(text.trim());
-  const byteNums = new Array(byteChars.length);
-  for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
-  const blob = new Blob([new Uint8Array(byteNums)], { type: "audio/mpeg" });
-  return { blob, blobUrl: URL.createObjectURL(blob) };
-}
+  // Supports both JSONP callback & plain Base64 response from Code.gs
+  function fetchGdProxyBlobUrl(proxyUrl) {
+    return new Promise((resolve, reject) => {
+      const cbName = "adAudioCb_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+      const script = document.createElement("script");
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error("GD audio stream timed out"));
+      }, 25000);
+
+      function cleanup() {
+        clearTimeout(timer);
+        delete window[cbName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+
+      window[cbName] = (payload) => {
+        cleanup();
+        if (!payload || !payload.ok || !payload.base64) {
+          return reject(new Error(payload?.error || "GD audio unavailable"));
+        }
+        try {
+          const byteChars = atob(payload.base64);
+          const byteNums = new Array(byteChars.length);
+          for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
+          const blob = new Blob([new Uint8Array(byteNums)], { type: payload.mimeType || "audio/mpeg" });
+          resolve({ blob, blobUrl: URL.createObjectURL(blob) });
+        } catch (err) {
+          reject(err);
+        }
+      };
+
+      script.onerror = () => {
+        cleanup();
+        reject(new Error("GD audio proxy failed"));
+      };
+
+      const sep = proxyUrl.includes("?") ? "&" : "?";
+      script.src = `${proxyUrl}${sep}callback=${cbName}`;
+      document.body.appendChild(script);
+    });
+  }
 
   function normalizeTitle(title) {
     return (title || "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
@@ -243,14 +275,15 @@
     });
     const res = await fetch(API_URL, {
       method: "POST",
+      redirect: "follow",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body
     });
     const data = await res.json();
-   if (!data.ok) {
-  if (data.blocked) logoutUser("Account blocked by administrator.");
-  throw new Error(data.error || "Request failed");
-}
+    if (!data.ok) {
+      if (data.blocked) logoutUser("Account blocked by administrator.");
+      throw new Error(data.error || "Request failed");
+    }
     return data;
   }
 
@@ -301,7 +334,6 @@
         state.currentIndex = 0;
         updatePlayerBar(first, first.resolved?.type || "GD");
       } else {
-        // Refresh currentSong cover if updated from server sync
         const refreshed = state.songs.find((x) => x.id === state.currentSong.id);
         if (refreshed) {
           state.currentSong = refreshed;
@@ -318,7 +350,6 @@
   async function loadSongs(forceFresh = true, showToast = false) {
     if (!state.user) return;
 
-    // Show cached songs instantly first while syncing fresh data in background
     const cached = localStorage.getItem(SONGS_CACHE_KEY);
     if (cached && !state.songs.length) {
       try { hydrateSongs(JSON.parse(cached)); } catch (_) {}
@@ -408,6 +439,15 @@
     list.forEach((song, idx) => box.appendChild(createSongRow(song, idx, list, isOfflineView)));
   }
 
+  function playAlbumTracks(albumName, tracks) {
+    if (!tracks || !tracks.length) return;
+    state.activeAlbumName = albumName;
+    state.queue = state.shuffle ? shuffleArray(tracks) : [...tracks];
+    playSongAtIndex(0);
+    document.querySelector('[data-view="nowPlayingView"]').click();
+    toast(`Playing album: ${albumName}`, "info");
+  }
+
   function renderAlbums() {
     const grid = $("albumGrid");
     const songBox = $("albumSongList");
@@ -474,14 +514,6 @@
       grid.appendChild(row);
     });
   }
-
-  function updatePlayerBar(song, srcType) {
-  $("playerTitle").textContent = song.title;
-  $("playerArtist").textContent = `${song.artist} • ${song.cleanAlbum}`;
-  $("sourceTypeBadge").textContent = srcType;
-  $("playerFavBtn").classList.toggle("active", state.favorites.has(song.id));
-  ...
-}
 
   async function downloadAlbumOffline(albumName, tracks) {
     toast(`Downloading ${tracks.length} songs from "${albumName}"...`, "info");
@@ -1051,7 +1083,6 @@
       }
     };
 
-    // Volume (0% - 200%) + Auto-Unlock Turbo Boost (200% - 400%)
     $("masterVolume").oninput = (e) => {
       const val = parseFloat(e.target.value);
       const pct = Math.round(val * 100);
@@ -1097,7 +1128,6 @@
     $("playerFavBtn").onclick = () => { if (state.currentSong) toggleFavorite(state.currentSong.id); };
     $("downloadOfflineBtn").onclick = () => { if (state.currentSong) downloadSongOffline(state.currentSong); };
 
-    // Equalizer
     document.querySelectorAll(".eq-preset-tab").forEach((tab) => {
       tab.addEventListener("click", () => {
         document.querySelectorAll(".eq-preset-tab").forEach((t) => t.classList.remove("active"));
@@ -1111,7 +1141,6 @@
     $("eqBassKnob").oninput = syncEqVisuals;
     $("eqTrebleKnob").oninput = syncEqVisuals;
 
-    // DJ Decks
     ["A", "B"].forEach((k) => {
       $(`deck${k}Select`).onchange = (e) => loadDeck(k, e.target.value);
       $(`deck${k}PlayBtn`).onclick = async () => {
@@ -1151,7 +1180,6 @@
     });
     $("djCrossfader").oninput = applyDjCrossfader;
 
-    // Upload
     $("uploadSourceType").onchange = (e) => {
       const mode = e.target.value;
       $("filePickerGroup").classList.toggle("hidden", mode !== "FILE");
@@ -1222,7 +1250,6 @@
       }
     };
 
-    // Admin & Settings Customization
     $("adminRefreshBtn").onclick = () => { loadAdminData(); loadSongs(true, true); };
     $("createCodeForm").onsubmit = async (e) => {
       e.preventDefault();
@@ -1266,7 +1293,6 @@
     renderAuthState();
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
     if (state.user) {
-      // Open hote hi saare songs automatically sync & load honge
       loadSongs(true, false);
       checkUpdates();
     }
