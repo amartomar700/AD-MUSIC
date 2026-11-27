@@ -1,4 +1,4 @@
-/* AD Music v3.4.0 — Glowing Spinning Logo Play/Pause, Track Cover Art, Random Shuffle & Folder Albums */
+/* AD Music v3.4.0 — Auto-Sync All Songs, Drive Thumbnails, Rotating AD Logo, Random Play & 400% Turbo Boost */
 (() => {
   "use strict";
 
@@ -99,12 +99,13 @@
     return null;
   }
 
+  // Reliable Google Drive thumbnail URL (works on all mobile & PC browsers without CORS/cookie blocks)
   function resolveCoverUrl(rawCover) {
     const c = (rawCover || "").trim();
     if (!c) return "";
     const id = extractDriveId(c);
     if (id && (c.includes("drive.google.com") || c.includes("googleusercontent.com"))) {
-      return `https://lh3.googleusercontent.com/d/${encodeURIComponent(id)}=s600`;
+      return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w500`;
     }
     return c;
   }
@@ -169,10 +170,11 @@
     return fallback;
   }
 
-  // --- Audio & Equalizer ---
+  // --- Audio, Equalizer & 200%-400% Turbo Volume Booster ---
   const audio = new Audio();
   audio.preload = "metadata";
-  let audioCtx = null, sourceNode = null, bandFilters = [], bassFilter = null, trebleFilter = null, webAudioReady = false;
+  let audioCtx = null, sourceNode = null, gainNode = null, compressorNode = null, bandFilters = [], bassFilter = null, trebleFilter = null, webAudioReady = false;
+  let currentMasterGain = 1.0;
 
   function initWebAudioForMain() {
     if (webAudioReady) return;
@@ -199,13 +201,37 @@
       trebleFilter.frequency.value = 8000;
       trebleFilter.gain.value = Number($("eqTrebleKnob").value);
 
+      gainNode = audioCtx.createGain();
+      gainNode.gain.value = currentMasterGain;
+
+      compressorNode = audioCtx.createDynamicsCompressor();
+      compressorNode.threshold.setValueAtTime(-12, audioCtx.currentTime);
+      compressorNode.knee.setValueAtTime(14, audioCtx.currentTime);
+      compressorNode.ratio.setValueAtTime(8, audioCtx.currentTime);
+      compressorNode.attack.setValueAtTime(0.004, audioCtx.currentTime);
+      compressorNode.release.setValueAtTime(0.15, audioCtx.currentTime);
+
       sourceNode.connect(bassFilter);
       bassFilter.connect(bandFilters[0]);
       for (let i = 0; i < bandFilters.length - 1; i++) bandFilters[i].connect(bandFilters[i + 1]);
       bandFilters[bandFilters.length - 1].connect(trebleFilter);
-      trebleFilter.connect(audioCtx.destination);
+      trebleFilter.connect(gainNode);
+      gainNode.connect(compressorNode);
+      compressorNode.connect(audioCtx.destination);
       webAudioReady = true;
     } catch (_) {}
+  }
+
+  function applyMasterGain(gainVal) {
+    currentMasterGain = gainVal;
+    initWebAudioForMain();
+    if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    if (webAudioReady && gainNode) {
+      audio.volume = 1;
+      gainNode.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+    } else {
+      audio.volume = Math.min(1, gainVal);
+    }
   }
 
   async function apiCall(action, payload = {}) {
@@ -256,7 +282,7 @@
     if (msg) toast(msg, "error");
   }
 
-  // --- Instant Cache + Re-Sync ---
+  // --- Instant Cache + Auto-Sync All Songs on Open ---
   function hydrateSongs(rawList) {
     state.songs = (rawList || []).map((s) => ({
       ...s,
@@ -264,24 +290,42 @@
       resolvedCover: resolveCoverUrl(s.coverUrl || s.thumbnail || s.thumb || s.image),
       resolved: resolveAudioSource(s)
     }));
-    if (!state.queue.length && state.songs.length) {
-      state.queue = shuffleArray(state.songs);
+
+    if (state.songs.length) {
+      if (!state.queue.length) {
+        state.queue = shuffleArray(state.songs);
+      }
+      if (!state.currentSong) {
+        const first = state.queue[0];
+        state.currentSong = first;
+        state.currentIndex = 0;
+        updatePlayerBar(first, first.resolved?.type || "GD");
+      } else {
+        // Refresh currentSong cover if updated from server sync
+        const refreshed = state.songs.find((x) => x.id === state.currentSong.id);
+        if (refreshed) {
+          state.currentSong = refreshed;
+          updatePlayerBar(refreshed, refreshed.resolved?.type || "GD");
+        }
+      }
     }
+
     populateCategories();
     renderAllViews();
     populateDJSelectors();
   }
 
-  async function loadSongs(forceFresh = false) {
+  async function loadSongs(forceFresh = true, showToast = false) {
     if (!state.user) return;
-    if (forceFresh) {
-      localStorage.removeItem(SONGS_CACHE_KEY);
-      toast("Re-syncing library from server...", "info");
-    } else {
-      const cached = localStorage.getItem(SONGS_CACHE_KEY);
-      if (cached && !state.songs.length) {
-        try { hydrateSongs(JSON.parse(cached)); } catch (_) {}
-      }
+
+    // Show cached songs instantly first while syncing fresh data in background
+    const cached = localStorage.getItem(SONGS_CACHE_KEY);
+    if (cached && !state.songs.length) {
+      try { hydrateSongs(JSON.parse(cached)); } catch (_) {}
+    }
+
+    if (forceFresh && showToast) {
+      toast("Syncing all songs...", "info");
     }
 
     try {
@@ -299,7 +343,7 @@
         badge.textContent = data.pendingCount;
         badge.classList.toggle("hidden", data.pendingCount === 0);
       }
-      if (forceFresh) toast(`Synced ${state.songs.length} tracks!`, "success");
+      if (showToast) toast(`Synced ${state.songs.length} songs!`, "success");
     } catch (err) {
       toast(err.message, "error");
     }
@@ -487,13 +531,10 @@
 
     audio.crossOrigin = src.type === "CLOUD" ? "anonymous" : null;
     audio.src = playableUrl;
-    audio.volume = Number($("masterVolume").value);
     $("dialProgressCircle").style.strokeDashoffset = CIRCUMFERENCE;
 
     updatePlayerBar(song, src.type);
-
-    initWebAudioForMain();
-    if (audioCtx && audioCtx.state === "suspended") await audioCtx.resume();
+    applyMasterGain(currentMasterGain);
 
     try {
       await audio.play();
@@ -504,6 +545,7 @@
           const { blobUrl } = await fetchGdProxyBlobUrl(src.proxyUrl);
           audio.crossOrigin = null;
           audio.src = blobUrl;
+          applyMasterGain(currentMasterGain);
           await audio.play();
           setPlayingVisuals(true);
         } catch (err) {
@@ -769,7 +811,7 @@
         await apiCall("reviewSong", { songId: s.id, decision: "Approved" });
         toast("Song approved!", "success");
         loadAdminData();
-        loadSongs(true);
+        loadSongs(true, true);
       };
       item.querySelector(".reject-btn").onclick = async () => {
         await apiCall("reviewSong", { songId: s.id, decision: "Rejected" });
@@ -931,7 +973,7 @@
         state.user = res.user;
         localStorage.setItem("admusic_user", JSON.stringify(state.user));
         renderAuthState();
-        loadSongs(true);
+        loadSongs(true, true);
         toast(`Welcome back, ${state.user.name}!`, "success");
       } catch (err) {
         toast(err.message, "error");
@@ -949,7 +991,7 @@
         state.user = res.user;
         localStorage.setItem("admusic_user", JSON.stringify(state.user));
         renderAuthState();
-        loadSongs(true);
+        loadSongs(true, true);
         toast("Account created!", "success");
       } catch (err) {
         toast(err.message, "error");
@@ -958,19 +1000,20 @@
 
     $("searchInput").oninput = (e) => { state.searchQuery = e.target.value; renderAllViews(); };
     $("categoryFilter").onchange = (e) => { state.selectedCategory = e.target.value; renderAllViews(); };
-    $("refreshLibraryBtn").onclick = () => loadSongs(true);
+    $("refreshLibraryBtn").onclick = () => loadSongs(true, true);
     $("backToAlbumsBtn").onclick = renderAlbums;
 
     $("playPauseBtn").onclick = async () => {
-      if (!state.currentSong) {
+      if (!audio.src || audio.src === window.location.href) {
         const pool = getFilteredSongs();
         if (pool.length) {
-          state.queue = state.shuffle ? shuffleArray(pool) : pool;
-          playSongAtIndex(0);
+          if (!state.queue.length) state.queue = state.shuffle ? shuffleArray(pool) : pool;
+          playSongAtIndex(state.currentIndex >= 0 ? state.currentIndex : 0);
         }
         return;
       }
       if (audio.paused) {
+        applyMasterGain(currentMasterGain);
         await audio.play();
         setPlayingVisuals(true);
       } else {
@@ -1009,10 +1052,32 @@
       }
     };
 
+    // Volume (0% - 200%) + Auto-Unlock Turbo Boost (200% - 400%)
     $("masterVolume").oninput = (e) => {
-      audio.volume = Number(e.target.value);
-      $("volumeValue").textContent = `${Math.round(audio.volume * 100)}%`;
+      const val = parseFloat(e.target.value);
+      const pct = Math.round(val * 100);
+      $("volumeValue").textContent = `${pct}%`;
+      $("volumeValue").classList.toggle("boosted", pct > 100);
+
+      if (val >= 2) {
+        $("turboVolBox").classList.remove("hidden");
+        const turboVal = parseFloat($("turboVolumeSlider").value) || 2;
+        $("turboVolumeValue").textContent = `${Math.round(turboVal * 100)}%`;
+        applyMasterGain(turboVal);
+      } else {
+        $("turboVolBox").classList.add("hidden");
+        $("turboVolumeSlider").value = 2;
+        $("turboVolumeValue").textContent = "200%";
+        applyMasterGain(val);
+      }
     };
+
+    $("turboVolumeSlider").oninput = (e) => {
+      const turboVal = parseFloat(e.target.value);
+      $("turboVolumeValue").textContent = `${Math.round(turboVal * 100)}%`;
+      applyMasterGain(turboVal);
+    };
+
     $("seekBar").oninput = (e) => {
       if (Number.isFinite(audio.duration)) audio.currentTime = (Number(e.target.value) / 100) * audio.duration;
     };
@@ -1159,7 +1224,7 @@
     };
 
     // Admin & Settings Customization
-    $("adminRefreshBtn").onclick = () => { loadAdminData(); loadSongs(true); };
+    $("adminRefreshBtn").onclick = () => { loadAdminData(); loadSongs(true, true); };
     $("createCodeForm").onsubmit = async (e) => {
       e.preventDefault();
       try {
@@ -1202,7 +1267,8 @@
     renderAuthState();
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
     if (state.user) {
-      loadSongs(false);
+      // Open hote hi saare songs automatically sync & load honge
+      loadSongs(true, false);
       checkUpdates();
     }
   }
