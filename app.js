@@ -125,16 +125,16 @@
     return { type: "GD", driveId: id, streamUrl: gdDirect, proxyUrl, downloadUrl: gdDirect };
   }
 
-  async function fetchGdProxyBlobUrl(proxyUrl) {
-    const res = await fetch(proxyUrl);
-    const text = await res.text();
-    if (!text || text.trim().startsWith("{")) throw new Error("GD audio unavailable");
-    const byteChars = atob(text.trim());
-    const byteNums = new Array(byteChars.length);
-    for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
-    const blob = new Blob([new Uint8Array(byteNums)], { type: "audio/mpeg" });
-    return { blob, blobUrl: URL.createObjectURL(blob) };
-  }
+ async function fetchGdProxyBlobUrl(proxyUrl) {
+  const res = await fetch(proxyUrl);
+  const text = await res.text();
+  if (!text || text.trim().startsWith("{")) throw new Error("GD audio unavailable");
+  const byteChars = atob(text.trim());
+  const byteNums = new Array(byteChars.length);
+  for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
+  const blob = new Blob([new Uint8Array(byteNums)], { type: "audio/mpeg" });
+  return { blob, blobUrl: URL.createObjectURL(blob) };
+}
 
   function normalizeTitle(title) {
     return (title || "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
@@ -247,10 +247,10 @@
       body
     });
     const data = await res.json();
-    if (!data.ok) {
-      if (data.blocked) logoutUser("Account blocked by administrator.");
-      throw new Error(data.error || "Request failed");
-    }
+   if (!data.ok) {
+  if (data.blocked) logoutUser("Account blocked by administrator.");
+  throw new Error(data.error || "Request failed");
+}
     return data;
   }
 
@@ -475,14 +475,13 @@
     });
   }
 
-  function playAlbumTracks(albumName, tracks) {
-    if (!tracks.length) return;
-    state.activeAlbumName = albumName;
-    state.queue = state.shuffle ? shuffleArray(tracks) : [...tracks];
-    playSongAtIndex(0);
-    toast(`Playing Album: ${albumName} (${tracks.length} songs)`, "success");
-    document.querySelector('[data-view="nowPlayingView"]').click();
-  }
+  function updatePlayerBar(song, srcType) {
+  $("playerTitle").textContent = song.title;
+  $("playerArtist").textContent = `${song.artist} • ${song.cleanAlbum}`;
+  $("sourceTypeBadge").textContent = srcType;
+  $("playerFavBtn").classList.toggle("active", state.favorites.has(song.id));
+  ...
+}
 
   async function downloadAlbumOffline(albumName, tracks) {
     toast(`Downloading ${tracks.length} songs from "${albumName}"...`, "info");
