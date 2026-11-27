@@ -1,8 +1,8 @@
-/* AD Music v4.0.0 — Clean Player (No DJ PRO), Zero-Scroll UI, Fast Preload & Settings Hub */
+/* AD Music v4.0.1 — Embedded MP3 Cover Extractor, Centered Cover & Safe Cache */
 (() => {
   "use strict";
 
-  const APP_VERSION = "4.0.0";
+  const APP_VERSION = "4.0.1";
   const OFFLINE_CACHE_NAME = "ad-music-offline-audio-v1";
   const SONGS_CACHE_KEY = "admusic_cached_songs_v40";
   const CIRCUMFERENCE = 641;
@@ -40,6 +40,7 @@
     favorites: new Set(JSON.parse(localStorage.getItem("admusic_favorites") || "[]")),
     offlineIds: new Set(JSON.parse(localStorage.getItem("admusic_offline_ids") || "[]")),
     blobUrlCache: new Map(),
+    embeddedCoverCache: new Map(),
     currentSong: null,
     activeAlbumName: null,
     queue: [],
@@ -129,6 +130,104 @@
     return { type: "GD", driveId: id, streamUrl: gdDirect, proxyUrl, downloadUrl: gdDirect };
   }
 
+  // --- MP3 ID3v2 Embedded Cover Extractor (for MP3s without separate .webp) ---
+  function extractEmbeddedCoverFromBuffer(buffer) {
+    try {
+      const bytes = new Uint8Array(buffer);
+      if (bytes.length < 10 || bytes[0] !== 0x49 || bytes[1] !== 0x44 || bytes[2] !== 0x33) return null; // "ID3"
+
+      const ver = bytes[3];
+      const flags = bytes[5];
+      const tagSize = ((bytes[6] & 0x7f) << 21) | ((bytes[7] & 0x7f) << 14) | ((bytes[8] & 0x7f) << 7) | (bytes[9] & 0x7f);
+      let pos = 10;
+
+      // Skip extended header if present
+      if ((flags & 0x40) && pos + 4 <= bytes.length) {
+        const extSize = ver === 4
+          ? (((bytes[pos] & 0x7f) << 21) | ((bytes[pos + 1] & 0x7f) << 14) | ((bytes[pos + 2] & 0x7f) << 7) | (bytes[pos + 3] & 0x7f))
+          : ((bytes[pos] << 24) | (bytes[pos + 1] << 16) | (bytes[pos + 2] << 8) | bytes[pos + 3]);
+        pos += extSize;
+      }
+
+      const end = Math.min(bytes.length, 10 + tagSize);
+
+      while (pos + 10 <= end) {
+        const frameId = String.fromCharCode(bytes[pos], bytes[pos + 1], bytes[pos + 2], bytes[pos + 3]);
+        if (!/^[A-Z0-9]{4}$/.test(frameId)) break;
+
+        const frameSize = ver === 4
+          ? (((bytes[pos + 4] & 0x7f) << 21) | ((bytes[pos + 5] & 0x7f) << 14) | ((bytes[pos + 6] & 0x7f) << 7) | (bytes[pos + 7] & 0x7f))
+          : ((bytes[pos + 4] << 24) | (bytes[pos + 5] << 16) | (bytes[pos + 6] << 8) | bytes[pos + 7]);
+
+        if (frameSize <= 0 || pos + 10 + frameSize > end) break;
+
+        if (frameId === "APIC") {
+          let p = pos + 10;
+          const frameEnd = p + frameSize;
+          const encoding = bytes[p++];
+
+          let mimeEnd = p;
+          while (mimeEnd < frameEnd && bytes[mimeEnd] !== 0) mimeEnd++;
+          let mime = String.fromCharCode(...bytes.slice(p, mimeEnd)) || "image/jpeg";
+          if (mime === "image/jpg") mime = "image/jpeg";
+          p = mimeEnd + 1; // skip null
+          p++; // skip picture type byte
+
+          // Skip description string
+          if (encoding === 1 || encoding === 2) {
+            while (p + 1 < frameEnd && !(bytes[p] === 0 && bytes[p + 1] === 0)) p += 2;
+            p += 2;
+          } else {
+            while (p < frameEnd && bytes[p] !== 0) p++;
+            p++;
+          }
+
+          if (p < frameEnd) {
+            const imgBytes = bytes.slice(p, frameEnd);
+            return URL.createObjectURL(new Blob([imgBytes], { type: mime }));
+          }
+        }
+        pos += 10 + frameSize;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  async function resolveEmbeddedCoverForSong(song, blob) {
+    if (!song || !blob) return;
+    if (state.embeddedCoverCache.has(song.id)) return;
+
+    const headerSlice = blob.slice(0, Math.min(blob.size, 512 * 1024));
+    const buf = await headerSlice.arrayBuffer();
+    const extractedUrl = extractEmbeddedCoverFromBuffer(buf);
+
+    if (extractedUrl) {
+      state.embeddedCoverCache.set(song.id, extractedUrl);
+      song.resolvedCover = extractedUrl;
+      if (state.currentSong?.id === song.id) {
+        updatePlayerBar(song, song.resolved?.type || "GD");
+      }
+      renderAllViews();
+    }
+  }
+
+  async function probeEmbeddedCoverIfNeeded(song) {
+    if (!song || song.resolvedCover || state.embeddedCoverCache.has(song.id)) return;
+    const src = song.resolved || resolveAudioSource(song);
+    try {
+      if (src.type === "GD" && src.proxyUrl) {
+        const { blob } = await fetchGdProxyBlobUrl(src.proxyUrl, song.id);
+        if (blob) await resolveEmbeddedCoverForSong(song, blob);
+      } else if (src.streamUrl) {
+        const res = await fetch(src.streamUrl, { headers: { Range: "bytes=0-393215" } });
+        if (res.ok) {
+          const blob = await res.blob();
+          await resolveEmbeddedCoverForSong(song, blob);
+        }
+      }
+    } catch (_) {}
+  }
+
   function fetchGdProxyBlobUrl(proxyUrl, cacheKey = "") {
     if (cacheKey && state.blobUrlCache.has(cacheKey)) {
       return Promise.resolve({ blobUrl: state.blobUrlCache.get(cacheKey) });
@@ -209,9 +308,40 @@
     const { grad, initials } = getGradientForLabel(label);
     const fallback = `<div class="auto-cover-art" style="background:${grad}"><span>${escapeHtml(initials)}</span><small>♪</small></div>`;
     if (coverUrl) {
-      return `<img src="${escapeHtml(coverUrl)}" alt="" loading="lazy" onerror="this.remove()" />${fallback}`;
+      return `<img src="${escapeHtml(coverUrl)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.remove()" />${fallback}`;
     }
     return fallback;
+  }
+
+  // --- Center Cover Alignment Lock ---
+  function enforceCenterCoverStyles() {
+    const coverImg = $("playerCover");
+    const fallbackEl = $("coverFallback");
+    const sharedCenterStyle = {
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      width: "148px",
+      height: "148px",
+      borderRadius: "50%",
+      overflow: "hidden",
+      margin: "0"
+    };
+
+    if (coverImg) {
+      Object.assign(coverImg.style, sharedCenterStyle, {
+        objectFit: "cover",
+        objectPosition: "center center"
+      });
+    }
+    if (fallbackEl) {
+      Object.assign(fallbackEl.style, sharedCenterStyle, {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      });
+    }
   }
 
   // --- Audio, Equalizer & 400% Volume Booster ---
@@ -321,12 +451,16 @@
   }
 
   function hydrateSongs(rawList) {
-    const mapped = (rawList || []).map((s) => ({
-      ...s,
-      cleanAlbum: getCleanAlbumName(s),
-      resolvedCover: resolveCoverUrl(s.coverUrl || s.thumbnail || s.thumb || s.image),
-      resolved: resolveAudioSource(s)
-    }));
+    const mapped = (rawList || []).map((s) => {
+      const cachedEmbedded = state.embeddedCoverCache.get(s.id);
+      const externalCover = resolveCoverUrl(s.coverUrl || s.thumbnail || s.thumb || s.image);
+      return {
+        ...s,
+        cleanAlbum: getCleanAlbumName(s),
+        resolvedCover: cachedEmbedded || externalCover,
+        resolved: resolveAudioSource(s)
+      };
+    });
 
     const albumCoverMap = new Map();
     mapped.forEach((s) => {
@@ -349,6 +483,7 @@
         state.currentSong = first;
         state.currentIndex = 0;
         updatePlayerBar(first, first.resolved?.type || "GD");
+        if (!first.resolvedCover) probeEmbeddedCoverIfNeeded(first);
       } else {
         const refreshed = state.songs.find((x) => x.id === state.currentSong.id);
         if (refreshed) {
@@ -364,14 +499,12 @@
 
   function saveSongsCacheSafely(songList) {
     try {
-      // Purane version ke cache keys hata kar space khali karein
       Object.keys(localStorage).forEach((k) => {
         if (k.startsWith("admusic_cached_songs_") && k !== SONGS_CACHE_KEY) {
           localStorage.removeItem(k);
         }
       });
 
-      // Sirf compact fields save karein (5MB limit ke andar 3000+ songs aa jayenge)
       const compact = (songList || []).map((s) => ({
         id: s.id,
         title: s.title,
@@ -387,7 +520,6 @@
 
       localStorage.setItem(SONGS_CACHE_KEY, JSON.stringify(compact));
     } catch (e) {
-      // Agar storage phir bhi full ho toh purana cache clear karke aage badhein, crash na hone dein
       localStorage.removeItem(SONGS_CACHE_KEY);
     }
   }
@@ -629,7 +761,11 @@
     if (!nextSong) return;
     const src = nextSong.resolved || resolveAudioSource(nextSong);
     if (src.type === "GD" && src.proxyUrl && !state.blobUrlCache.has(nextSong.id)) {
-      fetchGdProxyBlobUrl(src.proxyUrl, nextSong.id).catch(() => {});
+      fetchGdProxyBlobUrl(src.proxyUrl, nextSong.id)
+        .then(({ blob }) => {
+          if (blob && !nextSong.resolvedCover) resolveEmbeddedCoverForSong(nextSong, blob);
+        })
+        .catch(() => {});
     }
   }
 
@@ -646,7 +782,11 @@
     if (state.offlineIds.has(song.id) && "caches" in window) {
       const cache = await caches.open(OFFLINE_CACHE_NAME);
       const match = await cache.match(src.streamUrl);
-      if (match) playableUrl = URL.createObjectURL(await match.blob());
+      if (match) {
+        const offlineBlob = await match.blob();
+        playableUrl = URL.createObjectURL(offlineBlob);
+        if (!song.resolvedCover) resolveEmbeddedCoverForSong(song, offlineBlob);
+      }
     }
 
     audio.crossOrigin = src.type === "CLOUD" ? "anonymous" : null;
@@ -659,11 +799,13 @@
     try {
       await audio.play();
       setPlayingVisuals(true);
+      if (!song.resolvedCover) probeEmbeddedCoverIfNeeded(song);
       preloadNextTrack();
     } catch (_) {
       if (src.proxyUrl && playableUrl !== src.proxyUrl) {
         try {
-          const { blobUrl } = await fetchGdProxyBlobUrl(src.proxyUrl, song.id);
+          const { blob, blobUrl } = await fetchGdProxyBlobUrl(src.proxyUrl, song.id);
+          if (blob && !song.resolvedCover) await resolveEmbeddedCoverForSong(song, blob);
           audio.crossOrigin = null;
           audio.src = blobUrl;
           applyMasterGain(currentMasterGain);
@@ -683,6 +825,7 @@
   }
 
   function updatePlayerBar(song, srcType) {
+    enforceCenterCoverStyles();
     if ($("playerTitle")) $("playerTitle").textContent = song.title;
     if ($("playerArtist")) $("playerArtist").textContent = `${song.artist} • ${song.cleanAlbum}`;
     if ($("sourceTypeBadge")) $("sourceTypeBadge").textContent = srcType;
@@ -690,11 +833,11 @@
 
     const coverImg = $("playerCover");
     const fallbackEl = $("coverFallback");
-    const thumbUrl = (song.resolvedCover || "").trim();
+    const thumbUrl = (state.embeddedCoverCache.get(song.id) || song.resolvedCover || "").trim();
     const { grad, initials } = getGradientForLabel(song.title);
 
     if (fallbackEl) {
-      fallbackEl.innerHTML = `<div class="center-auto-cover" style="background:${grad}"><span>${escapeHtml(initials)}</span></div>`;
+      fallbackEl.innerHTML = `<div class="center-auto-cover" style="background:${grad};width:100%;height:100%;display:flex;align-items:center;justify-content:center;border-radius:50%;"><span>${escapeHtml(initials)}</span></div>`;
     }
 
     if (thumbUrl && coverImg) {
@@ -705,6 +848,10 @@
       coverImg.onerror = () => {
         coverImg.classList.add("hidden");
         if (fallbackEl) fallbackEl.classList.remove("hidden");
+        if (!state.embeddedCoverCache.has(song.id)) {
+          song.resolvedCover = "";
+          probeEmbeddedCoverIfNeeded(song);
+        }
       };
       coverImg.src = thumbUrl;
     } else if (coverImg) {
@@ -757,6 +904,7 @@
       const cache = await caches.open(OFFLINE_CACHE_NAME);
       if (src.type === "GD" && src.proxyUrl) {
         const { blob } = await fetchGdProxyBlobUrl(src.proxyUrl, song.id);
+        if (blob && !song.resolvedCover) resolveEmbeddedCoverForSong(song, blob);
         await cache.put(src.streamUrl, new Response(blob, { headers: { "Content-Type": "audio/mpeg" } }));
       } else {
         const res = await fetch(src.downloadUrl);
@@ -1258,6 +1406,7 @@
   }
 
   function init() {
+    enforceCenterCoverStyles();
     applySettings();
     syncEqVisuals();
     bindEvents();
