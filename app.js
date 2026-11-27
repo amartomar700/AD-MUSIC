@@ -362,6 +362,36 @@
     renderAllViews();
   }
 
+  function saveSongsCacheSafely(songList) {
+    try {
+      // Purane version ke cache keys hata kar space khali karein
+      Object.keys(localStorage).forEach((k) => {
+        if (k.startsWith("admusic_cached_songs_") && k !== SONGS_CACHE_KEY) {
+          localStorage.removeItem(k);
+        }
+      });
+
+      // Sirf compact fields save karein (5MB limit ke andar 3000+ songs aa jayenge)
+      const compact = (songList || []).map((s) => ({
+        id: s.id,
+        title: s.title,
+        artist: s.artist,
+        album: s.album,
+        category: s.category,
+        sourceType: s.sourceType,
+        audioUrl: s.sourceType === "DRIVE" ? "" : s.audioUrl,
+        driveId: s.driveId,
+        coverUrl: s.coverUrl,
+        durationSec: s.durationSec
+      }));
+
+      localStorage.setItem(SONGS_CACHE_KEY, JSON.stringify(compact));
+    } catch (e) {
+      // Agar storage phir bhi full ho toh purana cache clear karke aage badhein, crash na hone dein
+      localStorage.removeItem(SONGS_CACHE_KEY);
+    }
+  }
+
   async function loadSongs(forceFresh = true, showToast = false) {
     if (!state.user) return;
 
@@ -375,7 +405,7 @@
 
     try {
       const data = await apiCall("getSongs");
-      localStorage.setItem(SONGS_CACHE_KEY, JSON.stringify(data.songs || []));
+      saveSongsCacheSafely(data.songs || []);
       state.radioStations = data.radioStations || [];
       hydrateSongs(data.songs || []);
       renderRadioStations();
