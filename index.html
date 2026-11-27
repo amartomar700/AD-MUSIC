@@ -44,12 +44,6 @@
     <span id="liveBannerText"></span>
   </div>
 
-  <!-- Update Banner -->
-  <div id="updateBanner" class="update-banner hidden">
-    <span>Update available (<strong id="remoteVersionText"></strong>)</span>
-    <button type="button" id="bannerUpdateNowBtn" class="neo-pill-btn">Update</button>
-  </div>
-
   <div class="app-shell">
     <!-- Clean Top Header (4 Tabs Only: Player, Tracks, EQ, Settings) -->
     <header class="app-header">
@@ -78,7 +72,7 @@
 
     <!-- VIEW 1: ZERO-SCROLL PLAYER -->
     <main id="nowPlayingView" class="view active">
-      <div class="player-card">
+      <div class="player-card" style="display:flex;flex-direction:column;justify-content:space-between;gap:8px;padding:12px 14px;box-sizing:border-box;">
         <div class="player-top-meta">
           <span id="sourceTypeBadge" class="hd-badge">GD</span>
           <span id="liveRadioBadge" class="radio-badge hidden">LIVE RADIO</span>
@@ -86,7 +80,7 @@
         </div>
 
         <!-- Circular Progress Dial + Active Track Cover -->
-        <div id="visualWrap" class="dial-wrap">
+        <div id="visualWrap" class="dial-wrap" style="margin:0 auto;">
           <svg class="dial-svg" viewBox="0 0 220 220">
             <circle class="dial-bg" cx="110" cy="110" r="102"></circle>
             <circle id="dialProgressCircle" class="dial-fg" cx="110" cy="110" r="102"></circle>
@@ -97,19 +91,19 @@
           </div>
         </div>
 
-        <div class="track-meta">
+        <div class="track-meta" style="margin:0;">
           <h2 id="playerTitle">Select a Track</h2>
           <p id="playerArtist" class="muted small">AD Music Library</p>
         </div>
 
-        <div class="seek-row">
+        <div class="seek-row" style="margin:0;">
           <span id="currentTimeLabel" class="time-txt">0:00</span>
           <input type="range" id="seekBar" class="neo-slider" min="0" max="100" step="0.1" value="0" />
           <span id="durationLabel" class="time-txt">0:00</span>
         </div>
 
         <!-- Main Transport + Custom logo.png Play Button -->
-        <div class="transport-row">
+        <div class="transport-row" style="margin:0;">
           <button type="button" id="prevBtn" class="ctrl-btn" title="Previous">⏮</button>
           <button type="button" id="rewind10Btn" class="ctrl-btn skip-txt" title="Rewind 10s">-10s</button>
           <button type="button" id="playPauseBtn" class="play-ad-btn" title="Play / Pause">
@@ -122,7 +116,7 @@
           <button type="button" id="nextBtn" class="ctrl-btn" title="Next">⏭</button>
         </div>
 
-        <div class="pill-action-row">
+        <div class="pill-action-row" style="margin:0;">
           <button type="button" id="shuffleBtn" class="neo-pill-btn active">🔀 Shuffle</button>
           <button type="button" id="playerFavBtn" class="neo-pill-btn">♡ Fav</button>
           <button type="button" id="downloadOfflineBtn" class="neo-pill-btn">⬇ Save</button>
@@ -130,12 +124,12 @@
           <button type="button" id="repeatBtn" class="neo-pill-btn">🔁 Loop</button>
         </div>
 
-        <!-- Volume (0% - 200%) + Integrated Turbo Toggle -->
-        <div class="vol-row">
-          <span>🔈</span>
-          <input type="range" id="masterVolume" class="neo-slider" min="0" max="2" step="0.05" value="1" />
-          <span id="volumeValue" class="vol-pct">100%</span>
-          <button type="button" id="turboBoostBtn" class="turbo-chip" title="Boost Volume up to 400%">🔥 400%</button>
+        <!-- Volume (0% - 200%) + Integrated Turbo Toggle (Always Visible) -->
+        <div class="vol-row" style="display:flex;align-items:center;gap:8px;width:100%;margin-top:2px;padding:6px 10px;border-radius:14px;background:rgba(255,255,255,0.03);box-sizing:border-box;flex-shrink:0;position:relative;z-index:5;">
+          <span style="font-size:14px;flex-shrink:0;">🔈</span>
+          <input type="range" id="masterVolume" class="neo-slider" style="flex:1;min-width:60px;" min="0" max="2" step="0.05" value="1" />
+          <span id="volumeValue" class="vol-pct" style="min-width:38px;text-align:right;font-size:12px;font-weight:700;flex-shrink:0;">100%</span>
+          <button type="button" id="turboBoostBtn" class="turbo-chip" style="padding:4px 8px;font-size:11px;white-space:nowrap;flex-shrink:0;" title="Boost Volume up to 400%">🔥 400%</button>
         </div>
       </div>
     </main>
@@ -151,12 +145,10 @@
           <button type="button" id="refreshLibraryBtn" class="neo-pill-btn">↻ Sync</button>
         </div>
 
-        <!-- Full Width Search Input (Category Dropdown Removed) -->
         <div style="width:100%;margin-bottom:6px;">
           <input type="text" id="searchInput" class="neo-input" style="width:100%;box-sizing:border-box;" placeholder="Search songs, artists, albums..." />
         </div>
 
-        <!-- 4 Visible Tabs Above Song List -->
         <div class="sub-tabs" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;min-height:38px;margin-bottom:10px;position:relative;z-index:5;overflow:visible;flex-shrink:0;">
           <button type="button" class="sub-tab active" data-lib-tab="allSongsPanel" style="height:36px;padding:0 6px;font-size:12px;white-space:nowrap;">All Track</button>
           <button type="button" class="sub-tab" data-lib-tab="albumsPanel" style="height:36px;padding:0 6px;font-size:12px;white-space:nowrap;">Albums</button>
@@ -284,11 +276,8 @@
             </div>
             <div class="inline-between">
               <span class="small muted">AD Music v4.1.0</span>
-              <button type="button" id="checkUpdatesBtn" class="neo-pill-btn">Check Updates</button>
+              <button type="button" id="settingsClearCacheBtn" class="neo-pill-btn danger-text">Clear Offline Cache</button>
             </div>
-            <p id="versionCheckStatus" class="muted small"></p>
-            <button type="button" id="updateNowBtn" class="neo-btn neo-btn-primary hidden">Install Update</button>
-            <button type="button" id="settingsClearCacheBtn" class="neo-btn danger-text">Clear Offline Cache</button>
           </div>
         </div>
 
