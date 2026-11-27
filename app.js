@@ -1,11 +1,11 @@
-/* AD Music v3.2.0 — Mobile-Fit Compact UI + Timing Circular Dial + 10s Skip + AD Play Logo */
+/* AD Music v3.3.0 — Clean Folder Albums, Auto-Generated Album Covers, Album Play & Offline Delete */
 (() => {
   "use strict";
 
-  const APP_VERSION = "3.2.0";
+  const APP_VERSION = "3.3.0";
   const OFFLINE_CACHE_NAME = "ad-music-offline-audio-v1";
   const SONGS_CACHE_KEY = "admusic_cached_songs_v3";
-  const CIRCUMFERENCE = 641; // 2 * Math.PI * 102
+  const CIRCUMFERENCE = 641;
   const API_URL = "https://script.google.com/macros/s/AKfycbwSr-j8h-BR8mgzU2c-9K0yuLokz7qcTAV8uxsW3ih8XLOADPCamdIg6OxIt7sNsZqQ/exec";
 
   const THEME_PRESETS = {
@@ -23,12 +23,22 @@
     club: [10, 4, 3, 9]
   };
 
+  const COVER_GRADIENTS = [
+    "linear-gradient(135deg, #ff3f82, #55d7ff)",
+    "linear-gradient(135deg, #00d285, #0984e3)",
+    "linear-gradient(135deg, #a855f7, #ec4899)",
+    "linear-gradient(135deg, #f59e0b, #ef4444)",
+    "linear-gradient(135deg, #06b6d4, #6366f1)",
+    "linear-gradient(135deg, #10b981, #f59e0b)"
+  ];
+
   const state = {
     user: JSON.parse(localStorage.getItem("admusic_user") || "null"),
     songs: [],
     favorites: new Set(JSON.parse(localStorage.getItem("admusic_favorites") || "[]")),
     offlineIds: new Set(JSON.parse(localStorage.getItem("admusic_offline_ids") || "[]")),
     currentSong: null,
+    activeAlbumName: null,
     queue: [],
     currentIndex: -1,
     isPlaying: false,
@@ -127,6 +137,31 @@
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   }
 
+  // Prevents double album names like "masti / masti" -> returns clean "masti"
+  function getCleanAlbumName(song) {
+    const cat = String(song.category || "").trim();
+    const alb = String(song.album || "").trim();
+    if (!alb && !cat) return "Singles";
+    if (!alb) return cat;
+    if (!cat || cat.toLowerCase() === alb.toLowerCase()) return alb;
+    return `${cat} — ${alb}`;
+  }
+
+  // Auto-generates unique gradient cover art from title/album name when no image exists
+  function autoCoverHtml(label, coverUrl) {
+    const clean = String(label || "AD").trim();
+    let hash = 0;
+    for (let i = 0; i < clean.length; i++) hash = clean.charCodeAt(i) + ((hash << 5) - hash);
+    const grad = COVER_GRADIENTS[Math.abs(hash) % COVER_GRADIENTS.length];
+    const initials = clean.split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase() || "AD";
+
+    const fallback = `<div class="auto-cover-art" style="background:${grad}"><span>${escapeHtml(initials)}</span><small>♪</small></div>`;
+    if (coverUrl) {
+      return `<img src="${escapeHtml(coverUrl)}" alt="" loading="lazy" onerror="this.remove()" />${fallback}`;
+    }
+    return fallback;
+  }
+
   // --- Audio & Equalizer ---
   const audio = new Audio();
   audio.preload = "metadata";
@@ -214,10 +249,11 @@
     if (msg) toast(msg, "error");
   }
 
-  // --- Instant Cache + Library Sync ---
+  // --- Instant Cache + Re-Sync ---
   function hydrateSongs(rawList) {
     state.songs = (rawList || []).map((s) => ({
       ...s,
+      cleanAlbum: getCleanAlbumName(s),
       resolvedCover: resolveCoverUrl(s.coverUrl),
       resolved: resolveAudioSource(s)
     }));
@@ -226,11 +262,16 @@
     populateDJSelectors();
   }
 
-  async function loadSongs() {
+  async function loadSongs(forceFresh = false) {
     if (!state.user) return;
-    const cached = localStorage.getItem(SONGS_CACHE_KEY);
-    if (cached && !state.songs.length) {
-      try { hydrateSongs(JSON.parse(cached)); } catch (_) {}
+    if (forceFresh) {
+      localStorage.removeItem(SONGS_CACHE_KEY);
+      toast("Re-syncing library from server...", "info");
+    } else {
+      const cached = localStorage.getItem(SONGS_CACHE_KEY);
+      if (cached && !state.songs.length) {
+        try { hydrateSongs(JSON.parse(cached)); } catch (_) {}
+      }
     }
 
     try {
@@ -248,6 +289,7 @@
         badge.textContent = data.pendingCount;
         badge.classList.toggle("hidden", data.pendingCount === 0);
       }
+      if (forceFresh) toast(`Synced ${state.songs.length} tracks!`, "success");
     } catch (err) {
       toast(err.message, "error");
     }
@@ -267,19 +309,12 @@
     const q = state.searchQuery.toLowerCase();
     return state.songs.filter((s) => {
       const catOk = state.selectedCategory === "ALL" || (s.category || "General") === state.selectedCategory;
-      const qOk = !q || [s.title, s.artist, s.album, s.category].some((f) => (f || "").toLowerCase().includes(q));
+      const qOk = !q || [s.title, s.artist, s.cleanAlbum, s.category].some((f) => (f || "").toLowerCase().includes(q));
       return catOk && qOk;
     });
   }
 
-  function thumbHtml(coverUrl) {
-    if (coverUrl) {
-      return `<img src="${escapeHtml(coverUrl)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><span class="ad-monogram" style="display:none">AD</span>`;
-    }
-    return `<span class="ad-monogram">AD</span>`;
-  }
-
-  function createSongRow(song, index, list) {
+  function createSongRow(song, index, list, isOfflineView = false) {
     const row = document.createElement("div");
     row.className = `song-row ${state.currentSong?.id === song.id ? "playing" : ""}`;
     const isFav = state.favorites.has(song.id);
@@ -287,21 +322,25 @@
     const srcType = song.resolved?.type || "GD";
 
     row.innerHTML = `
-      <div class="song-thumb">${thumbHtml(song.resolvedCover)}</div>
+      <div class="song-thumb">${autoCoverHtml(song.title, song.resolvedCover)}</div>
       <div class="song-info">
         <h4>${escapeHtml(song.title)}</h4>
-        <p>${escapeHtml(song.artist)} &bull; ${escapeHtml(song.album || "Singles")} &bull; ${formatTime(Number(song.durationSec || 0))}</p>
+        <p>${escapeHtml(song.artist)} &bull; ${escapeHtml(song.cleanAlbum)} &bull; ${formatTime(Number(song.durationSec || 0))}</p>
       </div>
       <div class="song-actions">
         <span class="hd-badge">${srcType}</span>
-        <button type="button" class="neo-pill-btn fav-btn">${isFav ? "❤️" : "♡"}</button>
-        <button type="button" class="neo-pill-btn dl-btn">${isOffline ? "✅" : "⬇️"}</button>
+        <button type="button" class="neo-pill-btn fav-btn" title="Favorite">${isFav ? "❤️" : "♡"}</button>
+        ${isOfflineView
+          ? `<button type="button" class="neo-pill-btn danger-text del-offline-btn" title="Delete Offline">🗑️</button>`
+          : `<button type="button" class="neo-pill-btn dl-btn" title="Download Offline">${isOffline ? "✅" : "⬇️"}</button>`
+        }
       </div>
     `;
 
     row.addEventListener("click", (e) => {
       if (e.target.closest(".fav-btn")) return toggleFavorite(song.id);
       if (e.target.closest(".dl-btn")) return downloadSongOffline(song);
+      if (e.target.closest(".del-offline-btn")) return removeSingleOfflineSong(song);
       state.queue = list;
       playSongAtIndex(index);
       document.querySelector('[data-view="nowPlayingView"]').click();
@@ -309,53 +348,109 @@
     return row;
   }
 
-  function renderSongCollection(containerId, list) {
+  function renderSongCollection(containerId, list, isOfflineView = false) {
     const box = $(containerId);
     box.innerHTML = list.length ? "" : `<p class="muted small">No tracks found.</p>`;
-    list.forEach((song, idx) => box.appendChild(createSongRow(song, idx, list)));
+    list.forEach((song, idx) => box.appendChild(createSongRow(song, idx, list, isOfflineView)));
   }
 
+  // Folder-Style Album List (Matches Screenshot 2 + Auto Thumbnail + Play Album + Download Album)
   function renderAlbums() {
     const grid = $("albumGrid");
     const songBox = $("albumSongList");
+    grid.className = "stack";
     grid.classList.remove("hidden");
     songBox.classList.add("hidden");
     $("backToAlbumsBtn").classList.add("hidden");
 
     const map = new Map();
     state.songs.forEach((s) => {
-      const key = `${s.category || "General"} / ${s.album || "Singles"}`;
+      const key = s.cleanAlbum;
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(s);
     });
 
     grid.innerHTML = map.size ? "" : `<p class="muted small">No albums available.</p>`;
-    map.forEach((tracks, folderName) => {
-      const card = document.createElement("div");
-      card.className = "album-card";
-      const cover = tracks.find((t) => t.resolvedCover)?.resolvedCover || "";
-      card.innerHTML = `
-        <div class="album-art">${thumbHtml(cover)}</div>
-        <h4>${escapeHtml(folderName)}</h4>
-        <p class="muted small">${tracks.length} track(s)</p>
+    map.forEach((tracks, albumName) => {
+      const row = document.createElement("div");
+      row.className = `album-list-row ${state.activeAlbumName === albumName ? "active-album" : ""}`;
+      // Pick first available cover inside this album's songs, or auto-generate from album name
+      const inheritedCover = tracks.find((t) => t.resolvedCover)?.resolvedCover || "";
+
+      row.innerHTML = `
+        <div class="album-row-thumb">${autoCoverHtml(albumName, inheritedCover)}</div>
+        <div class="album-row-info">
+          <h4>${escapeHtml(albumName)}</h4>
+          <p>${tracks.length} song(s)</p>
+        </div>
+        <div class="album-row-actions">
+          <button type="button" class="neo-pill-btn album-play-pill play-album-btn" title="Play Only This Album">▶ Play</button>
+          <button type="button" class="neo-pill-btn dl-album-btn" title="Download Album Offline">⬇️</button>
+        </div>
       `;
-      card.addEventListener("click", () => {
+
+      row.addEventListener("click", (e) => {
+        if (e.target.closest(".play-album-btn")) {
+          playAlbumTracks(albumName, tracks);
+          return;
+        }
+        if (e.target.closest(".dl-album-btn")) {
+          downloadAlbumOffline(albumName, tracks);
+          return;
+        }
+        // Open album tracks view with a Play Album header bar
         grid.classList.add("hidden");
         songBox.classList.remove("hidden");
         $("backToAlbumsBtn").classList.remove("hidden");
-        renderSongCollection("albumSongList", tracks);
+        songBox.innerHTML = `
+          <div class="album-list-row active-album">
+            <div class="album-row-thumb">${autoCoverHtml(albumName, inheritedCover)}</div>
+            <div class="album-row-info">
+              <h4>${escapeHtml(albumName)}</h4>
+              <p>Album Queue &bull; ${tracks.length} song(s)</p>
+            </div>
+            <div class="album-row-actions">
+              <button type="button" id="openAlbumPlayBtn" class="neo-pill-btn album-play-pill">▶ Play Album</button>
+              <button type="button" id="openAlbumDlBtn" class="neo-pill-btn">⬇️ Save All</button>
+            </div>
+          </div>
+        `;
+        $("openAlbumPlayBtn").onclick = () => playAlbumTracks(albumName, tracks);
+        $("openAlbumDlBtn").onclick = () => downloadAlbumOffline(albumName, tracks);
+        tracks.forEach((song, idx) => songBox.appendChild(createSongRow(song, idx, tracks, false)));
       });
-      grid.appendChild(card);
+
+      grid.appendChild(row);
     });
+  }
+
+  function playAlbumTracks(albumName, tracks) {
+    if (!tracks.length) return;
+    state.activeAlbumName = albumName;
+    state.queue = [...tracks]; // Locks playback strictly to this album's songs
+    playSongAtIndex(0);
+    toast(`Playing Album: ${albumName} (${tracks.length} songs)`, "success");
+    document.querySelector('[data-view="nowPlayingView"]').click();
+  }
+
+  async function downloadAlbumOffline(albumName, tracks) {
+    toast(`Downloading ${tracks.length} songs from "${albumName}"...`, "info");
+    for (const song of tracks) {
+      if (!state.offlineIds.has(song.id)) {
+        await downloadSongOffline(song, true);
+      }
+    }
+    renderAllViews();
+    toast(`Album "${albumName}" saved offline!`, "success");
   }
 
   function renderAllViews() {
     const filtered = getFilteredSongs();
     $("libraryStats").textContent = `${filtered.length} approved track(s) • Cloud + GD`;
-    $("offlineStats").textContent = `${state.offlineIds.size} track(s) cached offline`;
-    renderSongCollection("songList", filtered);
-    renderSongCollection("favoritesList", state.songs.filter((s) => state.favorites.has(s.id)));
-    renderSongCollection("offlineList", state.songs.filter((s) => state.offlineIds.has(s.id)));
+    $("offlineStats").textContent = `${state.offlineIds.size} track(s) saved offline`;
+    renderSongCollection("songList", filtered, false);
+    renderSongCollection("favoritesList", state.songs.filter((s) => state.favorites.has(s.id)), false);
+    renderSongCollection("offlineList", state.songs.filter((s) => state.offlineIds.has(s.id)), true);
     renderAlbums();
   }
 
@@ -413,7 +508,7 @@
 
   function updatePlayerBar(song, srcType) {
     $("playerTitle").textContent = song.title;
-    $("playerArtist").textContent = `${song.artist} • ${song.album || "Singles"}`;
+    $("playerArtist").textContent = `${song.artist} • ${song.cleanAlbum}`;
     $("sourceTypeBadge").textContent = srcType;
     $("playerFavBtn").classList.toggle("active", state.favorites.has(song.id));
 
@@ -450,10 +545,10 @@
     renderAllViews();
   }
 
-  async function downloadSongOffline(song) {
+  async function downloadSongOffline(song, silent = false) {
     const src = song.resolved || resolveAudioSource(song);
     try {
-      toast(`Saving "${song.title}" offline...`);
+      if (!silent) toast(`Saving "${song.title}" offline...`);
       const cache = await caches.open(OFFLINE_CACHE_NAME);
       if (src.type === "GD" && src.proxyUrl) {
         const { blob } = await fetchGdProxyBlobUrl(src.proxyUrl);
@@ -464,11 +559,25 @@
       }
       state.offlineIds.add(song.id);
       localStorage.setItem("admusic_offline_ids", JSON.stringify([...state.offlineIds]));
-      renderAllViews();
-      toast(`Saved "${song.title}" offline!`, "success");
+      if (!silent) {
+        renderAllViews();
+        toast(`Saved "${song.title}" offline!`, "success");
+      }
     } catch (err) {
-      toast("Offline save failed: " + err.message, "error");
+      if (!silent) toast("Offline save failed: " + err.message, "error");
     }
+  }
+
+  async function removeSingleOfflineSong(song) {
+    const src = song.resolved || resolveAudioSource(song);
+    if ("caches" in window) {
+      const cache = await caches.open(OFFLINE_CACHE_NAME);
+      await cache.delete(src.streamUrl);
+    }
+    state.offlineIds.delete(song.id);
+    localStorage.setItem("admusic_offline_ids", JSON.stringify([...state.offlineIds]));
+    renderAllViews();
+    toast(`Removed "${song.title}" from offline.`, "info");
   }
 
   async function clearOfflineCache() {
@@ -476,7 +585,7 @@
     state.offlineIds.clear();
     localStorage.setItem("admusic_offline_ids", "[]");
     renderAllViews();
-    toast("Offline cache cleared.", "success");
+    toast("All offline songs deleted.", "success");
   }
 
   // --- Equalizer ---
@@ -611,7 +720,7 @@
       item.innerHTML = `
         <div>
           <strong>${escapeHtml(s.title)}</strong>
-          <div class="muted small">${escapeHtml(s.artist)} • ${escapeHtml(s.category)}/${escapeHtml(s.album)} • ${s.durationSec}s</div>
+          <div class="muted small">${escapeHtml(s.artist)} • ${escapeHtml(getCleanAlbumName(s))} • ${s.durationSec}s</div>
         </div>
         <div class="inline-row">
           <button type="button" class="neo-btn neo-btn-primary approve-btn">Approve</button>
@@ -622,7 +731,7 @@
         await apiCall("reviewSong", { songId: s.id, decision: "Approved" });
         toast("Song approved!", "success");
         loadAdminData();
-        loadSongs();
+        loadSongs(true);
       };
       item.querySelector(".reject-btn").onclick = async () => {
         await apiCall("reviewSong", { songId: s.id, decision: "Rejected" });
@@ -784,7 +893,7 @@
         state.user = res.user;
         localStorage.setItem("admusic_user", JSON.stringify(state.user));
         renderAuthState();
-        loadSongs();
+        loadSongs(true);
         toast(`Welcome back, ${state.user.name}!`, "success");
       } catch (err) {
         toast(err.message, "error");
@@ -802,7 +911,7 @@
         state.user = res.user;
         localStorage.setItem("admusic_user", JSON.stringify(state.user));
         renderAuthState();
-        loadSongs();
+        loadSongs(true);
         toast("Account created!", "success");
       } catch (err) {
         toast(err.message, "error");
@@ -811,7 +920,7 @@
 
     $("searchInput").oninput = (e) => { state.searchQuery = e.target.value; renderAllViews(); };
     $("categoryFilter").onchange = (e) => { state.selectedCategory = e.target.value; renderAllViews(); };
-    $("refreshLibraryBtn").onclick = () => { localStorage.removeItem(SONGS_CACHE_KEY); loadSongs(); };
+    $("refreshLibraryBtn").onclick = () => loadSongs(true);
     $("backToAlbumsBtn").onclick = renderAlbums;
 
     $("playPauseBtn").onclick = async () => {
@@ -850,6 +959,7 @@
       $("liveRadioBtn").classList.toggle("active", state.liveRadio);
       $("liveRadioBadge").classList.toggle("hidden", !state.liveRadio);
       if (state.liveRadio && !state.isPlaying && state.songs.length) {
+        state.activeAlbumName = null;
         state.queue = state.songs;
         playSongAtIndex(Math.floor(Math.random() * state.songs.length));
       }
@@ -863,7 +973,6 @@
       if (Number.isFinite(audio.duration)) audio.currentTime = (Number(e.target.value) / 100) * audio.duration;
     };
 
-    // Update both Seek Bar & Timing Circular Progress Ring
     audio.ontimeupdate = () => {
       if (!Number.isFinite(audio.duration) || audio.duration <= 0) return;
       const pct = (audio.currentTime / audio.duration) * 100;
@@ -1004,7 +1113,7 @@
     };
 
     // Admin & Settings Customization
-    $("adminRefreshBtn").onclick = loadAdminData;
+    $("adminRefreshBtn").onclick = () => { loadAdminData(); loadSongs(true); };
     $("createCodeForm").onsubmit = async (e) => {
       e.preventDefault();
       try {
@@ -1047,7 +1156,7 @@
     renderAuthState();
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
     if (state.user) {
-      loadSongs();
+      loadSongs(false);
       checkUpdates();
     }
   }
