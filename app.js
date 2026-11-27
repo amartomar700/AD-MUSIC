@@ -1,23 +1,20 @@
-/* AD Music v2.0.0 — Hybrid Cloud (R2 + Drive), Pro DJ, EQ, Offline Cache, Auth & Admin */
+/* AD Music v3.0.0 — Neumorphic Studio UI, Direct Phone/PC Upload, Pro EQ & DJ Lock/Unlock */
 (() => {
   "use strict";
 
-  const APP_VERSION = "2.0.0";
+  const APP_VERSION = "3.0.0";
   const OFFLINE_CACHE_NAME = "ad-music-offline-audio-v1";
-  const HARDCODED_API_URL = "https://script.google.com/macros/s/AKfycbwSr-j8h-BR8mgzU2c-9K0yuLokz7qcTAV8uxsW3ih8XLOADPCamdIg6OxIt7sNsZqQ/exec";
-  const DEFAULT_API_URL = localStorage.getItem("admusic_api_url") || HARDCODED_API_URL;
+  const API_URL = "https://script.google.com/macros/s/AKfycbwSr-j8h-BR8mgzU2c-9K0yuLokz7qcTAV8uxsW3ih8XLOADPCamdIg6OxIt7sNsZqQ/exec";
 
   const EQ_PRESETS = {
-    flat: [0, 0, 0, 0, 0],
-    bass: [7, 4, 0, -1, 0],
-    vocal: [-2, 1, 5, 4, 1],
-    club: [6, 3, -1, 3, 5],
-    rock: [5, 2, -1, 3, 5],
-    treble: [0, 0, 1, 5, 8]
+    normal: [2, 11, 18, 8],
+    classic: [4, 2, -1, 4],
+    flat: [0, 0, 0, 0],
+    bass: [12, 5, 0, 2],
+    club: [10, 4, 3, 9]
   };
 
   const state = {
-    apiUrl: DEFAULT_API_URL,
     user: JSON.parse(localStorage.getItem("admusic_user") || "null"),
     songs: [],
     favorites: new Set(JSON.parse(localStorage.getItem("admusic_favorites") || "[]")),
@@ -33,13 +30,11 @@
     searchQuery: "",
     settings: JSON.parse(localStorage.getItem("admusic_settings") || JSON.stringify({
       theme: "dark",
-      accent: "#6c5ce7",
-      crossfade: 2,
+      accent: "#00d285",
       visualizer: "on"
     }))
   };
 
-  // --- DOM Helpers ---
   const $ = (id) => document.getElementById(id);
 
   function escapeHtml(str) {
@@ -58,7 +53,7 @@
     setTimeout(() => el.remove(), 3500);
   }
 
-  // --- Hybrid Source Resolver (Cloudflare R2 Direct vs Google Drive) ---
+  // --- Hybrid Source Resolver (Cloud vs GD) ---
   function extractDriveId(input) {
     if (!input) return null;
     const raw = input.trim();
@@ -80,58 +75,42 @@
     const explicitType = (song.sourceType || "").toUpperCase();
     const driveId = extractDriveId(rawUrl) || (song.driveId ? song.driveId.trim() : null);
 
-    // Direct R2 / HTTP audio links skip Drive ID conversion
-    if (explicitType === "R2" || (!driveId && /^https?:\/\//i.test(rawUrl))) {
+    if (explicitType === "R2" || (!driveId && /^https?:\/\//i.test(rawUrl) && !rawUrl.includes("google.com"))) {
       return {
-        type: "R2",
+        type: "CLOUD",
         streamUrl: rawUrl,
         downloadUrl: rawUrl
       };
     }
 
-    // Google Drive direct stream + Apps Script Base64 proxy fallback
     const id = driveId || rawUrl;
-    const driveDirect = `https://drive.usercontent.google.com/download?id=${encodeURIComponent(id)}&export=download&confirm=t`;
-    const proxyUrl = state.apiUrl
-      ? `${state.apiUrl}?action=stream&id=${encodeURIComponent(id)}`
-      : driveDirect;
+    const gdDirect = `https://drive.usercontent.google.com/download?id=${encodeURIComponent(id)}&export=download&confirm=t`;
+    const proxyUrl = `${API_URL}?action=stream&id=${encodeURIComponent(id)}`;
 
     return {
-      type: "DRIVE",
+      type: "GD",
       driveId: id,
-      streamUrl: driveDirect,
+      streamUrl: gdDirect,
       proxyUrl,
-      downloadUrl: driveDirect
+      downloadUrl: gdDirect
     };
   }
 
-  // Converts Apps Script Base64 stream response into a playable Audio Blob URL
-  async function fetchDriveProxyBlobUrl(proxyUrl) {
+  async function fetchGdProxyBlobUrl(proxyUrl) {
     const res = await fetch(proxyUrl);
     const text = await res.text();
     if (!text || text.trim().startsWith("{")) {
-      let errMsg = "Drive file inaccessible";
-      try {
-        const parsed = JSON.parse(text);
-        if (parsed.error) errMsg = parsed.error;
-      } catch (_) {}
-      throw new Error(errMsg);
+      throw new Error("GD audio stream unavailable");
     }
     const byteChars = atob(text.trim());
     const byteNums = new Array(byteChars.length);
-    for (let i = 0; i < byteChars.length; i++) {
-      byteNums[i] = byteChars.charCodeAt(i);
-    }
+    for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
     const blob = new Blob([new Uint8Array(byteNums)], { type: "audio/mpeg" });
     return { blob, blobUrl: URL.createObjectURL(blob) };
   }
 
   function normalizeTitle(title) {
-    return (title || "")
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
+    return (title || "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
   }
 
   function formatTime(sec) {
@@ -141,13 +120,15 @@
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   }
 
-  // --- Primary Audio + Web Audio EQ Engine ---
+  // --- Main Audio + 6-Node Equalizer (4 Bands + Bass/Treble Knobs) ---
   const audio = new Audio();
   audio.preload = "metadata";
   let audioCtx = null;
   let sourceNode = null;
   let analyser = null;
-  let eqFilters = [];
+  let bandFilters = [];
+  let bassFilter = null;
+  let trebleFilter = null;
   let webAudioReady = false;
 
   function initWebAudioForMain() {
@@ -159,79 +140,99 @@
       analyser = audioCtx.createAnalyser();
       analyser.fftSize = 64;
 
-      const freqs = [100, 350, 1000, 3500, 10000];
-      eqFilters = freqs.map((freq, idx) => {
-        const filter = audioCtx.createBiquadFilter();
-        filter.type = idx === 0 ? "lowshelf" : idx === freqs.length - 1 ? "highshelf" : "peaking";
-        filter.frequency.value = freq;
-        filter.Q.value = 1.0;
-        filter.gain.value = 0;
-        return filter;
+      const freqs = [230, 910, 3600, 14000];
+      bandFilters = freqs.map((freq, idx) => {
+        const f = audioCtx.createBiquadFilter();
+        f.type = "peaking";
+        f.frequency.value = freq;
+        f.Q.value = 1.1;
+        f.gain.value = Number($(`eqBand${idx}`).value);
+        return f;
       });
 
-      sourceNode.connect(eqFilters[0]);
-      for (let i = 0; i < eqFilters.length - 1; i++) {
-        eqFilters[i].connect(eqFilters[i + 1]);
+      bassFilter = audioCtx.createBiquadFilter();
+      bassFilter.type = "lowshelf";
+      bassFilter.frequency.value = 120;
+      bassFilter.gain.value = Number($("eqBassKnob").value);
+
+      trebleFilter = audioCtx.createBiquadFilter();
+      trebleFilter.type = "highshelf";
+      trebleFilter.frequency.value = 8000;
+      trebleFilter.gain.value = Number($("eqTrebleKnob").value);
+
+      sourceNode.connect(bassFilter);
+      bassFilter.connect(bandFilters[0]);
+      for (let i = 0; i < bandFilters.length - 1; i++) {
+        bandFilters[i].connect(bandFilters[i + 1]);
       }
-      eqFilters[eqFilters.length - 1].connect(analyser);
+      bandFilters[bandFilters.length - 1].connect(trebleFilter);
+      trebleFilter.connect(analyser);
       analyser.connect(audioCtx.destination);
       webAudioReady = true;
-      drawVisualizer();
+      drawSpiralVisualizer();
     } catch (err) {
-      console.warn("Web Audio EQ unavailable, using native playback:", err);
+      console.warn("Web Audio EQ fallback:", err);
     }
   }
 
-  function drawVisualizer() {
+  function drawSpiralVisualizer() {
     const canvas = $("visualizerCanvas");
     const ctx = canvas.getContext("2d");
+    let phase = 0;
+
     const render = () => {
       requestAnimationFrame(render);
-      if (state.settings.visualizer === "off" || !analyser || !state.isPlaying) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        return;
-      }
-      canvas.width = canvas.clientWidth || 400;
-      const data = new Uint8Array(analyser.frequencyBinCount);
-      analyser.getByteFrequencyData(data);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const barW = canvas.width / data.length;
-      data.forEach((val, i) => {
-        const h = (val / 255) * canvas.height;
-        ctx.fillStyle = i % 2 === 0 ? state.settings.accent : "#00cec9";
-        ctx.fillRect(i * barW + 2, canvas.height - h, Math.max(2, barW - 4), h);
-      });
+      if (state.settings.visualizer === "off") return;
+
+      let energy = 0.15;
+      if (analyser && state.isPlaying) {
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(data);
+        const sum = data.reduce((a, b) => a + b, 0);
+        energy = Math.max(0.2, sum / (data.length * 180));
+      }
+
+      phase += state.isPlaying ? 0.045 : 0.008;
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+
+      for (let ring = 0; ring < 5; ring++) {
+        ctx.beginPath();
+        ctx.strokeStyle = state.settings.accent;
+        ctx.globalAlpha = 0.22 + ring * 0.1;
+        ctx.lineWidth = 1.4;
+        const r = 52 + ring * 6 + Math.sin(phase + ring) * (8 * energy);
+        ctx.ellipse(cx, cy, r, r * 0.86, phase + ring * 0.4, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
     };
     render();
   }
 
-  // --- API Client (Apps Script JSON POST via text/plain to avoid CORS preflight) ---
+  // --- API Helper ---
   async function apiCall(action, payload = {}) {
-    if (!state.apiUrl) {
-      throw new Error("Backend Web App URL is not configured in Settings.");
-    }
     const body = JSON.stringify({
       action,
       token: state.user?.token || "",
       userId: state.user?.id || "",
       ...payload
     });
-    const res = await fetch(state.apiUrl, {
+    const res = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body
     });
     const data = await res.json();
     if (!data.ok) {
-      if (data.blocked) {
-        logoutUser("Your account has been blocked by an administrator.");
-      }
+      if (data.blocked) logoutUser("Your account has been blocked by an administrator.");
       throw new Error(data.error || "Request failed");
     }
     return data;
   }
 
-  // --- Auth & Session ---
+  // --- Auth & DJ PRO Lock State ---
   function renderAuthState() {
     if (!state.user) {
       $("authOverlay").classList.remove("hidden");
@@ -241,60 +242,63 @@
     $("userDisplayName").textContent = state.user.name || state.user.email;
     $("roleBadge").textContent = (state.user.role || "user").toUpperCase();
     $("adminNavBtn").classList.toggle("hidden", state.user.role !== "admin");
+    updateDjLockState();
+  }
+
+  function updateDjLockState() {
+    const unlocked = state.user?.role === "admin" || Boolean(state.user?.djUnlocked);
+    $("djLockIcon").textContent = unlocked ? "🔓" : "🔒";
+    $("djLockedPanel").classList.toggle("hidden", unlocked);
+    $("djStudioPanel").classList.toggle("hidden", !unlocked);
   }
 
   function logoutUser(msg) {
     state.user = null;
     localStorage.removeItem("admusic_user");
     audio.pause();
-    state.isPlaying = false;
-    $("playPauseBtn").textContent = "▶";
+    setPlayingVisuals(false);
     renderAuthState();
     if (msg) toast(msg, "error");
   }
 
-  // --- Library Loading & Filtering ---
+  // --- Library ---
   async function loadSongs() {
-    if (!state.apiUrl || !state.user) return;
+    if (!state.user) return;
     try {
       const data = await apiCall("getSongs");
       state.songs = (data.songs || []).map((s) => ({
         ...s,
         resolved: resolveAudioSource(s)
       }));
+
+      if (typeof data.djUnlocked === "boolean") {
+        state.user.djUnlocked = data.djUnlocked;
+        localStorage.setItem("admusic_user", JSON.stringify(state.user));
+        updateDjLockState();
+      }
+
       if (typeof data.pendingCount === "number" && state.user.role === "admin") {
         const badge = $("pendingBadge");
         badge.textContent = data.pendingCount;
         badge.classList.toggle("hidden", data.pendingCount === 0);
       }
+
       populateCategories();
       renderAllViews();
       populateDJSelectors();
-      handleDeepLinkSong();
     } catch (err) {
       toast(err.message, "error");
     }
   }
 
-  function handleDeepLinkSong() {
-    const songId = new URLSearchParams(window.location.search).get("song");
-    if (!songId || state.currentSong) return;
-    const list = getFilteredSongs();
-    const idx = list.findIndex((s) => s.id === songId);
-    if (idx !== -1) {
-      state.queue = list;
-      state.currentIndex = idx;
-      state.currentSong = list[idx];
-      updatePlayerBar(list[idx], list[idx].resolved?.type || "R2");
-    }
-  }
-
   function populateCategories() {
     const sel = $("categoryFilter");
+    const datalist = $("categorySuggestions");
     const cats = [...new Set(state.songs.map((s) => s.category || "General"))].sort();
     sel.innerHTML = `<option value="ALL">All Categories</option>` +
       cats.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
     sel.value = state.selectedCategory;
+    datalist.innerHTML = cats.map((c) => `<option value="${escapeHtml(c)}">`).join("");
   }
 
   function getFilteredSongs() {
@@ -311,43 +315,34 @@
     row.className = `song-row ${state.currentSong?.id === song.id ? "playing" : ""}`;
     const isFav = state.favorites.has(song.id);
     const isOffline = state.offlineIds.has(song.id);
-    const srcType = song.resolved?.type || "R2";
+    const srcType = song.resolved?.type || "GD";
 
     row.innerHTML = `
-      <div class="song-thumb">${song.coverUrl ? `<img src="${escapeHtml(song.coverUrl)}" alt="" style="width:100%;height:100%;object-fit:cover">` : "🎵"}</div>
+      <div class="song-thumb">${song.coverUrl ? `<img src="${escapeHtml(song.coverUrl)}" alt="" style="width:100%;height:100%;object-fit:cover">` : `<img src="logo.png" alt="" style="width:28px;height:28px;border-radius:50%">`}</div>
       <div class="song-info">
         <h4>${escapeHtml(song.title)}</h4>
         <p>${escapeHtml(song.artist)} &bull; ${escapeHtml(song.album || "Singles")} &bull; ${formatTime(Number(song.durationSec || 0))}</p>
       </div>
       <div class="song-actions">
-        <span class="source-pill ${srcType === "DRIVE" ? "drive" : ""}">${srcType}</span>
-        <button type="button" class="icon-btn fav-btn" title="Favorite">${isFav ? "❤️" : "♡"}</button>
-        <button type="button" class="icon-btn dl-btn" title="Offline">${isOffline ? "✅" : "⬇️"}</button>
+        <span class="source-pill ${srcType === "GD" ? "drive" : ""}">${srcType}</span>
+        <button type="button" class="neo-pill-btn fav-btn">${isFav ? "❤️" : "♡"}</button>
+        <button type="button" class="neo-pill-btn dl-btn">${isOffline ? "✅" : "⬇️"}</button>
       </div>
     `;
 
     row.addEventListener("click", (e) => {
-      if (e.target.closest(".fav-btn")) {
-        toggleFavorite(song.id);
-        return;
-      }
-      if (e.target.closest(".dl-btn")) {
-        downloadSongOffline(song);
-        return;
-      }
+      if (e.target.closest(".fav-btn")) return toggleFavorite(song.id);
+      if (e.target.closest(".dl-btn")) return downloadSongOffline(song);
       state.queue = list;
       playSongAtIndex(index);
+      document.querySelector('[data-view="nowPlayingView"]').click();
     });
     return row;
   }
 
   function renderSongCollection(containerId, list) {
     const box = $(containerId);
-    box.innerHTML = "";
-    if (!list.length) {
-      box.innerHTML = `<p class="muted small">No tracks found.</p>`;
-      return;
-    }
+    box.innerHTML = list.length ? "" : `<p class="muted small">No tracks found.</p>`;
     list.forEach((song, idx) => box.appendChild(createSongRow(song, idx, list)));
   }
 
@@ -365,18 +360,12 @@
       map.get(key).push(s);
     });
 
-    grid.innerHTML = "";
-    if (!map.size) {
-      grid.innerHTML = `<p class="muted small">No albums available.</p>`;
-      return;
-    }
-
+    grid.innerHTML = map.size ? "" : `<p class="muted small">No albums available.</p>`;
     map.forEach((tracks, folderName) => {
       const card = document.createElement("div");
       card.className = "album-card";
-      const cover = tracks.find((t) => t.coverUrl)?.coverUrl;
       card.innerHTML = `
-        <div class="album-art">${cover ? `<img src="${escapeHtml(cover)}" alt="">` : "📁"}</div>
+        <div class="album-art">📁</div>
         <h4>${escapeHtml(folderName)}</h4>
         <p class="muted small">${tracks.length} track(s)</p>
       `;
@@ -392,15 +381,22 @@
 
   function renderAllViews() {
     const filtered = getFilteredSongs();
-    $("libraryStats").textContent = `${filtered.length} approved track(s) • Hybrid R2 + Drive`;
-    $("offlineStats").textContent = `${state.offlineIds.size} track(s) cached locally`;
+    $("libraryStats").textContent = `${filtered.length} approved track(s) • Cloud + GD`;
+    $("offlineStats").textContent = `${state.offlineIds.size} track(s) cached offline`;
     renderSongCollection("songList", filtered);
     renderSongCollection("favoritesList", state.songs.filter((s) => state.favorites.has(s.id)));
     renderSongCollection("offlineList", state.songs.filter((s) => state.offlineIds.has(s.id)));
     renderAlbums();
   }
 
-  // --- Playback ---
+  // --- Playback & Glowing Dial Progress ---
+  function setPlayingVisuals(playing) {
+    state.isPlaying = playing;
+    $("playPauseIcon").textContent = playing ? "⏸" : "▶";
+    $("playPauseBtn").classList.toggle("is-playing", playing);
+    $("playerCover").classList.toggle("spinning", playing);
+  }
+
   async function playSongAtIndex(index) {
     if (!state.queue.length) return;
     const safeIdx = ((index % state.queue.length) + state.queue.length) % state.queue.length;
@@ -414,85 +410,50 @@
     if (state.offlineIds.has(song.id) && "caches" in window) {
       const cache = await caches.open(OFFLINE_CACHE_NAME);
       const match = await cache.match(src.streamUrl);
-      if (match) {
-        const blob = await match.blob();
-        playableUrl = URL.createObjectURL(blob);
-      }
+      if (match) playableUrl = URL.createObjectURL(await match.blob());
     }
 
-    audio.crossOrigin = src.type === "R2" ? "anonymous" : null;
+    audio.crossOrigin = src.type === "CLOUD" ? "anonymous" : null;
     audio.src = playableUrl;
     audio.volume = Number($("masterVolume").value);
 
     initWebAudioForMain();
-    if (audioCtx && audioCtx.state === "suspended") {
-      await audioCtx.resume();
-    }
+    if (audioCtx && audioCtx.state === "suspended") await audioCtx.resume();
 
     try {
       await audio.play();
-      state.isPlaying = true;
-    } catch (err) {
-      if (audio.crossOrigin) {
-        audio.crossOrigin = null;
-        audio.src = playableUrl;
+      setPlayingVisuals(true);
+    } catch (_) {
+      if (src.proxyUrl && playableUrl !== src.proxyUrl) {
         try {
-          await audio.play();
-          state.isPlaying = true;
-        } catch (_) {}
-      }
-
-      if (!state.isPlaying && src.proxyUrl && playableUrl !== src.proxyUrl) {
-        try {
-          toast("Loading via Drive stream proxy...", "info");
-          const { blobUrl } = await fetchDriveProxyBlobUrl(src.proxyUrl);
+          const { blobUrl } = await fetchGdProxyBlobUrl(src.proxyUrl);
           audio.crossOrigin = null;
           audio.src = blobUrl;
           await audio.play();
-          state.isPlaying = true;
-        } catch (proxyErr) {
-          toast("Unable to play audio source: " + proxyErr.message, "error");
+          setPlayingVisuals(true);
+        } catch (err) {
+          toast("Unable to play audio: " + err.message, "error");
         }
-      } else if (!state.isPlaying) {
-        toast("Playback failed: " + err.message, "error");
       }
     }
 
     updatePlayerBar(song, src.type);
     renderAllViews();
-    updateUrlHash(song.id);
   }
 
   function updatePlayerBar(song, srcType) {
     $("playerTitle").textContent = song.title;
     $("playerArtist").textContent = `${song.artist} • ${song.album || "Singles"}`;
     $("sourceTypeBadge").textContent = srcType;
-    $("sourceTypeBadge").className = `source-pill ${srcType === "DRIVE" ? "drive" : ""}`;
-    $("playPauseBtn").textContent = state.isPlaying ? "⏸" : "▶";
-    $("playerFavBtn").textContent = state.favorites.has(song.id) ? "❤️" : "♡";
-
-    if (song.coverUrl) {
-      $("playerCover").src = song.coverUrl;
-      $("playerCover").classList.remove("hidden");
-      $("playerCoverFallback").classList.add("hidden");
-    } else {
-      $("playerCover").classList.add("hidden");
-      $("playerCoverFallback").classList.remove("hidden");
-    }
-  }
-
-  function updateUrlHash(songId) {
-    const url = new URL(window.location.href);
-    url.searchParams.set("song", songId);
-    window.history.replaceState({}, "", url.toString());
+    $("sourceTypeBadge").className = `source-pill ${srcType === "GD" ? "drive" : ""}`;
+    $("playerFavBtn").textContent = state.favorites.has(song.id) ? "❤️ Favorited" : "♡ Favorite";
+    $("playerCover").src = song.coverUrl || "logo.png";
   }
 
   function nextTrack() {
     if (!state.queue.length) return;
     if (state.shuffle || state.liveRadio) {
-      const nextIdx = Math.floor(Math.random() * state.queue.length);
-      playSongAtIndex(nextIdx);
-      return;
+      return playSongAtIndex(Math.floor(Math.random() * state.queue.length));
     }
     playSongAtIndex(state.currentIndex + 1);
   }
@@ -502,32 +463,27 @@
     playSongAtIndex(state.currentIndex - 1);
   }
 
-  // --- Favorites & Offline Cache ---
+  // --- Favorites & Offline ---
   function toggleFavorite(songId) {
     if (state.favorites.has(songId)) state.favorites.delete(songId);
     else state.favorites.add(songId);
     localStorage.setItem("admusic_favorites", JSON.stringify([...state.favorites]));
     if (state.currentSong?.id === songId) {
-      $("playerFavBtn").textContent = state.favorites.has(songId) ? "❤️" : "♡";
+      $("playerFavBtn").textContent = state.favorites.has(songId) ? "❤️ Favorited" : "♡ Favorite";
     }
     renderAllViews();
   }
 
   async function downloadSongOffline(song) {
     const src = song.resolved || resolveAudioSource(song);
-    if (!("caches" in window)) {
-      toast("Offline Cache API not supported in this browser.", "error");
-      return;
-    }
     try {
-      toast(`Caching "${song.title}" for offline use...`);
+      toast(`Saving "${song.title}" offline...`);
       const cache = await caches.open(OFFLINE_CACHE_NAME);
-      if (src.type === "DRIVE" && src.proxyUrl) {
-        const { blob } = await fetchDriveProxyBlobUrl(src.proxyUrl);
+      if (src.type === "GD" && src.proxyUrl) {
+        const { blob } = await fetchGdProxyBlobUrl(src.proxyUrl);
         await cache.put(src.streamUrl, new Response(blob, { headers: { "Content-Type": "audio/mpeg" } }));
       } else {
         const res = await fetch(src.downloadUrl);
-        if (!res.ok) throw new Error("Network response not ok");
         await cache.put(src.streamUrl, res);
       }
       state.offlineIds.add(song.id);
@@ -540,59 +496,57 @@
   }
 
   async function clearOfflineCache() {
-    if ("caches" in window) {
-      await caches.delete(OFFLINE_CACHE_NAME);
-    }
-    if (navigator.serviceWorker?.controller) {
-      navigator.serviceWorker.controller.postMessage({ type: "CLEAR_AUDIO_CACHE" });
-    }
+    if ("caches" in window) await caches.delete(OFFLINE_CACHE_NAME);
     state.offlineIds.clear();
     localStorage.setItem("admusic_offline_ids", "[]");
     renderAllViews();
-    toast("Offline audio cache cleared.", "success");
+    toast("Offline cache cleared.", "success");
   }
 
-  // --- Pro DJ Dual-Deck Engine + Realistic Scratch Synthesis ---
-  const decks = {
-    A: { audio: new Audio(), playing: false, angle: 0, song: null, vol: 1 },
-    B: { audio: new Audio(), playing: false, angle: 0, song: null, vol: 1 }
-  };
-  let djCtx = null;
+  // --- Pro Equalizer Vertical Sliders & Rotary Knobs ---
+  function formatDb(val) {
+    const n = Number(val);
+    return (n >= 0 ? "+" : "-") + String(Math.abs(n)).padStart(2, "0");
+  }
 
-  function ensureDjAudioCtx() {
-    if (!djCtx) {
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      djCtx = new Ctx();
+  function syncEqVisuals() {
+    for (let i = 0; i < 4; i++) {
+      const val = Number($(`eqBand${i}`).value);
+      $(`valBand${i}`).textContent = formatDb(val);
+      const pct = ((val + 12) / 30) * 100;
+      $(`fillBand${i}`).style.height = `${Math.max(6, Math.min(100, pct))}%`;
+      if (bandFilters[i]) bandFilters[i].gain.value = val;
     }
-    if (djCtx.state === "suspended") djCtx.resume();
+
+    const bassVal = Number($("eqBassKnob").value);
+    $("bassKnobVal").textContent = formatDb(bassVal);
+    $("bassKnobCap").style.transform = `rotate(${(bassVal / 18) * 135}deg)`;
+    if (bassFilter) bassFilter.gain.value = bassVal;
+
+    const trebVal = Number($("eqTrebleKnob").value);
+    $("trebleKnobVal").textContent = formatDb(trebVal);
+    $("trebleKnobCap").style.transform = `rotate(${(trebVal / 18) * 135}deg)`;
+    if (trebleFilter) trebleFilter.gain.value = trebVal;
   }
 
-  function playScratchSound(velocity) {
+  // --- DJ PRO Dual-Deck Players + Dual EQ ---
+  const decks = {
+    A: { audio: new Audio(), playing: false, angle: 0, song: null, vol: 1, ctx: null, filters: {} },
+    B: { audio: new Audio(), playing: false, angle: 0, song: null, vol: 1, ctx: null, filters: {} }
+  };
+
+  function setupDeckEq(k) {
+    const d = decks[k];
+    if (d.ctx) return;
     try {
-      ensureDjAudioCtx();
-      const duration = 0.07;
-      const bufferSize = Math.floor(djCtx.sampleRate * duration);
-      const buffer = djCtx.createBuffer(1, bufferSize, djCtx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.45));
-      }
-      const noise = djCtx.createBufferSource();
-      noise.buffer = buffer;
-
-      const filter = djCtx.createBiquadFilter();
-      filter.type = "bandpass";
-      filter.frequency.value = Math.min(2600, Math.max(450, 900 + Math.abs(velocity) * 24));
-      filter.Q.value = 3.2;
-
-      const gain = djCtx.createGain();
-      gain.gain.setValueAtTime(0.18, djCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, djCtx.currentTime + duration);
-
-      noise.connect(filter);
-      filter.connect(gain);
-      gain.connect(djCtx.destination);
-      noise.start();
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      d.ctx = new Ctx();
+      const src = d.ctx.createMediaElementSource(d.audio);
+      const low = d.ctx.createBiquadFilter(); low.type = "lowshelf"; low.frequency.value = 200;
+      const mid = d.ctx.createBiquadFilter(); mid.type = "peaking"; mid.frequency.value = 1200;
+      const high = d.ctx.createBiquadFilter(); high.type = "highshelf"; high.frequency.value = 6000;
+      src.connect(low); low.connect(mid); mid.connect(high); high.connect(d.ctx.destination);
+      d.filters = { low, mid, high };
     } catch (_) {}
   }
 
@@ -612,52 +566,41 @@
     $("deckBSelect").innerHTML = opts;
   }
 
-  function loadDeck(deckKey, songId) {
+  function loadDeck(k, songId) {
     const song = state.songs.find((s) => s.id === songId);
     if (!song) return;
-    const deck = decks[deckKey];
+    const d = decks[k];
     const src = song.resolved || resolveAudioSource(song);
-    deck.song = song;
-    deck.audio.src = src.streamUrl;
-    deck.playing = false;
-    $(`deck${deckKey}TrackTitle`).textContent = `${song.title} — ${song.artist}`;
-    $(`deck${deckKey}Label`).textContent = song.title.slice(0, 10).toUpperCase();
-    $(`deck${deckKey}PlayBtn`).textContent = "▶ Play";
+    d.song = song;
+    d.audio.src = src.streamUrl;
+    d.playing = false;
+    $(`deck${k}TrackTitle`).textContent = `${song.title} — ${song.artist}`;
+    $(`deck${k}Label`).textContent = song.title.slice(0, 10).toUpperCase();
+    $(`deck${k}PlayBtn`).textContent = "▶";
     applyDjCrossfader();
   }
 
-  function bindTurntableScratch(deckKey) {
-    const platter = $(`platter${deckKey}`);
-    let dragging = false;
-    let lastX = 0;
-
-    const onStart = (clientX) => {
-      dragging = true;
-      lastX = clientX;
-      ensureDjAudioCtx();
-    };
-    const onMove = (clientX) => {
+  function bindTurntableScratch(k) {
+    const platter = $(`platter${k}`);
+    let dragging = false, lastX = 0;
+    const start = (x) => { dragging = true; lastX = x; };
+    const move = (x) => {
       if (!dragging) return;
-      const dx = clientX - lastX;
-      lastX = clientX;
-      if (Math.abs(dx) < 1) return;
-      const deck = decks[deckKey];
-      deck.angle += dx * 1.8;
-      platter.style.transform = `rotate(${deck.angle}deg)`;
-      if (Number.isFinite(deck.audio.duration)) {
-        deck.audio.currentTime = Math.max(0, Math.min(deck.audio.duration, deck.audio.currentTime + dx * 0.03));
+      const dx = x - lastX;
+      lastX = x;
+      decks[k].angle += dx * 1.8;
+      platter.style.transform = `rotate(${decks[k].angle}deg)`;
+      if (Number.isFinite(decks[k].audio.duration)) {
+        decks[k].audio.currentTime = Math.max(0, Math.min(decks[k].audio.duration, decks[k].audio.currentTime + dx * 0.03));
       }
-      playScratchSound(dx);
     };
-    const onEnd = () => { dragging = false; };
-
-    platter.addEventListener("mousedown", (e) => onStart(e.clientX));
-    window.addEventListener("mousemove", (e) => onMove(e.clientX));
-    window.addEventListener("mouseup", onEnd);
-
-    platter.addEventListener("touchstart", (e) => onStart(e.touches[0].clientX), { passive: true });
-    platter.addEventListener("touchmove", (e) => onMove(e.touches[0].clientX), { passive: true });
-    platter.addEventListener("touchend", onEnd);
+    const end = () => { dragging = false; };
+    platter.addEventListener("mousedown", (e) => start(e.clientX));
+    window.addEventListener("mousemove", (e) => move(e.clientX));
+    window.addEventListener("mouseup", end);
+    platter.addEventListener("touchstart", (e) => start(e.touches[0].clientX), { passive: true });
+    platter.addEventListener("touchmove", (e) => move(e.touches[0].clientX), { passive: true });
+    platter.addEventListener("touchend", end);
   }
 
   setInterval(() => {
@@ -669,25 +612,7 @@
     });
   }, 30);
 
-  // --- Upload Rules & Probe ---
-  function probeAudioDuration(url) {
-    return new Promise((resolve, reject) => {
-      const probe = new Audio();
-      probe.preload = "metadata";
-      const timer = setTimeout(() => reject(new Error("Timed out reading audio metadata")), 10000);
-      probe.onloadedmetadata = () => {
-        clearTimeout(timer);
-        resolve(Math.round(probe.duration));
-      };
-      probe.onerror = () => {
-        clearTimeout(timer);
-        reject(new Error("Could not inspect audio URL metadata"));
-      };
-      probe.src = url;
-    });
-  }
-
-  // --- Admin Dashboard ---
+  // --- Admin Dashboard (Block + Revoke Code + DJ PRO Lock/Unlock per User) ---
   async function loadAdminData() {
     if (state.user?.role !== "admin") return;
     try {
@@ -705,19 +630,19 @@
     const badge = $("pendingBadge");
     badge.textContent = list.length;
     badge.classList.toggle("hidden", list.length === 0);
-
     box.innerHTML = list.length ? "" : `<p class="muted small">No pending songs.</p>`;
+
     list.forEach((s) => {
       const item = document.createElement("div");
       item.className = "admin-item";
       item.innerHTML = `
         <div>
           <strong>${escapeHtml(s.title)}</strong>
-          <div class="muted small">${escapeHtml(s.artist)} • ${escapeHtml(s.category)}/${escapeHtml(s.album)} • ${s.durationSec}s (${escapeHtml(s.sourceType)})</div>
+          <div class="muted small">${escapeHtml(s.artist)} • ${escapeHtml(s.category)}/${escapeHtml(s.album)} • ${s.durationSec}s</div>
         </div>
         <div class="inline-row">
-          <button type="button" class="btn btn-green approve-btn">Approve</button>
-          <button type="button" class="btn btn-danger reject-btn">Reject</button>
+          <button type="button" class="neo-btn neo-btn-primary approve-btn">Approve</button>
+          <button type="button" class="neo-btn danger-text reject-btn">Reject</button>
         </div>
       `;
       item.querySelector(".approve-btn").onclick = async () => {
@@ -746,13 +671,13 @@
           <strong><code>${escapeHtml(c.code)}</code></strong>
           <div class="muted small">${escapeHtml(c.role)} • Used ${c.usedCount}/${c.maxUses} • ${c.active ? "Active" : "Revoked"}</div>
         </div>
-        ${c.active ? `<button type="button" class="btn btn-danger revoke-btn">Revoke</button>` : ""}
+        ${c.active ? `<button type="button" class="neo-btn danger-text revoke-btn">Revoke</button>` : `<span class="muted small">Revoked</span>`}
       `;
       const btn = item.querySelector(".revoke-btn");
       if (btn) {
         btn.onclick = async () => {
           await apiCall("revokeAccessCode", { code: c.code });
-          toast("Access code revoked.", "info");
+          toast("Code revoked.", "info");
           loadAdminData();
         };
       }
@@ -763,76 +688,87 @@
   function renderAdminUsers(list) {
     const box = $("adminUsersList");
     box.innerHTML = list.length ? "" : `<p class="muted small">No registered users.</p>`;
+
     list.forEach((u) => {
       const item = document.createElement("div");
       item.className = "admin-item";
       item.innerHTML = `
         <div>
           <strong>${escapeHtml(u.name)} (${escapeHtml(u.email)})</strong>
-          <div class="muted small">Role: ${escapeHtml(u.role)} • Status: ${u.blocked ? "BLOCKED" : "Active"}</div>
+          <div class="muted small">
+            Code: <code>${escapeHtml(u.accessCode || "-")}</code> &bull;
+            Status: ${u.blocked ? "BLOCKED" : "Active"} &bull;
+            DJ PRO: ${u.djUnlocked ? "Unlocked 🔓" : "Locked 🔒"}
+          </div>
         </div>
-        <button type="button" class="btn ${u.blocked ? "btn-green" : "btn-danger"} toggle-block-btn">
-          ${u.blocked ? "Unblock" : "Block"}
-        </button>
+        <div class="inline-row">
+          <button type="button" class="neo-btn toggle-dj-btn">
+            ${u.djUnlocked ? "Lock DJ 🔒" : "Unlock DJ 🔓"}
+          </button>
+          <button type="button" class="neo-btn ${u.blocked ? "neo-btn-primary" : "danger-text"} toggle-block-btn">
+            ${u.blocked ? "Unblock" : "Block"}
+          </button>
+          ${u.codeActive ? `<button type="button" class="neo-btn danger-text revoke-user-code-btn">Revoke Code</button>` : ""}
+        </div>
       `;
+
+      item.querySelector(".toggle-dj-btn").onclick = async () => {
+        await apiCall("setUserDj", { targetUserId: u.id, djUnlocked: !u.djUnlocked });
+        toast(`DJ PRO ${!u.djUnlocked ? "unlocked" : "locked"} for ${u.name}.`, "success");
+        loadAdminData();
+      };
+
       item.querySelector(".toggle-block-btn").onclick = async () => {
         await apiCall("setUserBlock", { targetUserId: u.id, blocked: !u.blocked });
         toast(`User ${u.blocked ? "unblocked" : "blocked"}.`, "success");
         loadAdminData();
       };
+
+      const revBtn = item.querySelector(".revoke-user-code-btn");
+      if (revBtn) {
+        revBtn.onclick = async () => {
+          await apiCall("revokeAccessCode", { code: u.accessCode });
+          toast(`Code ${u.accessCode} revoked.`, "info");
+          loadAdminData();
+        };
+      }
+
       box.appendChild(item);
     });
   }
 
-  // --- Version & Update Checker ---
+  // --- Version & Settings ---
   async function checkUpdates() {
-    $("versionCheckStatus").textContent = "Checking remote version...";
+    $("versionCheckStatus").textContent = "Checking for updates...";
     try {
       const data = await apiCall("getVersion");
       const remote = data.version || APP_VERSION;
       if (remote !== APP_VERSION) {
         $("remoteVersionText").textContent = `v${remote}`;
         $("updateBanner").classList.remove("hidden");
-        $("versionCheckStatus").textContent = `Update available: v${remote} (current v${APP_VERSION})`;
+        $("versionCheckStatus").textContent = `Update available: v${remote}`;
       } else {
-        $("versionCheckStatus").textContent = `You are up to date (v${APP_VERSION}).`;
+        $("versionCheckStatus").textContent = `Up to date (v${APP_VERSION}).`;
       }
     } catch (err) {
-      $("versionCheckStatus").textContent = "Version check failed: " + err.message;
+      $("versionCheckStatus").textContent = err.message;
     }
   }
 
   async function applyUpdateNow() {
-    toast("Clearing Service Worker caches and updating...", "info");
-    try {
-      if ("caches" in window) {
-        const keys = await caches.keys();
-        await Promise.all(
-          keys.filter((k) => k !== OFFLINE_CACHE_NAME).map((k) => caches.delete(k))
-        );
-      }
-      if ("serviceWorker" in navigator) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        for (const reg of regs) {
-          if (reg.waiting) reg.waiting.postMessage({ type: "FORCE_UPDATE" });
-          await reg.update();
-        }
-      }
-    } catch (_) {}
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((k) => k !== OFFLINE_CACHE_NAME).map((k) => caches.delete(k)));
+    }
     window.location.reload();
   }
 
-  // --- Settings & Theme ---
   function applySettings() {
     document.documentElement.setAttribute("data-theme", state.settings.theme);
     document.documentElement.style.setProperty("--accent", state.settings.accent);
     $("settingTheme").value = state.settings.theme;
     $("settingAccent").value = state.settings.accent;
-    $("settingCrossfade").value = state.settings.crossfade;
-    $("settingCrossfadeVal").textContent = state.settings.crossfade;
     $("settingVisualizer").value = state.settings.visualizer;
-    $("settingApiUrl").value = state.apiUrl;
-    $("visualizerWrap").classList.toggle("hidden", state.settings.visualizer === "off");
     localStorage.setItem("admusic_settings", JSON.stringify(state.settings));
   }
 
@@ -848,6 +784,15 @@
       });
     });
 
+    document.querySelectorAll(".sub-tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".sub-tab").forEach((t) => t.classList.remove("active"));
+        document.querySelectorAll(".lib-panel").forEach((p) => p.classList.add("hidden"));
+        tab.classList.add("active");
+        $(tab.dataset.libTab).classList.remove("hidden");
+      });
+    });
+
     document.querySelectorAll(".auth-tab").forEach((tab) => {
       tab.addEventListener("click", () => {
         document.querySelectorAll(".auth-tab").forEach((t) => t.classList.remove("active"));
@@ -857,16 +802,6 @@
         $("registerForm").classList.toggle("hidden", isLogin);
       });
     });
-
-    $("guestConfigBtn").onclick = () => {
-      const url = prompt("Enter Google Apps Script Web App URL:", state.apiUrl);
-      if (url !== null) {
-        state.apiUrl = url.trim();
-        localStorage.setItem("admusic_api_url", state.apiUrl);
-        $("settingApiUrl").value = state.apiUrl;
-        toast("Backend URL saved.", "success");
-      }
-    };
 
     $("loginForm").onsubmit = async (e) => {
       e.preventDefault();
@@ -897,7 +832,7 @@
         localStorage.setItem("admusic_user", JSON.stringify(state.user));
         renderAuthState();
         loadSongs();
-        toast("Registration successful!", "success");
+        toast("Account created!", "success");
       } catch (err) {
         toast(err.message, "error");
       }
@@ -918,12 +853,11 @@
       }
       if (audio.paused) {
         await audio.play();
-        state.isPlaying = true;
+        setPlayingVisuals(true);
       } else {
         audio.pause();
-        state.isPlaying = false;
+        setPlayingVisuals(false);
       }
-      $("playPauseBtn").textContent = state.isPlaying ? "⏸" : "▶";
     };
 
     $("nextBtn").onclick = nextTrack;
@@ -945,7 +879,6 @@
         state.queue = state.songs;
         playSongAtIndex(Math.floor(Math.random() * state.songs.length));
       }
-      toast(state.liveRadio ? "Live Radio Mode ON" : "Live Radio Mode OFF");
     };
 
     $("masterVolume").oninput = (e) => { audio.volume = Number(e.target.value); };
@@ -954,11 +887,16 @@
         audio.currentTime = (Number(e.target.value) / 100) * audio.duration;
       }
     };
+
     audio.ontimeupdate = () => {
       if (!Number.isFinite(audio.duration) || audio.duration <= 0) return;
-      $("seekBar").value = (audio.currentTime / audio.duration) * 100;
+      const pct = (audio.currentTime / audio.duration) * 100;
+      $("seekBar").value = pct;
       $("currentTimeLabel").textContent = formatTime(audio.currentTime);
       $("durationLabel").textContent = formatTime(audio.duration);
+      $("remainingTimeLabel").textContent = `-${formatTime(audio.duration - audio.currentTime)}`;
+      const offset = 704 - (704 * pct) / 100;
+      $("dialProgressCircle").style.strokeDashoffset = offset;
     };
     audio.onended = () => { if (!state.repeat) nextTrack(); };
 
@@ -966,129 +904,144 @@
     $("downloadOfflineBtn").onclick = () => { if (state.currentSong) downloadSongOffline(state.currentSong); };
     $("shareSongBtn").onclick = () => {
       navigator.clipboard?.writeText(window.location.href);
-      toast("Online song link copied!", "success");
+      toast("Track link copied!", "success");
     };
 
-    // Equalizer
-    const eqIds = ["eqBass", "eqLowMid", "eqMid", "eqHighMid", "eqTreble"];
-    const eqValIds = ["eqBassVal", "eqLowMidVal", "eqMidVal", "eqHighMidVal", "eqTrebleVal"];
-    eqIds.forEach((id, idx) => {
-      $(id).oninput = (e) => {
-        const val = Number(e.target.value);
-        $(eqValIds[idx]).textContent = `${val} dB`;
-        if (eqFilters[idx]) eqFilters[idx].gain.value = val;
-      };
-    });
-    $("eqPresetSelect").onchange = (e) => {
-      const preset = EQ_PRESETS[e.target.value] || EQ_PRESETS.flat;
-      preset.forEach((val, idx) => {
-        $(eqIds[idx]).value = val;
-        $(eqValIds[idx]).textContent = `${val} dB`;
-        if (eqFilters[idx]) eqFilters[idx].gain.value = val;
+    // Equalizer Events
+    document.querySelectorAll(".eq-preset-tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".eq-preset-tab").forEach((t) => t.classList.remove("active"));
+        tab.classList.add("active");
+        const vals = EQ_PRESETS[tab.dataset.preset] || EQ_PRESETS.flat;
+        vals.forEach((v, i) => { $(`eqBand${i}`).value = v; });
+        syncEqVisuals();
       });
-    };
+    });
 
-    // DJ Mode
-    $("djToggleActiveBtn").onclick = () => {
-      ensureDjAudioCtx();
-      audio.pause();
-      state.isPlaying = false;
-      $("playPauseBtn").textContent = "▶";
-      toast("Pro DJ Dual-Deck Engine Ready!", "success");
-    };
+    for (let i = 0; i < 4; i++) {
+      $(`eqBand${i}`).oninput = syncEqVisuals;
+    }
+    $("eqBassKnob").oninput = syncEqVisuals;
+    $("eqTrebleKnob").oninput = syncEqVisuals;
+
+    // DJ Decks + Dual EQ
     ["A", "B"].forEach((k) => {
       $(`deck${k}Select`).onchange = (e) => loadDeck(k, e.target.value);
       $(`deck${k}PlayBtn`).onclick = async () => {
         const d = decks[k];
-        if (!d.song) return toast(`Load a track into Deck ${k} first.`, "error");
-        ensureDjAudioCtx();
+        if (!d.song) return toast(`Load Track ${k} first.`, "error");
+        setupDeckEq(k);
         if (d.audio.paused) {
-          try {
-            await d.audio.play();
-          } catch (_) {
+          try { await d.audio.play(); } catch (_) {
             const src = d.song.resolved || resolveAudioSource(d.song);
-            if (src.proxyUrl) {
-              const { blobUrl } = await fetchDriveProxyBlobUrl(src.proxyUrl);
-              d.audio.src = blobUrl;
-              await d.audio.play();
-            }
+            const { blobUrl } = await fetchGdProxyBlobUrl(src.proxyUrl);
+            d.audio.src = blobUrl;
+            await d.audio.play();
           }
           d.playing = true;
-          $(`deck${k}PlayBtn`).textContent = "⏸ Pause";
+          $(`deck${k}PlayBtn`).textContent = "⏸";
         } else {
           d.audio.pause();
           d.playing = false;
-          $(`deck${k}PlayBtn`).textContent = "▶ Play";
+          $(`deck${k}PlayBtn`).textContent = "▶";
         }
       };
       $(`deck${k}CueBtn`).onclick = () => { decks[k].audio.currentTime = 0; };
       $(`deck${k}Pitch`).oninput = (e) => {
-        const rate = Number(e.target.value);
-        decks[k].audio.playbackRate = rate;
-        $(`deck${k}PitchVal`).textContent = `${rate.toFixed(2)}x`;
+        const r = Number(e.target.value);
+        decks[k].audio.playbackRate = r;
+        $(`deck${k}PitchVal`).textContent = `${r.toFixed(2)}x`;
       };
       $(`deck${k}Vol`).oninput = (e) => {
         decks[k].vol = Number(e.target.value);
         $(`deck${k}VolVal`).textContent = `${Math.round(decks[k].vol * 100)}%`;
         applyDjCrossfader();
       };
+      $(`deck${k}EqLow`).oninput = (e) => { if (decks[k].filters.low) decks[k].filters.low.gain.value = Number(e.target.value); };
+      $(`deck${k}EqMid`).oninput = (e) => { if (decks[k].filters.mid) decks[k].filters.mid.gain.value = Number(e.target.value); };
+      $(`deck${k}EqHigh`).oninput = (e) => { if (decks[k].filters.high) decks[k].filters.high.gain.value = Number(e.target.value); };
       bindTurntableScratch(k);
     });
     $("djCrossfader").oninput = applyDjCrossfader;
 
-    // Upload Form + Strict Frontend Validation
+    // Upload Source Switch & Direct Phone/PC File Auto-Read
     $("uploadSourceType").onchange = (e) => {
-      const isR2 = e.target.value === "R2";
-      $("audioSourceLabel").textContent = isR2
-        ? "Cloudflare R2 Public Audio URL"
-        : "Google Drive Share Link or File ID";
-      $("uploadSourceUrl").placeholder = isR2
-        ? "https://pub-xxxx.r2.dev/song.mp3"
-        : "https://drive.google.com/file/d/.../view";
+      const mode = e.target.value;
+      $("filePickerGroup").classList.toggle("hidden", mode !== "FILE");
+      $("urlInputGroup").classList.toggle("hidden", mode === "FILE");
+      $("audioSourceLabel").textContent = mode === "R2" ? "Cloud Direct Audio Link" : "GD Link or File ID";
+    };
+
+    $("uploadAudioFile").onchange = (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (!$("uploadTitle").value.trim()) {
+        $("uploadTitle").value = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]+/g, " ");
+      }
+      const tempAudio = new Audio(URL.createObjectURL(file));
+      tempAudio.onloadedmetadata = () => {
+        $("uploadDuration").value = Math.min(600, Math.round(tempAudio.duration));
+      };
     };
 
     $("probeDurationBtn").onclick = async () => {
       const raw = $("uploadSourceUrl").value.trim();
-      const srcType = $("uploadSourceType").value;
-      if (!raw) return toast("Enter an audio URL first.", "error");
-      const resolved = resolveAudioSource({ audioUrl: raw, sourceType: srcType });
-      try {
-        const sec = await probeAudioDuration(resolved.streamUrl);
-        $("uploadDuration").value = sec;
-        if (sec > 600) toast(`Duration is ${sec}s (> 600s limit)!`, "error");
-        else toast(`Verified audio duration: ${sec}s`, "success");
-      } catch (err) {
-        toast(err.message, "error");
-      }
+      if (!raw) return toast("Enter an audio link first.", "error");
+      const src = resolveAudioSource({ audioUrl: raw, sourceType: $("uploadSourceType").value });
+      const probe = new Audio(src.streamUrl);
+      probe.onloadedmetadata = () => {
+        $("uploadDuration").value = Math.round(probe.duration);
+        toast(`Verified duration: ${Math.round(probe.duration)}s`, "success");
+      };
+      probe.onerror = () => toast("Could not read metadata.", "error");
     };
 
     $("uploadForm").onsubmit = async (e) => {
       e.preventDefault();
+      const mode = $("uploadSourceType").value;
       const title = $("uploadTitle").value.trim();
+      const artist = $("uploadArtist").value.trim();
+      const album = $("uploadAlbum").value.trim();
+      const category = $("uploadCategory").value.trim();
+      const coverUrl = $("uploadCoverUrl").value.trim();
       const durationSec = Number($("uploadDuration").value);
 
-      const norm = normalizeTitle(title);
-      if (state.songs.some((s) => normalizeTitle(s.title) === norm)) {
-        return toast("Duplicate rejected: A song with this title already exists.", "error");
-      }
-      if (!Number.isFinite(durationSec) || durationSec <= 0 || durationSec > 600) {
-        return toast("Duration rejected: Tracks must be between 1 and 600 seconds (10 minutes).", "error");
+      if (state.songs.some((s) => normalizeTitle(s.title) === normalizeTitle(title))) {
+        return toast("Duplicate rejected: Song title already exists.", "error");
       }
 
       try {
-        $("uploadStatusMsg").textContent = "Submitting track...";
-        await apiCall("uploadSong", {
-          sourceType: $("uploadSourceType").value,
-          audioUrl: $("uploadSourceUrl").value.trim(),
-          title,
-          artist: $("uploadArtist").value.trim(),
-          album: $("uploadAlbum").value.trim(),
-          category: $("uploadCategory").value.trim(),
-          coverUrl: $("uploadCoverUrl").value.trim(),
-          durationSec
-        });
+        if (mode === "FILE") {
+          const file = $("uploadAudioFile").files?.[0];
+          if (!file) return toast("Please choose an audio file from Phone/PC.", "error");
+          if (file.size > 25 * 1024 * 1024) return toast("Max file size 25MB for direct upload.", "error");
+
+          $("uploadStatusMsg").textContent = "Uploading file to GD folder...";
+          const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result).split(",")[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+
+          await apiCall("uploadSongFile", {
+            fileBase64: base64,
+            mimeType: file.type || "audio/mpeg",
+            fileName: file.name,
+            title, artist, album, category, coverUrl, durationSec
+          });
+        } else {
+          $("uploadStatusMsg").textContent = "Submitting track...";
+          await apiCall("uploadSong", {
+            sourceType: mode,
+            audioUrl: $("uploadSourceUrl").value.trim(),
+            title, artist, album, category, coverUrl, durationSec
+          });
+        }
+
         $("uploadForm").reset();
-        $("uploadStatusMsg").textContent = "Submitted! Pending Admin Approval.";
+        $("uploadSourceType").dispatchEvent(new Event("change"));
+        $("uploadStatusMsg").textContent = "Submitted for Admin Approval!";
         toast("Upload submitted for Admin Approval!", "success");
       } catch (err) {
         $("uploadStatusMsg").textContent = err.message;
@@ -1096,7 +1049,7 @@
       }
     };
 
-    // Admin actions
+    // Admin & Settings
     $("adminRefreshBtn").onclick = loadAdminData;
     $("createCodeForm").onsubmit = async (e) => {
       e.preventDefault();
@@ -1112,54 +1065,25 @@
       }
     };
 
-    // Settings, Theme, Cache & Update
-    $("themeToggleBtn").onclick = () => {
-      state.settings.theme = state.settings.theme === "dark" ? "light" : "dark";
-      applySettings();
-    };
     $("settingTheme").onchange = (e) => { state.settings.theme = e.target.value; applySettings(); };
     $("settingAccent").oninput = (e) => { state.settings.accent = e.target.value; applySettings(); };
-    $("settingCrossfade").oninput = (e) => { state.settings.crossfade = Number(e.target.value); applySettings(); };
     $("settingVisualizer").onchange = (e) => { state.settings.visualizer = e.target.value; applySettings(); };
-
-    $("saveApiUrlBtn").onclick = () => {
-      state.apiUrl = $("settingApiUrl").value.trim();
-      localStorage.setItem("admusic_api_url", state.apiUrl);
-      toast("Google Apps Script URL saved!", "success");
-      if (state.user) loadSongs();
-    };
-
-    $("clearOfflineBtn").onclick = clearOfflineCache;
     $("settingsClearCacheBtn").onclick = clearOfflineCache;
     $("checkUpdatesBtn").onclick = checkUpdates;
     $("updateNowBtn").onclick = applyUpdateNow;
     $("bannerUpdateNowBtn").onclick = applyUpdateNow;
     $("logoutBtn").onclick = () => logoutUser("Signed out.");
-    $("userBadgeBtn").onclick = () => {
-      document.querySelector('[data-view="settingsView"]').click();
-    };
+    $("userBadgeBtn").onclick = () => document.querySelector('[data-view="settingsView"]').click();
   }
 
-  // --- Service Worker Registration ---
-  function registerServiceWorker() {
-    if (!("serviceWorker" in navigator)) return;
-    navigator.serviceWorker.register("./sw.js").catch((err) => {
-      console.warn("SW registration failed:", err);
-    });
-    navigator.serviceWorker.addEventListener("message", (event) => {
-      if (event.data?.type === "UPDATE_READY") {
-        window.location.reload();
-      }
-    });
-  }
-
-  // --- Init ---
   function init() {
     applySettings();
+    syncEqVisuals();
     bindEvents();
     renderAuthState();
-    registerServiceWorker();
-    if (state.user && state.apiUrl) {
+    drawSpiralVisualizer();
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
+    if (state.user) {
       loadSongs();
       checkUpdates();
     }
