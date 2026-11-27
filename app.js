@@ -1,10 +1,11 @@
-/* AD Music v3.1.0 — Instant Cached Loading, NeonWave UI, Thumbnails & Settings Customization */
+/* AD Music v3.2.0 — Mobile-Fit Compact UI + Timing Circular Dial + 10s Skip + AD Play Logo */
 (() => {
   "use strict";
 
-  const APP_VERSION = "3.1.0";
+  const APP_VERSION = "3.2.0";
   const OFFLINE_CACHE_NAME = "ad-music-offline-audio-v1";
   const SONGS_CACHE_KEY = "admusic_cached_songs_v3";
+  const CIRCUMFERENCE = 641; // 2 * Math.PI * 102
   const API_URL = "https://script.google.com/macros/s/AKfycbwSr-j8h-BR8mgzU2c-9K0yuLokz7qcTAV8uxsW3ih8XLOADPCamdIg6OxIt7sNsZqQ/exec";
 
   const THEME_PRESETS = {
@@ -36,13 +37,12 @@
     liveRadio: false,
     selectedCategory: "ALL",
     searchQuery: "",
-    quickQuery: "",
     settings: JSON.parse(localStorage.getItem("admusic_settings") || JSON.stringify({
       primaryColor: "#ff3f82",
       secondaryColor: "#55d7ff",
       themePreset: "neonwave",
       visualizer: "on",
-      cardRadius: 34
+      cardRadius: 28
     }))
   };
 
@@ -61,7 +61,7 @@
     el.className = `toast ${type}`;
     el.textContent = msg;
     $("toastContainer").appendChild(el);
-    setTimeout(() => el.remove(), 3200);
+    setTimeout(() => el.remove(), 3000);
   }
 
   function extractDriveId(input) {
@@ -214,7 +214,7 @@
     if (msg) toast(msg, "error");
   }
 
-  // --- Instant Cache + Fast Background Library Sync ---
+  // --- Instant Cache + Library Sync ---
   function hydrateSongs(rawList) {
     state.songs = (rawList || []).map((s) => ({
       ...s,
@@ -228,20 +228,12 @@
 
   async function loadSongs() {
     if (!state.user) return;
-
-    // 1. Load instantly from localStorage cache so there is 0ms wait
     const cached = localStorage.getItem(SONGS_CACHE_KEY);
     if (cached && !state.songs.length) {
-      try {
-        hydrateSongs(JSON.parse(cached));
-      } catch (_) {}
+      try { hydrateSongs(JSON.parse(cached)); } catch (_) {}
     }
 
-    // 2. Sync fresh list in background
     try {
-      $("libraryStats").textContent = state.songs.length
-        ? `${state.songs.length} tracks • Syncing latest...`
-        : "Syncing library...";
       const data = await apiCall("getSongs");
       localStorage.setItem(SONGS_CACHE_KEY, JSON.stringify(data.songs || []));
       hydrateSongs(data.songs || []);
@@ -287,7 +279,7 @@
     return `<span class="ad-monogram">AD</span>`;
   }
 
-  function createSongRow(song, index, list, compact = false) {
+  function createSongRow(song, index, list) {
     const row = document.createElement("div");
     row.className = `song-row ${state.currentSong?.id === song.id ? "playing" : ""}`;
     const isFav = state.favorites.has(song.id);
@@ -302,10 +294,8 @@
       </div>
       <div class="song-actions">
         <span class="hd-badge">${srcType}</span>
-        ${compact ? "" : `
-          <button type="button" class="neo-pill-btn fav-btn">${isFav ? "❤️" : "♡"}</button>
-          <button type="button" class="neo-pill-btn dl-btn">${isOffline ? "✅" : "⬇️"}</button>
-        `}
+        <button type="button" class="neo-pill-btn fav-btn">${isFav ? "❤️" : "♡"}</button>
+        <button type="button" class="neo-pill-btn dl-btn">${isOffline ? "✅" : "⬇️"}</button>
       </div>
     `;
 
@@ -314,15 +304,15 @@
       if (e.target.closest(".dl-btn")) return downloadSongOffline(song);
       state.queue = list;
       playSongAtIndex(index);
-      if (!compact) document.querySelector('[data-view="nowPlayingView"]').click();
+      document.querySelector('[data-view="nowPlayingView"]').click();
     });
     return row;
   }
 
-  function renderSongCollection(containerId, list, compact = false) {
+  function renderSongCollection(containerId, list) {
     const box = $(containerId);
     box.innerHTML = list.length ? "" : `<p class="muted small">No tracks found.</p>`;
-    list.slice(0, compact ? 80 : 500).forEach((song, idx) => box.appendChild(createSongRow(song, idx, list, compact)));
+    list.forEach((song, idx) => box.appendChild(createSongRow(song, idx, list)));
   }
 
   function renderAlbums() {
@@ -367,19 +357,12 @@
     renderSongCollection("favoritesList", state.songs.filter((s) => state.favorites.has(s.id)));
     renderSongCollection("offlineList", state.songs.filter((s) => state.offlineIds.has(s.id)));
     renderAlbums();
-
-    const qq = state.quickQuery.toLowerCase();
-    const quickList = qq
-      ? state.songs.filter((s) => [s.title, s.artist, s.album].some((f) => (f || "").toLowerCase().includes(qq)))
-      : state.songs;
-    $("quickCount").textContent = `${quickList.length} tracks`;
-    renderSongCollection("quickQueueList", quickList, true);
   }
 
-  // --- Playback ---
+  // --- Playback & Timing Circular Dial ---
   function setPlayingVisuals(playing) {
     state.isPlaying = playing;
-    $("playPauseBtn").textContent = playing ? "Ⅱ" : "▶";
+    $("playPauseIcon").textContent = playing ? "Ⅱ" : "▶";
     $("visualWrap").classList.toggle("playing", playing);
   }
 
@@ -402,6 +385,7 @@
     audio.crossOrigin = src.type === "CLOUD" ? "anonymous" : null;
     audio.src = playableUrl;
     audio.volume = Number($("masterVolume").value);
+    $("dialProgressCircle").style.strokeDashoffset = CIRCUMFERENCE;
 
     initWebAudioForMain();
     if (audioCtx && audioCtx.state === "suspended") await audioCtx.resume();
@@ -431,7 +415,6 @@
     $("playerTitle").textContent = song.title;
     $("playerArtist").textContent = `${song.artist} • ${song.album || "Singles"}`;
     $("sourceTypeBadge").textContent = srcType;
-    $("playerFavBtn").textContent = state.favorites.has(song.id) ? "♥ Favorite" : "♡ Favorite";
     $("playerFavBtn").classList.toggle("active", state.favorites.has(song.id));
 
     const hasImg = Boolean(song.resolvedCover);
@@ -452,12 +435,16 @@
     playSongAtIndex(state.currentIndex - 1);
   }
 
+  function skipSeconds(delta) {
+    if (!Number.isFinite(audio.duration)) return;
+    audio.currentTime = Math.max(0, Math.min(audio.duration, audio.currentTime + delta));
+  }
+
   function toggleFavorite(songId) {
     if (state.favorites.has(songId)) state.favorites.delete(songId);
     else state.favorites.add(songId);
     localStorage.setItem("admusic_favorites", JSON.stringify([...state.favorites]));
     if (state.currentSong?.id === songId) {
-      $("playerFavBtn").textContent = state.favorites.has(songId) ? "♥ Favorite" : "♡ Favorite";
       $("playerFavBtn").classList.toggle("active", state.favorites.has(songId));
     }
     renderAllViews();
@@ -823,7 +810,6 @@
     };
 
     $("searchInput").oninput = (e) => { state.searchQuery = e.target.value; renderAllViews(); };
-    $("quickSearchInput").oninput = (e) => { state.quickQuery = e.target.value; renderAllViews(); };
     $("categoryFilter").onchange = (e) => { state.selectedCategory = e.target.value; renderAllViews(); };
     $("refreshLibraryBtn").onclick = () => { localStorage.removeItem(SONGS_CACHE_KEY); loadSongs(); };
     $("backToAlbumsBtn").onclick = renderAlbums;
@@ -847,6 +833,9 @@
 
     $("nextBtn").onclick = nextTrack;
     $("prevBtn").onclick = prevTrack;
+    $("rewind10Btn").onclick = () => skipSeconds(-10);
+    $("forward10Btn").onclick = () => skipSeconds(10);
+
     $("shuffleBtn").onclick = () => {
       state.shuffle = !state.shuffle;
       $("shuffleBtn").classList.toggle("active", state.shuffle);
@@ -874,12 +863,15 @@
       if (Number.isFinite(audio.duration)) audio.currentTime = (Number(e.target.value) / 100) * audio.duration;
     };
 
+    // Update both Seek Bar & Timing Circular Progress Ring
     audio.ontimeupdate = () => {
       if (!Number.isFinite(audio.duration) || audio.duration <= 0) return;
-      $("seekBar").value = (audio.currentTime / audio.duration) * 100;
+      const pct = (audio.currentTime / audio.duration) * 100;
+      $("seekBar").value = pct;
       $("currentTimeLabel").textContent = formatTime(audio.currentTime);
       $("durationLabel").textContent = formatTime(audio.duration);
-      $("remainingTimeLabel").textContent = `-${formatTime(audio.duration - audio.currentTime)}`;
+      $("remainingTimeLabel").textContent = `-${formatTime(Math.max(0, audio.duration - audio.currentTime))}`;
+      $("dialProgressCircle").style.strokeDashoffset = CIRCUMFERENCE - (CIRCUMFERENCE * pct) / 100;
     };
     audio.onended = () => { if (!state.repeat) nextTrack(); };
 
