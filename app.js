@@ -1,16 +1,33 @@
 /**
- * AD Music PWA — Clean Modular Engine (v4.2)
- * Features: .webm + .webp fast rendering, 100-200% Auto-Unlock Boost, RAM Preload (Next 2),
- * Smart 2s Silence Auto-Skip, 10-Band Web Audio EQ, Quota-Safe LocalStorage, Admin Controls
+- AD Music PWA — Clean Modular Engine (v4.3 + Live FM Radio)
+- Features: .webm + .webp fast rendering, 100-200% Auto-Unlock Boost, RAM Preload (Next 2),
+- Smart 2s Silence Auto-Skip, 10-Band Web Audio EQ, Quota-Safe LocalStorage, Admin Controls, Live FM Radio
  */
 
 const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwSr-j8h-BR8mgzU2c-9K0yuLokz7qcTAV8uxsW3ih8XLOADPCamdIg6OxIt7sNsZqQ/exec";
+
+const DEFAULT_RADIOS = [
+  { id: "rad_1", name: "Radio City Hindi", genre: "Bollywood Hindi", streamUrl: "https://stream.zeno.fm/9phrkb1e3v8uv", active: true },
+  { id: "rad_2", name: "Radio Mirchi 98.3 FM", genre: "Bollywood Chartbusters", streamUrl: "https://stream.zeno.fm/wgaznsmt92quv", active: true },
+  { id: "rad_3", name: "Ishq FM", genre: "Bollywood Romantic", streamUrl: "https://drive.uber.radio/uber/bollywoodlove/icecast.audio", active: true },
+  { id: "rad_4", name: "AIR FM Rainbow Delhi", genre: "Hindi & Bollywood", streamUrl: "https://radioindia.net/in/fmrainbowdelhi/icecast.audio", active: true },
+  { id: "rad_5", name: "AIR FM Gold Delhi", genre: "Hindi News & Hits", streamUrl: "https://new.radiosolo.ru/in/fmgolddelhi/icecast.audio", active: true },
+  { id: "rad_6", name: "90s Bollywood Retro", genre: "Evergreen Old Hits", streamUrl: "https://stream.zeno.fm/f3wvbbqmdg8uv", active: true },
+  { id: "rad_7", name: "Red FM / Desi Hits", genre: "Non-Stop Hindi", streamUrl: "https://stream.zeno.fm/0r0xa792kwzuv", active: true },
+  { id: "rad_8", name: "Bangla Live FM", genre: "Bengali Hits", streamUrl: "https://stream.zeno.fm/dbstwo3dvhhtv", active: true },
+  { id: "rad_9", name: "Tamil FM", genre: "Tamil Hits", streamUrl: "https://radios.crabdance.com:8002/5", active: true },
+  { id: "rad_10", name: "Suryan FM", genre: "Tamil Chartbusters", streamUrl: "https://radios.crabdance.com:8002/2", active: true },
+  { id: "rad_11", name: "94.3 Club FM", genre: "Malayalam Hits", streamUrl: "https://strw3.openstream.co/1452", active: true }
+];
 
 const state = {
   user: JSON.parse(localStorage.getItem("admusic_user") || "null"),
   songs: [],
   filteredSongs: [],
+  radios: [...DEFAULT_RADIOS],
   currentIndex: -1,
+  isRadioMode: false,
+  radioIndex: -1,
   isPlaying: false,
   shuffle: false,
   loop: false,
@@ -41,6 +58,7 @@ const EQ_PRESETS = {
 document.addEventListener("DOMContentLoaded", () => {
   initEQUI();
   bindEvents();
+  renderRadioList();
   const savedAccent = localStorage.getItem("admusic_accent");
   if (savedAccent) setAccentColor(savedAccent);
 
@@ -144,8 +162,12 @@ async function loadSongs() {
       return;
     }
     state.songs = data.songs || [];
+    if (Array.isArray(data.radios) && data.radios.length > 0) {
+      state.radios = data.radios.filter(r => r.active !== false);
+    }
     saveSongsCacheSafely(state.songs);
     renderLibrary();
+    renderRadioList();
     if (state.user.role === "ADMIN") loadAdminData();
   } catch (e) {
     showToast("Offline mode: Loaded cached tracks");
@@ -208,6 +230,9 @@ async function playSongAtIndex(idx) {
   if (audioCtx.state === "suspended") await audioCtx.resume();
 
   state.currentIndex = idx;
+  state.isRadioMode = false;
+  state.radioIndex = -1;
+  audio.crossOrigin = "anonymous";
   state.silenceCounter = 0;
   const song = state.songs[idx];
 
@@ -216,6 +241,7 @@ async function playSongAtIndex(idx) {
   updateCoverDisplay(song);
   updateUtilityStates(song);
   renderLibrary();
+  renderRadioList();
 
   try {
     const src = await resolveAudioSrc(song);
@@ -264,6 +290,78 @@ function setPlayingState(playing) {
   state.isPlaying = playing;
   const btn = document.getElementById("playPauseBtn");
   if (btn) btn.classList.toggle("playing", playing);
+  renderRadioList();
+}
+
+/* ==================== LIVE FM RADIO ENGINE ==================== */
+function renderRadioList() {
+  const box = document.getElementById("radioListContainer");
+  if (!box) return;
+  const q = (document.getElementById("radioSearchInput")?.value || "").toLowerCase().trim();
+  const list = state.radios.length ? state.radios : DEFAULT_RADIOS;
+
+  const countBadge = document.getElementById("radioCountBadge");
+  if (countBadge) countBadge.textContent = `${list.length} Stations`;
+
+  box.innerHTML = "";
+  list.forEach((rad, idx) => {
+    if (q && !rad.name.toLowerCase().includes(q) && !(rad.genre || "").toLowerCase().includes(q)) return;
+
+    const isActive = state.isRadioMode && state.radioIndex === idx;
+    const row = document.createElement("div");
+    row.className = "track-item" + (isActive ? " now-active" : "");
+    row.style.cssText = `
+      display:flex; justify-content:space-between; align-items:center;
+      padding:11px 14px; border-radius:14px; cursor:pointer;
+      background:${isActive ? "rgba(168,85,247,0.18)" : "rgba(255,255,255,0.04)"};
+      border:1px solid ${isActive ? "#a855f7" : "rgba(255,255,255,0.08)"};
+    `;
+    row.innerHTML = `
+      <div class="item-info">
+        <div class="item-title">📻 ${rad.name}</div>
+        <div class="item-sub">${rad.genre || "Live FM"}</div>
+      </div>
+      <div class="item-actions">
+        <button class="mini-btn">${isActive && !audio.paused ? "❚❚" : "▶"}</button>
+      </div>
+    `;
+    row.onclick = () => playRadioAtIndex(idx);
+    box.appendChild(row);
+  });
+}
+
+async function playRadioAtIndex(idx) {
+  const list = state.radios.length ? state.radios : DEFAULT_RADIOS;
+  if (!list.length) return;
+
+  const safeIdx = ((idx % list.length) + list.length) % list.length;
+  const rad = list[safeIdx];
+  const stream = rad.streamUrl || rad.url;
+
+  state.isRadioMode = true;
+  state.radioIndex = safeIdx;
+  state.currentIndex = -1;
+  state.silenceCounter = 0;
+
+  document.getElementById("playerTitle").textContent = rad.name;
+  document.getElementById("playerArtist").textContent = `🔴 LIVE FM • ${rad.genre || "Radio"}`;
+  updateCoverDisplay({ title: "FM", coverUrl: rad.logoUrl || "logo.png" });
+
+  // Bypass CORS for SHOUTcast/Icecast streams so volume & playback work smoothly
+  audio.removeAttribute("crossorigin");
+  audio.src = stream;
+
+  renderLibrary();
+  renderRadioList();
+  switchTab("playerTab");
+
+  try {
+    await audio.play();
+    setPlayingState(true);
+  } catch (e) {
+    setPlayingState(false);
+    showToast(`${rad.name} offline — tap Next ⏭`);
+  }
 }
 
 /* ==================== ALBUMS (SHORT UNIQUE NAMES) & LIBRARY RENDER ==================== */
@@ -342,7 +440,7 @@ function renderLibrary() {
 
   list.forEach(song => {
     const globalIdx = state.songs.findIndex(x => x.id === song.id);
-    const isCurrent = globalIdx === state.currentIndex;
+    const isCurrent = !state.isRadioMode && globalIdx === state.currentIndex;
     const isOffline = state.offlineIds.has(song.id);
     const row = document.createElement("div");
     row.className = "track-item" + (isCurrent ? " now-active" : "");
@@ -370,6 +468,10 @@ function renderLibrary() {
 
 /* ==================== OFFLINE DOWNLOAD & FAVORITES ==================== */
 async function saveCurrentOffline() {
+  if (state.isRadioMode) {
+    showToast("Live Radio cannot be saved offline");
+    return;
+  }
   const song = state.songs[state.currentIndex];
   if (!song) return;
   showToast("Downloading for offline...");
@@ -590,6 +692,16 @@ function bindEvents() {
   document.getElementById("resyncQuickBtn").onclick = loadSongs;
 
   document.getElementById("playPauseBtn").onclick = () => {
+    if (state.isRadioMode) {
+      if (audio.paused) {
+        audio.play();
+        setPlayingState(true);
+      } else {
+        audio.pause();
+        setPlayingState(false);
+      }
+      return;
+    }
     if (state.currentIndex === -1 && state.songs.length) {
       playSongAtIndex(0);
       return;
@@ -604,14 +716,18 @@ function bindEvents() {
   };
 
   document.getElementById("prevBtn").onclick = () => {
+    if (state.isRadioMode) {
+      playRadioAtIndex(state.radioIndex - 1);
+      return;
+    }
     if (!state.songs.length) return;
     const prev = (state.currentIndex - 1 + state.songs.length) % state.songs.length;
     playSongAtIndex(prev);
   };
 
   document.getElementById("nextBtn").onclick = playNextTrack;
-  document.getElementById("rew10Btn").onclick = () => { audio.currentTime = Math.max(0, audio.currentTime - 10); };
-  document.getElementById("fwd10Btn").onclick = () => { audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10); };
+  document.getElementById("rew10Btn").onclick = () => { if (!state.isRadioMode) audio.currentTime = Math.max(0, audio.currentTime - 10); };
+  document.getElementById("fwd10Btn").onclick = () => { if (!state.isRadioMode) audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10); };
 
   document.getElementById("shuffleBtn").onclick = () => {
     state.shuffle = !state.shuffle;
@@ -625,6 +741,7 @@ function bindEvents() {
   };
 
   document.getElementById("favBtn").onclick = () => {
+    if (state.isRadioMode) return;
     const s = state.songs[state.currentIndex];
     if (s) toggleFavorite(s.id);
   };
@@ -636,9 +753,13 @@ function bindEvents() {
   };
 
   document.getElementById("volSlider").oninput = e => {
-    initAudioGraph();
     const val = Number(e.target.value);
     document.getElementById("volVal").textContent = val + "%";
+    if (state.isRadioMode) {
+      audio.volume = val / 100;
+      return;
+    }
+    initAudioGraph();
     const boostLine = document.getElementById("boostLine");
     if (val === 100) {
       boostLine.classList.add("unlocked");
@@ -653,6 +774,7 @@ function bindEvents() {
   };
 
   document.getElementById("boostSlider").oninput = e => {
+    if (state.isRadioMode) return;
     initAudioGraph();
     const boost = Number(e.target.value);
     document.getElementById("boostVal").textContent = boost + "%";
@@ -661,10 +783,16 @@ function bindEvents() {
 
   const seekSlider = document.getElementById("seekSlider");
   seekSlider.oninput = () => {
-    if (audio.duration) audio.currentTime = (seekSlider.value / 100) * audio.duration;
+    if (!state.isRadioMode && audio.duration) audio.currentTime = (seekSlider.value / 100) * audio.duration;
   };
 
   audio.ontimeupdate = () => {
+    if (state.isRadioMode) {
+      seekSlider.value = 100;
+      document.getElementById("currentTime").textContent = "LIVE";
+      document.getElementById("totalTime").textContent = "FM";
+      return;
+    }
     if (!audio.duration) return;
     seekSlider.value = (audio.currentTime / audio.duration) * 100;
     document.getElementById("currentTime").textContent = formatTime(audio.currentTime);
@@ -686,7 +814,7 @@ function bindEvents() {
     }
   };
 
-  audio.onended = () => { if (!state.loop) playNextTrack(); };
+  audio.onended = () => { if (!state.loop && !state.isRadioMode) playNextTrack(); };
 
   document.querySelectorAll(".eq-preset-btn").forEach(btn => {
     btn.onclick = () => {
@@ -788,6 +916,10 @@ function bindEvents() {
 }
 
 function playNextTrack() {
+  if (state.isRadioMode) {
+    playRadioAtIndex(state.radioIndex + 1);
+    return;
+  }
   if (!state.songs.length) return;
   const next = state.shuffle
     ? Math.floor(Math.random() * state.songs.length)
