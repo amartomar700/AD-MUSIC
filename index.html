@@ -56,7 +56,25 @@
 
     <!-- ==================== 1. PLAYER TAB (ZERO-SCROLL 100dvh) ==================== -->
     <main id="playerTab" class="tab-view active player-view">
-      <div class="now-playing-label">NOW PLAYING</div>
+     <!-- Line 44 (<div class="now-playing-label">NOW PLAYING</div>) ko REPLACE karein: -->
+<div class="ad-mode-switch-bar">
+  <span class="ad-mode-lbl active" id="modeLblMusic">MUSIC</span>
+  <label class="ad-reactor-switch" title="Left: Music Player | Right: Live FM Radio">
+    <input type="checkbox" id="modeReactorToggle" class="ad-reactor-input" />
+    <div class="ad-reactor-casing">
+      <div class="ad-reactor-track">
+        <div class="ad-plasma-beam"></div>
+      </div>
+      <div class="ad-reactor-slider">
+        <div class="ad-slider-vents"></div>
+        <div class="ad-reactor-core">
+          <div class="ad-core-inner"></div>
+        </div>
+      </div>
+    </div>
+  </label>
+  <span class="ad-mode-lbl" id="modeLblRadio">RADIO</span>
+</div>
 
       <!-- Center Cover Art -->
       <div class="cover-stage">
