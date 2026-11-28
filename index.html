@@ -51,13 +51,48 @@
         <p id="playerArtist" class="song-artist">AD Music Library</p>
       </div>
 
-      <!-- Utility Action Row: Volume, Loop, Shuffle, Like, Offline -->
+     <!-- Utility Action Row: Crisp SVG Icons -->
       <div class="utility-row">
-        <button id="volToggleBtn" class="icon-btn" title="Volume & Boost">🔊</button>
-        <button id="loopBtn" class="icon-btn" title="Loop">🔁</button>
-        <button id="shuffleBtn" class="icon-btn" title="Shuffle">🔀</button>
-        <button id="favBtn" class="icon-btn" title="Favorite">♡</button>
-        <button id="offlineBtn" class="icon-btn" title="Save Offline">⬇</button>
+        <button id="volToggleBtn" class="icon-btn" title="Volume & Boost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+          </svg>
+        </button>
+
+        <button id="loopBtn" class="icon-btn" title="Repeat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="17 1 21 5 17 9"></polyline>
+            <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+            <polyline points="7 23 3 19 7 15"></polyline>
+            <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+          </svg>
+        </button>
+
+        <button id="shuffleBtn" class="icon-btn" title="Shuffle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 3 21 3 21 8"></polyline>
+            <line x1="4" y1="20" x2="21" y2="3"></line>
+            <polyline points="21 16 21 21 16 21"></polyline>
+            <line x1="15" y1="15" x2="21" y2="21"></line>
+            <line x1="4" y1="4" x2="9" y2="9"></line>
+          </svg>
+        </button>
+
+        <button id="favBtn" class="icon-btn" title="Favorite">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+        </button>
+
+        <button id="offlineBtn" class="icon-btn" title="Save Offline">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+        </button>
       </div>
 
       <!-- Pop-up Volume (0-100%) + Auto-Unlocking Boost (100-200%) -->
