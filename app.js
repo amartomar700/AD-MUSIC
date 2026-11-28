@@ -163,7 +163,10 @@ async function loadSongs() {
     }
     state.songs = data.songs || [];
     if (Array.isArray(data.radios) && data.radios.length > 0) {
-      state.radios = data.radios.filter(r => r.active !== false);
+      const sheetRadios = data.radios.filter(r => r.active !== false);
+      const sheetUrls = new Set(sheetRadios.map(r => (r.streamUrl || r.url || "").trim()));
+      const extraDefaults = DEFAULT_RADIOS.filter(d => !sheetUrls.has(d.streamUrl.trim()));
+      state.radios = [...sheetRadios, ...extraDefaults];
     }
     saveSongsCacheSafely(state.songs);
     renderLibrary();
