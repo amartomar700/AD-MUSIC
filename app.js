@@ -1,5 +1,5 @@
 /**
- * AD Music PWA — Clean Modular Engine (v4.4 + Live FM Radio & Reactor Mode Switch)
+ * AD Music PWA — Clean Modular Engine (v4.5 + Dedicated Radio Audio & Reactor Mode Switch)
  * Features: .webm + .webp fast rendering, 100-200% Auto-Unlock Boost, RAM Preload (Next 2),
  * Smart 2s Silence Auto-Skip, 10-Band Web Audio EQ, Quota-Safe LocalStorage, Admin Controls, Live FM Radio
  */
@@ -43,6 +43,8 @@ const state = {
 // Audio & Web Audio DSP Nodes
 const audio = new Audio();
 audio.crossOrigin = "anonymous";
+const radioAudio = new Audio(); // Dedicated clean audio engine for Live FM Radio (avoids Web Audio CORS mute)
+
 let audioCtx, sourceNode, gainNode, compressorNode, analyserNode;
 const eqFilters = [];
 const EQ_FREQS = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
@@ -233,6 +235,10 @@ async function playSongAtIndex(idx) {
   initAudioGraph();
   if (audioCtx.state === "suspended") await audioCtx.resume();
 
+  // Stop radio cleanly
+  radioAudio.pause();
+  radioAudio.src = "";
+
   state.currentIndex = idx;
   state.lastSongIndex = idx;
   state.isRadioMode = false;
@@ -340,7 +346,7 @@ function renderRadioList() {
         <div class="item-sub">${rad.genre || "Live FM"}</div>
       </div>
       <div class="item-actions">
-        <button class="mini-btn">${isActive && !audio.paused ? "❚❚" : "▶"}</button>
+        <button class="mini-btn">${isActive && !radioAudio.paused ? "❚❚" : "▶"}</button>
       </div>
     `;
     row.onclick = () => playRadioAtIndex(idx);
@@ -356,6 +362,9 @@ async function playRadioAtIndex(idx) {
   const rad = list[safeIdx];
   const stream = rad.streamUrl || rad.url;
 
+  // Pause normal song player
+  audio.pause();
+
   state.isRadioMode = true;
   state.radioIndex = safeIdx;
   state.currentIndex = -1;
@@ -366,16 +375,18 @@ async function playRadioAtIndex(idx) {
   document.getElementById("playerArtist").textContent = `🔴 LIVE FM • ${rad.genre || "Radio"}`;
   updateCoverDisplay({ title: "FM", coverUrl: rad.logoUrl || "logo.png" });
 
-  // Bypass CORS for SHOUTcast/Icecast streams so volume & playback work smoothly
-  audio.removeAttribute("crossorigin");
-  audio.src = stream;
+  // Sync current volume slider to dedicated radioAudio
+  const volSlider = document.getElementById("volSlider");
+  radioAudio.volume = volSlider ? Number(volSlider.value) / 100 : 1;
+
+  radioAudio.src = stream;
 
   renderLibrary();
   renderRadioList();
   switchTab("playerTab");
 
   try {
-    await audio.play();
+    await radioAudio.play();
     setPlayingState(true);
   } catch (e) {
     setPlayingState(false);
@@ -719,7 +730,8 @@ function bindEvents() {
         const targetRad = state.radioIndex >= 0 ? state.radioIndex : 0;
         playRadioAtIndex(targetRad);
       } else {
-        audio.pause();
+        radioAudio.pause();
+        radioAudio.src = "";
         state.isRadioMode = false;
         if (state.songs.length) {
           playSongAtIndex(state.lastSongIndex >= 0 ? state.lastSongIndex : 0);
@@ -735,11 +747,10 @@ function bindEvents() {
 
   document.getElementById("playPauseBtn").onclick = () => {
     if (state.isRadioMode) {
-      if (audio.paused) {
-        audio.play();
-        setPlayingState(true);
+      if (radioAudio.paused) {
+        radioAudio.play().then(() => setPlayingState(true));
       } else {
-        audio.pause();
+        radioAudio.pause();
         setPlayingState(false);
       }
       return;
@@ -798,7 +809,7 @@ function bindEvents() {
     const val = Number(e.target.value);
     document.getElementById("volVal").textContent = val + "%";
     if (state.isRadioMode) {
-      audio.volume = val / 100;
+      radioAudio.volume = val / 100;
       return;
     }
     initAudioGraph();
