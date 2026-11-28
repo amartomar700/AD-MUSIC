@@ -17,7 +17,22 @@ const DEFAULT_RADIOS = [
   { id: "rad_8", name: "Bangla Live FM", genre: "Bengali Hits", streamUrl: "https://stream.zeno.fm/dbstwo3dvhhtv", active: true },
   { id: "rad_9", name: "Tamil FM", genre: "Tamil Hits", streamUrl: "https://radios.crabdance.com:8002/5", active: true },
   { id: "rad_10", name: "Suryan FM", genre: "Tamil Chartbusters", streamUrl: "https://radios.crabdance.com:8002/2", active: true },
-  { id: "rad_11", name: "94.3 Club FM", genre: "Malayalam Hits", streamUrl: "https://strw3.openstream.co/1452", active: true }
+  { id: "rad_11", name: "94.3 Club FM", genre: "Malayalam Hits", streamUrl: "https://strw3.openstream.co/1452", active: true },
+  { id: "rad_12", name: "Mohammed Rafi Radio", genre: "Retro Legend", streamUrl: "https://stream.zeno.fm/2xx62x8ztm0uv", active: true },
+  { id: "rad_13", name: "Kishore Kumar Radio", genre: "Retro Legend", streamUrl: "https://stream.zeno.fm/0ghtfp8ztm0uv", active: true },
+  { id: "rad_14", name: "Radio Lata Mangeshkar", genre: "Retro Legend", streamUrl: "https://stream.zeno.fm/87xam8pf7tzuv", active: true },
+  { id: "rad_15", name: "Hits Of Bollywood", genre: "Bollywood Hits", streamUrl: "https://stream.zeno.fm/a2gyqzwpwfeuv", active: true },
+  { id: "rad_16", name: "New Hits of Bollywood", genre: "Latest Bollywood", streamUrl: "https://stream.zeno.fm/rqqps6cbe3quv", active: true },
+  { id: "rad_17", name: "Radio Hungama Evergreen Bollywood", genre: "Evergreen Hindi", streamUrl: "https://server.mixify.in:8010/radio.mp3", active: true },
+  { id: "rad_18", name: "Non Stop Hindi Radio", genre: "Bollywood Non-Stop", streamUrl: "https://s5.voscast.com:8217/stream", active: true },
+  { id: "rad_19", name: "Radio Hungama 90s Once Again", genre: "90s Bollywood", streamUrl: "https://stream.zeno.fm/rm4i9pdex3cuv", active: true },
+  { id: "rad_20", name: "Radio Retro Bollywood", genre: "Retro Hits", streamUrl: "https://stream.zeno.fm/g372rxef798uv", active: true },
+  { id: "rad_21", name: "Bollywood Radio and Beyond", genre: "Bollywood & Indie", streamUrl: "https://s6.yesstreaming.net/proxy/john1237?mp=/live", active: true },
+  { id: "rad_22", name: "Hindi Desi Bollywood Evergreen Hits", genre: "Evergreen Hits", streamUrl: "https://cast2.asurahosting.com/proxy/hindides/stream", active: true },
+  { id: "rad_23", name: "Hindi Desi Bollywood Evergreen Hits - Ch 2", genre: "Evergreen Hits Ch 2", streamUrl: "https://eu1.reliastream.com/proxy/hindi?mp=/stream", active: true },
+  { id: "rad_24", name: "Telugu NRI Radio", genre: "Telugu Hits", streamUrl: "https://cast5.asurahosting.com:2199/proxy/telugunr?mp=/stream", active: true },
+  { id: "rad_25", name: "Kiss FM", genre: "English / Pop", streamUrl: "https://srv02.onlineradio.voaplus.com/kissfm", active: true },
+  { id: "rad_26", name: "Gold FM Live", genre: "Classic English Hits", streamUrl: "https://radio.lotustechnologieslk.net:2020/stream/goldfmgarden", active: true }
 ];
 
 const state = {
