@@ -7,6 +7,26 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%2314b8a6'/><text x='50' y='64' font-size='44' font-weight='bold' text-anchor='middle' fill='%230b1315' font-family='sans-serif'>AD</text></svg>" />
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Force 5 equal pills in the exact same top header space */
+    .top-nav {
+      display: grid !important;
+      grid-template-columns: repeat(5, 1fr) !important;
+      gap: 6px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .top-nav .nav-tab {
+      width: 100% !important;
+      min-width: 0 !important;
+      padding: 8px 2px !important;
+      font-size: 12px !important;
+      text-align: center !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+  </style>
 </head>
 <body>
   <!-- AUTH SCREEN -->
@@ -25,17 +45,13 @@
 
   <!-- MAIN APP SHELL -->
   <div id="appShell" class="app-shell">
-    <!-- CLEAN 4-TAB TOP HEADER -->
+    <!-- CLEAN 5-TAB TOP HEADER -->
     <header class="top-nav">
       <button class="nav-tab active" data-tab="playerTab">Player</button>
       <button class="nav-tab" data-tab="tracksTab">Tracks</button>
       <button class="nav-tab" data-tab="eqTab">EQ</button>
       <button class="nav-tab" data-tab="settingsTab">Settings</button>
-      <!-- Is existing line ke THEEK NEECHE paste karein: -->
-<button class="nav-pill" data-tab="settingsTab" onclick="switchTab('settingsTab')">Settings</button>
-
-<!-- NAYA CODE: -->
-<button class="nav-pill" data-tab="radioTab" onclick="switchTab('radioTab')">Radio</button>
+      <button class="nav-tab" data-tab="radioTab">Radio</button>
     </header>
 
     <!-- ==================== 1. PLAYER TAB (ZERO-SCROLL 100dvh) ==================== -->
@@ -56,7 +72,7 @@
         <p id="playerArtist" class="song-artist">AD Music Library</p>
       </div>
 
-     <!-- Utility Action Row: Crisp SVG Icons -->
+      <!-- Utility Action Row: Crisp SVG Icons -->
       <div class="utility-row">
         <button id="volToggleBtn" class="icon-btn" title="Volume & Boost">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -234,26 +250,7 @@
           <button id="signOutBtn" class="btn-danger">Sign Out</button>
         </div>
       </div>
-<!-- Is existing closing tag (settingsTab ke end) ke THEEK NEECHE paste karein: -->
-</section>
 
-<!-- NAYA CODE: -->
-<section id="radioTab" class="tab-view" style="display: none;">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-    <h3 style="font-size:16px; color:#e2e8f0; margin:0;">Live FM Radio</h3>
-    <span style="font-size:11px; color:#a855f7; font-weight:600;">11 Stations</span>
-  </div>
-
-  <input
-    type="text"
-    id="radioSearchInput"
-    placeholder="Search FM station or language..."
-    oninput="renderRadioList()"
-    style="width:100%; padding:9px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.12); background:rgba(0,0,0,0.28); color:#fff; font-size:13px; margin-bottom:10px; box-sizing:border-box;"
-  />
-
-  <div id="radioListContainer" style="display:flex; flex-direction:column; gap:8px;"></div>
-</section>
       <!-- Playback Preferences -->
       <div class="card">
         <h3>Audio Engine</h3>
@@ -313,6 +310,15 @@
         <h4>Registered Users</h4>
         <div id="adminUsersList" class="admin-sublist"></div>
       </div>
+    </section>
+
+    <!-- ==================== 5. LIVE FM RADIO TAB ==================== -->
+    <section id="radioTab" class="tab-view scrollable-view">
+      <div class="search-wrap">
+        <input type="search" id="radioSearchInput" placeholder="Search FM station or language..." oninput="renderRadioList()" />
+        <span id="radioCountBadge" class="btn-chip">11 Stations</span>
+      </div>
+      <div id="radioListContainer" class="list-container"></div>
     </section>
   </div>
 
