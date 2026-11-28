@@ -415,7 +415,7 @@ function toggleFavorite(songId) {
 }
 
 function updateUtilityStates(song) {
-  document.getElementById("favBtn").textContent = state.favorites.has(song.id) ? "♥" : "♡";
+ function updateUtilityStates(song) {
   document.getElementById("favBtn").classList.toggle("active-state", state.favorites.has(song.id));
   document.getElementById("offlineBtn").classList.toggle("active-state", state.offlineIds.has(song.id));
 }
