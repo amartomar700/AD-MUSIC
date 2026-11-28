@@ -623,3 +623,207 @@ header nav button,
   overflow: hidden !important;
   text-overflow: ellipsis !important;
 }
+/* From Uiverse.io by xiaozhuzhu2028 - https://uiverse.io/xiaozhuzhu2028/thin-duck-60
+   MIT License, Copyright (c) xiaozhuzhu2028 (Zhu Xiaotian)
+   Scoped with .ad- prefix for AD Music Player / Radio mode swap */
+
+.ad-mode-switch-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 4px 0 8px;
+}
+
+.ad-mode-lbl {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #64748b;
+  transition: color 0.3s ease;
+  user-select: none;
+}
+
+.ad-mode-lbl.active {
+  color: #e2e8f0;
+}
+
+.ad-mode-lbl.radio-on {
+  color: #00f2ff;
+  text-shadow: 0 0 8px rgba(0, 242, 255, 0.5);
+}
+
+.ad-reactor-switch {
+  position: relative;
+  display: inline-block;
+  width: 96px;
+  height: 36px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.25));
+}
+
+.ad-reactor-input {
+  display: none;
+}
+
+.ad-reactor-casing {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #3a3f4b, #1e2025);
+  border-radius: 40px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.4),
+    0 0 0 2px #1e2025;
+  background-image: repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0px,
+      rgba(255, 255, 255, 0.02) 1px,
+      rgba(255, 255, 255, 0) 2px
+    ),
+    linear-gradient(180deg, #3a3f4b, #1e2025);
+  padding: 4px;
+  transition: box-shadow 0.3s ease;
+  z-index: 1;
+}
+
+.ad-reactor-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #0a0a0a;
+  border-radius: 30px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.ad-reactor-track::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 1px
+  );
+  background-size: 10px 100%;
+  opacity: 0.5;
+}
+
+.ad-plasma-beam {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(0, 242, 255, 0.6), #00f2ff);
+  opacity: 0.5;
+  filter: blur(6px);
+  transition:
+    width 0.5s cubic-bezier(0.7, 0, 0.3, 1),
+    opacity 0.4s ease;
+}
+
+.ad-reactor-slider {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #444, #222);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.3),
+    0 2px 5px rgba(0, 0, 0, 0.5),
+    0 0 0 1px #000;
+  transition: transform 0.5s cubic-bezier(0.7, 0, 0.3, 1);
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.ad-slider-vents {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: rgba(255, 255, 255, 0.1);
+  border-bottom-color: rgba(0, 0, 0, 0.3);
+  transform: rotate(45deg);
+}
+
+.ad-reactor-core {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #111;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
+  position: relative;
+  overflow: hidden;
+}
+
+.ad-core-inner {
+  position: absolute;
+  inset: 2px;
+  background: #333;
+  border-radius: 50%;
+  transition: all 0.5s ease;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.ad-reactor-input:checked ~ .ad-reactor-casing .ad-reactor-slider {
+  transform: translateX(60px);
+}
+
+.ad-reactor-input:checked ~ .ad-reactor-casing .ad-plasma-beam {
+  width: 100%;
+  opacity: 1;
+  animation: ad-beam-pulse 1.5s infinite alternate;
+}
+
+.ad-reactor-input:checked ~ .ad-reactor-casing .ad-reactor-slider .ad-core-inner {
+  background: #fff;
+  box-shadow:
+    0 0 10px #00f2ff,
+    0 0 20px #00f2ff,
+    inset 0 0 5px #00f2ff;
+}
+
+.ad-reactor-input:checked ~ .ad-reactor-casing .ad-reactor-slider .ad-reactor-core {
+  animation: ad-core-spin 2s linear infinite;
+  border-color: rgba(0, 242, 255, 0.5);
+}
+
+.ad-reactor-input:checked ~ .ad-reactor-casing {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 20px rgba(0, 242, 255, 0.25);
+}
+
+@keyframes ad-beam-pulse {
+  0% {
+    opacity: 0.8;
+    filter: blur(5px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(8px);
+    box-shadow: 0 0 15px #00f2ff;
+  }
+}
+
+@keyframes ad-core-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.ad-reactor-switch:active .ad-reactor-slider {
+  transform: scale(0.96);
+}
+.ad-reactor-input:checked:active ~ .ad-reactor-casing .ad-reactor-slider {
+  transform: translateX(60px) scale(0.96);
+}
