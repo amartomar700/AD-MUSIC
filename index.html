@@ -3,357 +3,261 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#0b0f17" />
-  <title>AD Music — Cloud & GD Player</title>
-  <link rel="icon" type="image/png" href="./logo.png" />
+  <title>AD Music</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%2314b8a6'/><text x='50' y='64' font-size='44' font-weight='bold' text-anchor='middle' fill='%230b1315' font-family='sans-serif'>AD</text></svg>" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
-  <!-- Auth / Lock Screen Overlay -->
-  <div id="authOverlay" class="auth-overlay">
+  <!-- AUTH SCREEN -->
+  <div id="authScreen" class="auth-overlay hidden">
     <div class="auth-card">
-      <div class="ad-emblem">
-        <img src="./logo.png" alt="AD" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" onerror="this.remove()" />
-      </div>
-      <h1>AD Music</h1>
-      <p class="muted small">Cloud &bull; GD &bull; Hi-Fi Audio</p>
-
-      <div class="auth-tabs">
-        <button type="button" class="auth-tab active" data-auth-tab="login">Sign In</button>
-        <button type="button" class="auth-tab" data-auth-tab="register">Register</button>
-      </div>
-
-      <form id="loginForm" class="stack">
-        <input type="text" id="loginIdentifier" class="neo-input" placeholder="Email or Name" required />
-        <input type="password" id="loginAccessCode" class="neo-input" placeholder="Access Code (e.g. AD-ADMIN-2026)" required />
-        <button type="submit" class="neo-btn neo-btn-primary">Sign In</button>
-      </form>
-
-      <form id="registerForm" class="stack hidden">
-        <input type="text" id="regName" class="neo-input" placeholder="Your Full Name" required />
-        <input type="email" id="regEmail" class="neo-input" placeholder="Email Address" required />
-        <input type="text" id="regAccessCode" class="neo-input" placeholder="Access Code" required />
-        <button type="submit" class="neo-btn neo-btn-primary">Create Account</button>
-      </form>
+      <img src="logo.png" onerror="this.style.display='none'" class="auth-logo" alt="AD" />
+      <h2>AD Music</h2>
+      <p class="muted">Sign in with your registered email or Access Code</p>
+      <input type="email" id="authEmail" placeholder="Email Address" required />
+      <input type="text" id="authName" placeholder="Full Name (Required for new users)" />
+      <input type="text" id="authCode" placeholder="Access Code (e.g. AD-USER-2026)" />
+      <button id="authSubmitBtn" class="btn-primary full-w">Continue</button>
+      <p id="authError" class="error-text"></p>
     </div>
   </div>
 
-  <!-- Live Announcement Banner -->
-  <div id="liveBanner" class="live-banner hidden">
-    <span id="liveBannerText"></span>
-  </div>
-
-  <div class="app-shell">
-    <!-- Clean Top Header (4 Tabs Only: Player, Tracks, EQ, Settings) -->
-    <header class="app-header">
-      <div class="brand-row">
-        <span class="brand-badge">AD <span class="cyan">Music</span></span>
-      </div>
-      <nav class="main-nav">
-        <button type="button" class="nav-btn active" data-view="nowPlayingView">
-          <span class="nav-ico">🎵</span>
-          <span>Player</span>
-        </button>
-        <button type="button" class="nav-btn" data-view="libraryView">
-          <span class="nav-ico">📚</span>
-          <span>Tracks</span>
-        </button>
-        <button type="button" class="nav-btn" data-view="eqView">
-          <span class="nav-ico">🎚️</span>
-          <span>EQ</span>
-        </button>
-        <button type="button" class="nav-btn" data-view="settingsView">
-          <span class="nav-ico">⚙️</span>
-          <span>Settings <span id="settingsPendingDot" class="badge-dot hidden"></span></span>
-        </button>
-      </nav>
+  <!-- MAIN APP SHELL -->
+  <div id="appShell" class="app-shell">
+    <!-- CLEAN 4-TAB TOP HEADER -->
+    <header class="top-nav">
+      <button class="nav-tab active" data-tab="playerTab">Player</button>
+      <button class="nav-tab" data-tab="tracksTab">Tracks</button>
+      <button class="nav-tab" data-tab="eqTab">EQ</button>
+      <button class="nav-tab" data-tab="settingsTab">Settings</button>
     </header>
 
-    <!-- VIEW 1: ZERO-SCROLL PLAYER -->
-    <main id="nowPlayingView" class="view active">
-      <div class="player-card" style="display:flex;flex-direction:column;justify-content:space-between;gap:8px;padding:12px 14px;box-sizing:border-box;">
-        <div class="player-top-meta">
-          <span id="sourceTypeBadge" class="hd-badge">GD</span>
-          <span id="liveRadioBadge" class="radio-badge hidden">LIVE RADIO</span>
-          <span id="remainingTimeLabel" class="muted small">-0:00</span>
-        </div>
+    <!-- ==================== 1. PLAYER TAB (ZERO-SCROLL 100dvh) ==================== -->
+    <main id="playerTab" class="tab-view active player-view">
+      <div class="now-playing-label">NOW PLAYING</div>
 
-        <!-- Circular Progress Dial + Active Track Cover -->
-        <div id="visualWrap" class="dial-wrap" style="margin:0 auto;">
-          <svg class="dial-svg" viewBox="0 0 220 220">
-            <circle class="dial-bg" cx="110" cy="110" r="102"></circle>
-            <circle id="dialProgressCircle" class="dial-fg" cx="110" cy="110" r="102"></circle>
-          </svg>
-          <div class="center-disc">
-            <img id="playerCover" src="" alt="Cover" class="hidden" />
-            <div id="coverFallback" class="cover-fallback">AD</div>
-          </div>
+      <!-- Center Cover Art -->
+      <div class="cover-stage">
+        <div id="coverBox" class="cover-box">
+          <img id="playerCoverImg" src="" alt="Cover" />
+          <div id="playerCoverFallback" class="cover-fallback">AD</div>
         </div>
+      </div>
 
-        <div class="track-meta" style="margin:0;">
-          <h2 id="playerTitle">Select a Track</h2>
-          <p id="playerArtist" class="muted small">AD Music Library</p>
-        </div>
+      <!-- Song Title & Artist -->
+      <div class="track-meta">
+        <h1 id="playerTitle" class="song-title">Select a Track</h1>
+        <p id="playerArtist" class="song-artist">AD Music Library</p>
+      </div>
 
-        <div class="seek-row" style="margin:0;">
-          <span id="currentTimeLabel" class="time-txt">0:00</span>
-          <input type="range" id="seekBar" class="neo-slider" min="0" max="100" step="0.1" value="0" />
-          <span id="durationLabel" class="time-txt">0:00</span>
-        </div>
+      <!-- Utility Action Row: Volume, Loop, Shuffle, Like, Offline -->
+      <div class="utility-row">
+        <button id="volToggleBtn" class="icon-btn" title="Volume & Boost">🔊</button>
+        <button id="loopBtn" class="icon-btn" title="Loop">🔁</button>
+        <button id="shuffleBtn" class="icon-btn" title="Shuffle">🔀</button>
+        <button id="favBtn" class="icon-btn" title="Favorite">♡</button>
+        <button id="offlineBtn" class="icon-btn" title="Save Offline">⬇</button>
+      </div>
 
-        <!-- Main Transport + Custom logo.png Play Button -->
-        <div class="transport-row" style="margin:0;">
-          <button type="button" id="prevBtn" class="ctrl-btn" title="Previous">⏮</button>
-          <button type="button" id="rewind10Btn" class="ctrl-btn skip-txt" title="Rewind 10s">-10s</button>
-          <button type="button" id="playPauseBtn" class="play-ad-btn" title="Play / Pause">
-            <div class="ad-disc-inner" style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;border-radius:50%;overflow:hidden;">
-              <img src="./logo.png" alt="Play" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.style.display='none'" />
-              <span id="playPauseIcon" class="play-mini-ico" style="position:absolute;bottom:4px;right:6px;background:rgba(11,15,23,0.82);padding:1px 5px;border-radius:999px;font-size:10px;line-height:1.2;">▶</span>
-            </div>
-          </button>
-          <button type="button" id="forward10Btn" class="ctrl-btn skip-txt" title="Forward 10s">+10s</button>
-          <button type="button" id="nextBtn" class="ctrl-btn" title="Next">⏭</button>
+      <!-- Pop-up Volume (0-100%) + Auto-Unlocking Boost (100-200%) -->
+      <div id="volumeDrawer" class="volume-drawer hidden">
+        <div class="vol-line">
+          <span>Vol</span>
+          <input type="range" id="volSlider" min="0" max="100" value="100" />
+          <span id="volVal">100%</span>
         </div>
+        <div id="boostLine" class="vol-line boost-line">
+          <span class="boost-tag">⚡ Boost</span>
+          <input type="range" id="boostSlider" min="100" max="200" value="100" />
+          <span id="boostVal">100%</span>
+        </div>
+      </div>
 
-        <div class="pill-action-row" style="margin:0;">
-          <button type="button" id="shuffleBtn" class="neo-pill-btn active">🔀 Shuffle</button>
-          <button type="button" id="playerFavBtn" class="neo-pill-btn">♡ Fav</button>
-          <button type="button" id="downloadOfflineBtn" class="neo-pill-btn">⬇ Save</button>
-          <button type="button" id="liveRadioBtn" class="neo-pill-btn">📻 Radio</button>
-          <button type="button" id="repeatBtn" class="neo-pill-btn">🔁 Loop</button>
+      <!-- Timeline Seek Bar -->
+      <div class="seek-area">
+        <div class="time-labels">
+          <span id="currentTime">0:00</span>
+          <span id="totalTime">0:00</span>
         </div>
+        <input type="range" id="seekSlider" min="0" max="100" value="0" step="0.1" />
+      </div>
 
-        <!-- Volume (0% - 200%) + Integrated Turbo Toggle (Always Visible) -->
-        <div class="vol-row" style="display:flex;align-items:center;gap:8px;width:100%;margin-top:2px;padding:6px 10px;border-radius:14px;background:rgba(255,255,255,0.03);box-sizing:border-box;flex-shrink:0;position:relative;z-index:5;">
-          <span style="font-size:14px;flex-shrink:0;">🔈</span>
-          <input type="range" id="masterVolume" class="neo-slider" style="flex:1;min-width:60px;" min="0" max="2" step="0.05" value="1" />
-          <span id="volumeValue" class="vol-pct" style="min-width:38px;text-align:right;font-size:12px;font-weight:700;flex-shrink:0;">100%</span>
-          <button type="button" id="turboBoostBtn" class="turbo-chip" style="padding:4px 8px;font-size:11px;white-space:nowrap;flex-shrink:0;" title="Boost Volume up to 400%">🔥 400%</button>
-        </div>
+      <!-- Primary Transport Controls (-10s, Prev, Rotating Glowing logo.png, Next, +10s) -->
+      <div class="transport-row">
+        <button id="rew10Btn" class="skip-btn" title="-10 Seconds">-10s</button>
+        <button id="prevBtn" class="ctrl-btn" title="Previous">⏮</button>
+        <button id="playPauseBtn" class="logo-play-btn" title="Play / Pause">
+          <img src="logo.png" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="Play" />
+          <span class="logo-text-fallback" style="display:none;">AD</span>
+        </button>
+        <button id="nextBtn" class="ctrl-btn" title="Next">⏭</button>
+        <button id="fwd10Btn" class="skip-btn" title="+10 Seconds">+10s</button>
       </div>
     </main>
 
-    <!-- VIEW 2: TRACKS & ALBUMS (Full-Width Search + 4 Visible Tabs) -->
-    <section id="libraryView" class="view">
-      <div class="card-panel scroll-panel stack">
-        <div class="inline-between">
+    <!-- ==================== 2. TRACKS TAB ==================== -->
+    <section id="tracksTab" class="tab-view scrollable-view">
+      <div class="search-wrap">
+        <input type="search" id="searchInput" placeholder="Search songs, artists, or albums..." />
+        <button id="resyncQuickBtn" class="btn-chip" title="Refresh Library">↻</button>
+      </div>
+
+      <div class="sub-tabs">
+        <button class="sub-tab active" data-sub="all">All Tracks</button>
+        <button class="sub-tab" data-sub="albums">Albums</button>
+        <button class="sub-tab" data-sub="favorites">Favorites</button>
+        <button class="sub-tab" data-sub="offline">Offline</button>
+      </div>
+
+      <div id="albumBackBar" class="album-back-bar hidden">
+        <button id="backToAlbumsBtn" class="btn-chip">← All Albums</button>
+        <span id="activeAlbumTitle" class="album-heading"></span>
+      </div>
+
+      <div id="tracksListContainer" class="list-container"></div>
+    </section>
+
+    <!-- ==================== 3. EQUALIZER TAB (10-BAND PRO UI) ==================== -->
+    <section id="eqTab" class="tab-view scrollable-view eq-theme">
+      <div class="eq-header-row">
+        <h3>Equalizer</h3>
+        <label class="switch">
+          <input type="checkbox" id="eqMasterToggle" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- Preset Pills -->
+      <div class="eq-presets">
+        <button class="eq-preset-btn active" data-preset="normal">Normal</button>
+        <button class="eq-preset-btn" data-preset="dance">Dance</button>
+        <button class="eq-preset-btn" data-preset="folk">Folk</button>
+        <button class="eq-preset-btn" data-preset="hiphop">HipHop</button>
+        <button class="eq-preset-btn" data-preset="pop">Pop</button>
+      </div>
+
+      <!-- 10-Band Vertical Sliders -->
+      <div id="eqBandsGrid" class="eq-bands-grid"></div>
+
+      <!-- Sound Effect & Acoustic Modes -->
+      <div class="eq-header-row" style="margin-top:16px;">
+        <h3>Sound Effect</h3>
+        <label class="switch">
+          <input type="checkbox" id="fxMasterToggle" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="fx-slider-row">
+        <span>Tempo</span>
+        <input type="range" id="tempoSlider" min="0.7" max="1.3" step="0.05" value="1.0" />
+        <span id="tempoVal">1.0x</span>
+      </div>
+
+      <div class="fx-slider-row">
+        <span>Punch / Comp</span>
+        <input type="range" id="compSlider" min="0" max="12" step="1" value="4" />
+        <span id="compVal">4</span>
+      </div>
+
+      <div id="acousticGrid" class="acoustic-grid">
+        <button class="ac-btn active" data-ac="pure">Pure</button>
+        <button class="ac-btn" data-ac="solid">Solid</button>
+        <button class="ac-btn" data-ac="around">Around</button>
+        <button class="ac-btn" data-ac="strong">Strong</button>
+        <button class="ac-btn" data-ac="steady">Steady</button>
+        <button class="ac-btn" data-ac="resonant">Resonant</button>
+        <button class="ac-btn" data-ac="amiable">Amiable</button>
+        <button class="ac-btn" data-ac="tall">Tall</button>
+        <button class="ac-btn" data-ac="color">Color</button>
+        <button class="ac-btn" data-ac="crisp">Crisp</button>
+        <button class="ac-btn" data-ac="bright">Bright</button>
+        <button class="ac-btn" data-ac="express">Express</button>
+      </div>
+    </section>
+
+    <!-- ==================== 4. SETTINGS & ADMIN TAB ==================== -->
+    <section id="settingsTab" class="tab-view scrollable-view">
+      <!-- Profile Card -->
+      <div class="card">
+        <h3>Profile & Account</h3>
+        <div class="profile-row">
           <div>
-            <h3>Music Library</h3>
-            <p id="libraryStats" class="muted small">0 tracks</p>
+            <strong id="profName">Guest</strong>
+            <div id="profEmail" class="muted">not signed in</div>
           </div>
-          <button type="button" id="refreshLibraryBtn" class="neo-pill-btn">↻ Sync</button>
+          <span id="profRoleBadge" class="role-badge">USER</span>
         </div>
-
-        <div style="width:100%;margin-bottom:6px;">
-          <input type="text" id="searchInput" class="neo-input" style="width:100%;box-sizing:border-box;" placeholder="Search songs, artists, albums..." />
-        </div>
-
-        <div class="sub-tabs" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;min-height:38px;margin-bottom:10px;position:relative;z-index:5;overflow:visible;flex-shrink:0;">
-          <button type="button" class="sub-tab active" data-lib-tab="allSongsPanel" style="height:36px;padding:0 6px;font-size:12px;white-space:nowrap;">All Track</button>
-          <button type="button" class="sub-tab" data-lib-tab="albumsPanel" style="height:36px;padding:0 6px;font-size:12px;white-space:nowrap;">Albums</button>
-          <button type="button" class="sub-tab" data-lib-tab="favoritesPanel" style="height:36px;padding:0 6px;font-size:12px;white-space:nowrap;">Fvt Song</button>
-          <button type="button" class="sub-tab" data-lib-tab="offlinePanel" style="height:36px;padding:0 6px;font-size:12px;white-space:nowrap;">Offline</button>
-        </div>
-
-        <div id="allSongsPanel" class="lib-panel stack" style="margin-top:4px;">
-          <div id="songList" class="stack"></div>
-        </div>
-
-        <div id="albumsPanel" class="lib-panel stack hidden" style="margin-top:4px;">
-          <button type="button" id="backToAlbumsBtn" class="neo-pill-btn hidden">← Back to Albums</button>
-          <div id="albumGrid" class="stack"></div>
-          <div id="albumSongList" class="stack hidden"></div>
-        </div>
-
-        <div id="favoritesPanel" class="lib-panel stack hidden" style="margin-top:4px;">
-          <div id="favoritesList" class="stack"></div>
-        </div>
-
-        <div id="offlinePanel" class="lib-panel stack hidden" style="margin-top:4px;">
-          <p id="offlineStats" class="muted small">0 tracks saved offline</p>
-          <div id="offlineList" class="stack"></div>
+        <div class="btn-row" style="margin-top:12px;">
+          <button id="clearOfflineBtn" class="btn-chip">Clear Offline Cache (<span id="offlineCountStat">0</span>)</button>
+          <button id="signOutBtn" class="btn-danger">Sign Out</button>
         </div>
       </div>
-    </section>
 
-    <!-- VIEW 3: EQUALIZER -->
-    <section id="eqView" class="view">
-      <div class="card-panel scroll-panel stack">
-        <h3>Equalizer & Tone</h3>
-        <div class="eq-presets">
-          <button type="button" class="eq-preset-tab active" data-preset="normal">Normal</button>
-          <button type="button" class="eq-preset-tab" data-preset="bass">Bass Boost</button>
-          <button type="button" class="eq-preset-tab" data-preset="club">Club</button>
-          <button type="button" class="eq-preset-tab" data-preset="classic">Classic</button>
-          <button type="button" class="eq-preset-tab" data-preset="flat">Flat</button>
-        </div>
-
-        <div class="eq-bands-grid">
-          <div class="eq-col">
-            <span id="valBand0" class="eq-val">+02</span>
-            <input type="range" id="eqBand0" class="eq-v-slider" min="-12" max="18" value="2" />
-            <span class="muted small">230Hz</span>
-          </div>
-          <div class="eq-col">
-            <span id="valBand1" class="eq-val">+11</span>
-            <input type="range" id="eqBand1" class="eq-v-slider" min="-12" max="18" value="11" />
-            <span class="muted small">910Hz</span>
-          </div>
-          <div class="eq-col">
-            <span id="valBand2" class="eq-val">+18</span>
-            <input type="range" id="eqBand2" class="eq-v-slider" min="-12" max="18" value="18" />
-            <span class="muted small">3.6kHz</span>
-          </div>
-          <div class="eq-col">
-            <span id="valBand3" class="eq-val">+08</span>
-            <input type="range" id="eqBand3" class="eq-v-slider" min="-12" max="18" value="8" />
-            <span class="muted small">14kHz</span>
-          </div>
-        </div>
-
-        <div class="knob-row">
-          <div class="knob-box">
-            <label class="small">Bass: <strong id="bassKnobVal">+00</strong> dB</label>
-            <input type="range" id="eqBassKnob" class="neo-slider" min="-12" max="18" value="0" />
-          </div>
-          <div class="knob-box">
-            <label class="small">Treble: <strong id="trebleKnobVal">+00</strong> dB</label>
-            <input type="range" id="eqTrebleKnob" class="neo-slider" min="-12" max="18" value="0" />
-          </div>
+      <!-- Playback Preferences -->
+      <div class="card">
+        <h3>Audio Engine</h3>
+        <label class="toggle-line">
+          <span>Preload Next 2 Tracks in RAM</span>
+          <input type="checkbox" id="preloadToggle" checked />
+        </label>
+        <label class="toggle-line">
+          <span>Smart Auto-Skip End Silence (2s)</span>
+          <input type="checkbox" id="silenceSkipToggle" checked />
+        </label>
+        <div class="theme-dots">
+          <span>Accent:</span>
+          <button class="dot" data-color="#14b8a6" style="background:#14b8a6"></button>
+          <button class="dot" data-color="#8b5cf6" style="background:#8b5cf6"></button>
+          <button class="dot" data-color="#f59e0b" style="background:#f59e0b"></button>
+          <button class="dot" data-color="#ec4899" style="background:#ec4899"></button>
         </div>
       </div>
-    </section>
 
-    <!-- VIEW 4: SETTINGS HUB (Info + Upload + Admin) -->
-    <section id="settingsView" class="view">
-      <div class="card-panel scroll-panel stack">
-        <div class="settings-sub-nav">
-          <button type="button" class="settings-tab active" data-settings-tab="settingsGeneralPanel">⚙️ Info & Theme</button>
-          <button type="button" class="settings-tab" data-settings-tab="uploadView">⬆️ Upload</button>
-          <button type="button" id="adminSubTabBtn" class="settings-tab hidden" data-settings-tab="adminView">
-            🛡️ Admin <span id="pendingBadge" class="pill-count hidden">0</span>
-          </button>
+      <!-- Upload Song Card -->
+      <div class="card">
+        <h3>Upload Song (.webm / .mp3)</h3>
+        <input type="text" id="upTitle" placeholder="Song Title *" />
+        <input type="text" id="upArtist" placeholder="Artist Name" />
+        <input type="text" id="upAlbum" placeholder="Album / Folder Name" />
+        <input type="file" id="upFile" accept="audio/*,.webm" />
+        <button id="uploadSongBtn" class="btn-primary full-w">Upload to AD Music</button>
+        <p id="uploadStatus" class="muted" style="margin-top:6px;"></p>
+      </div>
+
+      <!-- ADMIN CONSOLE (VISIBLE ONLY FOR ADMIN ROLE) -->
+      <div id="adminSection" class="card admin-card hidden">
+        <div class="admin-head">
+          <h3>Admin Control Panel</h3>
+          <button id="syncDriveBtn" class="btn-primary">Sync Drive (.webm/.webp)</button>
         </div>
+        <p id="syncStatusMsg" class="muted"></p>
 
-        <!-- 4A: User Profile, Info & Theme -->
-        <div id="settingsGeneralPanel" class="settings-panel stack">
-          <div class="sub-card stack">
-            <div class="inline-between">
-              <div>
-                <h3 id="userDisplayName">User</h3>
-                <p id="userEmailDisplay" class="muted small"></p>
-              </div>
-              <span id="roleBadge" class="hd-badge">USER</span>
-            </div>
-            <button type="button" id="logoutBtn" class="neo-btn danger-text">Sign Out</button>
-          </div>
+        <!-- Pending Song Approvals -->
+        <h4>Pending Approvals (<span id="pendingCount">0</span>)</h4>
+        <div id="adminPendingList" class="admin-sublist"></div>
 
-          <div class="sub-card stack">
-            <h4>Appearance & App Info</h4>
-            <div class="inline-between">
-              <label class="small">Theme Preset</label>
-              <select id="settingThemePreset" class="neo-select" style="width:auto;">
-                <option value="neonwave">Neon Wave</option>
-                <option value="emerald">Emerald</option>
-                <option value="gold">Royal Gold</option>
-                <option value="violet">Cyber Violet</option>
-              </select>
-            </div>
-            <div class="inline-between">
-              <label class="small">Accent Colors</label>
-              <div class="inline-row">
-                <input type="color" id="settingPrimaryColor" value="#ff3f82" />
-                <input type="color" id="settingSecondaryColor" value="#55d7ff" />
-              </div>
-            </div>
-            <div class="inline-between">
-              <label class="small">Dial Visualizer</label>
-              <select id="settingVisualizer" class="neo-select" style="width:auto;">
-                <option value="on">Active</option>
-                <option value="off">Static</option>
-              </select>
-            </div>
-            <div class="inline-between">
-              <span class="small muted">AD Music v4.1.0</span>
-              <button type="button" id="settingsClearCacheBtn" class="neo-pill-btn danger-text">Clear Offline Cache</button>
-            </div>
-          </div>
+        <!-- Access Code Generator -->
+        <h4>Generate Access Code</h4>
+        <div class="inline-form">
+          <input type="text" id="newCodeInput" placeholder="Custom Code (blank = auto)" />
+          <select id="newCodeRole">
+            <option value="USER">USER</option>
+            <option value="ADMIN">ADMIN</option>
+          </select>
+          <button id="genCodeBtn" class="btn-primary">Generate</button>
         </div>
+        <div id="adminCodesList" class="admin-sublist"></div>
 
-        <!-- 4B: Upload Songs (50/day, Max 10 mins, Duplicate Filter) -->
-        <div id="uploadView" class="settings-panel stack hidden">
-          <div class="sub-card stack">
-            <h4>Upload Song (Max 50/day • Max 10m)</h4>
-            <p class="muted small">Songs over 10 minutes or duplicate titles are auto-rejected. Approved songs save in your own folder.</p>
-            <form id="uploadForm" class="stack">
-              <select id="uploadSourceType" class="neo-select">
-                <option value="FILE">Upload Audio File (Phone / PC)</option>
-                <option value="DRIVE">Google Drive Link / File ID</option>
-                <option value="R2">Direct Cloud MP3 URL</option>
-              </select>
-
-              <div id="filePickerGroup">
-                <input type="file" id="uploadAudioFile" class="neo-input" accept="audio/*" />
-              </div>
-
-              <div id="urlInputGroup" class="stack hidden">
-                <label id="audioSourceLabel" class="small">GD Link or File ID</label>
-                <div class="inline-row">
-                  <input type="text" id="uploadSourceUrl" class="neo-input" placeholder="Paste link..." />
-                  <button type="button" id="probeDurationBtn" class="neo-pill-btn">Check</button>
-                </div>
-              </div>
-
-              <input type="text" id="uploadTitle" class="neo-input" placeholder="Song Title" required />
-              <input type="text" id="uploadArtist" class="neo-input" placeholder="Artist Name" required />
-              <input type="text" id="uploadAlbum" class="neo-input" placeholder="Album Name" />
-              <input type="text" id="uploadCategory" class="neo-input" list="categorySuggestions" placeholder="Category (e.g. Hindi, Punjabi)" />
-              <datalist id="categorySuggestions"></datalist>
-              <input type="url" id="uploadCoverUrl" class="neo-input" placeholder="Thumbnail URL (Optional)" />
-              <input type="number" id="uploadDuration" class="neo-input" placeholder="Duration in seconds (Max 600)" max="600" min="30" required />
-
-              <button type="submit" class="neo-btn neo-btn-primary">Submit for Admin Approval</button>
-            </form>
-            <p id="uploadStatusMsg" class="muted small"></p>
-          </div>
-        </div>
-
-        <!-- 4C: Admin Panel (Pending Approvals, Access Codes, Users) -->
-        <div id="adminView" class="settings-panel stack hidden">
-          <div class="inline-between">
-            <h4>Admin Service Panel</h4>
-            <button type="button" id="adminRefreshBtn" class="neo-pill-btn">↻ Refresh</button>
-          </div>
-
-          <div class="sub-card stack">
-            <h4>1. Pending Song Approvals</h4>
-            <div id="pendingSongsList" class="stack"></div>
-          </div>
-
-          <div class="sub-card stack">
-            <h4>2. Generate Access Code</h4>
-            <form id="createCodeForm" class="inline-row">
-              <select id="newCodeRole" class="neo-select">
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </select>
-              <input type="number" id="newCodeMaxUses" class="neo-input" value="5" min="1" max="500" />
-              <button type="submit" class="neo-btn neo-btn-primary">Create</button>
-            </form>
-            <div id="accessCodesList" class="stack"></div>
-          </div>
-
-          <div class="sub-card stack">
-            <h4>3. Registered Users</h4>
-            <div id="adminUsersList" class="stack"></div>
-          </div>
-        </div>
+        <!-- Registered Users (Block / Unblock & Revoke) -->
+        <h4>Registered Users</h4>
+        <div id="adminUsersList" class="admin-sublist"></div>
       </div>
     </section>
   </div>
 
-  <div id="toastContainer" class="toast-container"></div>
+  <div id="toast" class="toast hidden"></div>
   <script src="app.js"></script>
 </body>
 </html>
