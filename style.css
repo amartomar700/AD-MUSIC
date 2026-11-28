@@ -827,3 +827,39 @@ header nav button,
 .ad-reactor-input:checked:active ~ .ad-reactor-casing .ad-reactor-slider {
   transform: translateX(60px) scale(0.96);
 }
+/* Album list ke Play (▶) aur Download (⬇) buttons ko bada aur clean banane ke liye: */
+.album-item .item-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex-shrink: 0 !important;
+}
+
+.album-item .mini-btn {
+  width: 56px !important;
+  height: 46px !important;
+  border-radius: 14px !important;
+  font-size: 19px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: transform 0.15s ease, background 0.2s ease !important;
+}
+
+.album-item .play-alb-btn {
+  background: var(--accent, #14b8a6) !important;
+  color: #061012 !important;
+  font-weight: bold !important;
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.28) !important;
+}
+
+.album-item .dl-alb-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #f1f5f9 !important;
+}
+
+.album-item .mini-btn:active {
+  transform: scale(0.94) !important;
+}
