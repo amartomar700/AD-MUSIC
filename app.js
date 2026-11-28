@@ -1,7 +1,7 @@
 /**
-- AD Music PWA — Clean Modular Engine (v4.3 + Live FM Radio)
-- Features: .webm + .webp fast rendering, 100-200% Auto-Unlock Boost, RAM Preload (Next 2),
-- Smart 2s Silence Auto-Skip, 10-Band Web Audio EQ, Quota-Safe LocalStorage, Admin Controls, Live FM Radio
+ * AD Music PWA — Clean Modular Engine (v4.4 + Live FM Radio & Reactor Mode Switch)
+ * Features: .webm + .webp fast rendering, 100-200% Auto-Unlock Boost, RAM Preload (Next 2),
+ * Smart 2s Silence Auto-Skip, 10-Band Web Audio EQ, Quota-Safe LocalStorage, Admin Controls, Live FM Radio
  */
 
 const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwSr-j8h-BR8mgzU2c-9K0yuLokz7qcTAV8uxsW3ih8XLOADPCamdIg6OxIt7sNsZqQ/exec";
@@ -26,6 +26,7 @@ const state = {
   filteredSongs: [],
   radios: [...DEFAULT_RADIOS],
   currentIndex: -1,
+  lastSongIndex: 0,
   isRadioMode: false,
   radioIndex: -1,
   isPlaying: false,
@@ -233,8 +234,10 @@ async function playSongAtIndex(idx) {
   if (audioCtx.state === "suspended") await audioCtx.resume();
 
   state.currentIndex = idx;
+  state.lastSongIndex = idx;
   state.isRadioMode = false;
   state.radioIndex = -1;
+  syncModeSwitchUI(false);
   audio.crossOrigin = "anonymous";
   state.silenceCounter = 0;
   const song = state.songs[idx];
@@ -296,7 +299,19 @@ function setPlayingState(playing) {
   renderRadioList();
 }
 
-/* ==================== LIVE FM RADIO ENGINE ==================== */
+/* ==================== LIVE FM RADIO ENGINE & MODE SWITCH ==================== */
+function syncModeSwitchUI(isRadio) {
+  const toggle = document.getElementById("modeReactorToggle");
+  const lblMusic = document.getElementById("modeLblMusic");
+  const lblRadio = document.getElementById("modeLblRadio");
+  if (toggle) toggle.checked = !!isRadio;
+  if (lblMusic) lblMusic.classList.toggle("active", !isRadio);
+  if (lblRadio) {
+    lblRadio.classList.toggle("active", !!isRadio);
+    lblRadio.classList.toggle("radio-on", !!isRadio);
+  }
+}
+
 function renderRadioList() {
   const box = document.getElementById("radioListContainer");
   if (!box) return;
@@ -345,6 +360,7 @@ async function playRadioAtIndex(idx) {
   state.radioIndex = safeIdx;
   state.currentIndex = -1;
   state.silenceCounter = 0;
+  syncModeSwitchUI(true);
 
   document.getElementById("playerTitle").textContent = rad.name;
   document.getElementById("playerArtist").textContent = `🔴 LIVE FM • ${rad.genre || "Radio"}`;
@@ -693,6 +709,29 @@ function bindEvents() {
 
   document.getElementById("searchInput").oninput = renderLibrary;
   document.getElementById("resyncQuickBtn").onclick = loadSongs;
+
+  // Mutual Exclusion Reactor Switch (Left = Music Player, Right = Live FM Radio)
+  const reactorToggle = document.getElementById("modeReactorToggle");
+  if (reactorToggle) {
+    reactorToggle.onchange = () => {
+      if (reactorToggle.checked) {
+        audio.pause();
+        const targetRad = state.radioIndex >= 0 ? state.radioIndex : 0;
+        playRadioAtIndex(targetRad);
+      } else {
+        audio.pause();
+        state.isRadioMode = false;
+        if (state.songs.length) {
+          playSongAtIndex(state.lastSongIndex >= 0 ? state.lastSongIndex : 0);
+        } else {
+          syncModeSwitchUI(false);
+          document.getElementById("playerTitle").textContent = "Select a Track";
+          document.getElementById("playerArtist").textContent = "AD Music Library";
+          setPlayingState(false);
+        }
+      }
+    };
+  }
 
   document.getElementById("playPauseBtn").onclick = () => {
     if (state.isRadioMode) {
