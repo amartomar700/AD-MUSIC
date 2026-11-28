@@ -1,5 +1,5 @@
 /**
- * AD Music PWA — Clean Modular Engine (v4.0)
+ * AD Music PWA — Clean Modular Engine (v4.2)
  * Features: .webm + .webp fast rendering, 100-200% Auto-Unlock Boost, RAM Preload (Next 2),
  * Smart 2s Silence Auto-Skip, 10-Band Web Audio EQ, Quota-Safe LocalStorage, Admin Controls
  */
@@ -79,6 +79,26 @@ function initAudioGraph() {
   analyserNode.connect(audioCtx.destination);
 }
 
+/* ==================== JSONP HELPER (CORS-SAFE) ==================== */
+function jsonpRequest(url) {
+  return new Promise((resolve, reject) => {
+    const cbName = "ad_cb_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+    const script = document.createElement("script");
+    window[cbName] = data => {
+      delete window[cbName];
+      script.remove();
+      resolve(data);
+    };
+    script.onerror = () => {
+      delete window[cbName];
+      script.remove();
+      reject(new Error("JSONP request failed"));
+    };
+    script.src = `${url}&callback=${cbName}`;
+    document.body.appendChild(script);
+  });
+}
+
 /* ==================== AUTH & LIBRARY LOADING ==================== */
 async function handleAuth() {
   const email = document.getElementById("authEmail").value.trim();
@@ -108,7 +128,6 @@ async function handleAuth() {
 }
 
 async function loadSongs() {
-  // Load cached compact metadata first for instant startup
   const cached = localStorage.getItem("admusic_songs_meta");
   if (cached) {
     try {
@@ -119,8 +138,7 @@ async function loadSongs() {
 
   try {
     const url = `${GAS_WEBAPP_URL}?action=getLibrary&email=${encodeURIComponent(state.user.email)}`;
-    const res = await fetch(url);
-    const data = await res.json();
+    const data = await jsonpRequest(url);
     if (!data.ok) {
       if (data.error && data.error.includes("Unauthorized")) signOut();
       return;
@@ -135,7 +153,6 @@ async function loadSongs() {
 }
 
 function saveSongsCacheSafely(songs) {
-  // Purge old legacy keys to prevent 5MB QuotaExceededError
   Object.keys(localStorage).forEach(k => {
     if (k.startsWith("admusic_cached_songs_")) localStorage.removeItem(k);
   });
@@ -159,7 +176,6 @@ function saveSongsCacheSafely(songs) {
 /* ==================== PLAYBACK, RAM PRELOAD & SILENCE SKIP ==================== */
 async function resolveAudioSrc(song) {
   if (!song) return "";
-  // 1. Check Offline Cache API
   if (state.offlineIds.has(song.id) && "caches" in window) {
     const cache = await caches.open("admusic-offline-v1");
     const match = await cache.match(`/offline-track/${song.id}`);
@@ -168,15 +184,13 @@ async function resolveAudioSrc(song) {
       return URL.createObjectURL(blob);
     }
   }
-  // 2. Check RAM Preload Cache
   if (state.blobCache.has(song.id)) {
     return state.blobCache.get(song.id);
   }
-  // 3. Direct Cloud URL or JSONP Base64 Drive Stream
   if (song.sourceType === "CLOUD" && song.audioUrl) return song.audioUrl;
 
-  const res = await fetch(`${GAS_WEBAPP_URL}?action=streamAudio&email=${encodeURIComponent(state.user.email)}&fileId=${encodeURIComponent(song.fileId)}`);
-  const data = await res.json();
+  const url = `${GAS_WEBAPP_URL}?action=streamAudio&email=${encodeURIComponent(state.user.email)}&fileId=${encodeURIComponent(song.fileId)}`;
+  const data = await jsonpRequest(url);
   if (!data.ok) throw new Error(data.error || "Stream failed");
 
   const byteChars = atob(data.base64);
@@ -197,7 +211,6 @@ async function playSongAtIndex(idx) {
   state.silenceCounter = 0;
   const song = state.songs[idx];
 
-  // Update Player UI immediately
   document.getElementById("playerTitle").textContent = song.title;
   document.getElementById("playerArtist").textContent = `${song.artist} • ${cleanAlbumName(song.album)}`;
   updateCoverDisplay(song);
@@ -217,7 +230,8 @@ async function playSongAtIndex(idx) {
 }
 
 function preloadNextTwo(currentIdx) {
-  if (!document.getElementById("preloadToggle").checked) return;
+  const toggle = document.getElementById("preloadToggle");
+  if (!toggle || !toggle.checked || !state.songs.length) return;
   [1, 2].forEach(offset => {
     const nextIdx = (currentIdx + offset) % state.songs.length;
     const nextSong = state.songs[nextIdx];
@@ -249,13 +263,12 @@ function updateCoverDisplay(song) {
 function setPlayingState(playing) {
   state.isPlaying = playing;
   const btn = document.getElementById("playPauseBtn");
-  btn.classList.toggle("playing", playing);
+  if (btn) btn.classList.toggle("playing", playing);
 }
 
 /* ==================== ALBUMS (SHORT UNIQUE NAMES) & LIBRARY RENDER ==================== */
 function cleanAlbumName(raw) {
   if (!raw) return "Singles";
-  // Strip duplicate repeated path segments like "Bollywood/Bollywood" -> "Bollywood"
   const parts = String(raw).split(/[\\/]/).map(p => p.trim()).filter(Boolean);
   const unique = [...new Set(parts)];
   const shortName = unique[unique.length - 1] || "Singles";
@@ -268,7 +281,6 @@ function renderLibrary() {
   const backBar = document.getElementById("albumBackBar");
   container.innerHTML = "";
 
-  // Album folder list mode
   if (state.subTab === "albums" && !state.selectedAlbum && !query) {
     backBar.classList.add("hidden");
     const albumMap = new Map();
@@ -307,7 +319,6 @@ function renderLibrary() {
     return;
   }
 
-  // Show back bar if inside an album
   if (state.subTab === "albums" && state.selectedAlbum) {
     backBar.classList.remove("hidden");
     document.getElementById("activeAlbumTitle").textContent = state.selectedAlbum;
@@ -415,7 +426,6 @@ function toggleFavorite(songId) {
 }
 
 function updateUtilityStates(song) {
- function updateUtilityStates(song) {
   document.getElementById("favBtn").classList.toggle("active-state", state.favorites.has(song.id));
   document.getElementById("offlineBtn").classList.toggle("active-state", state.offlineIds.has(song.id));
 }
@@ -423,6 +433,7 @@ function updateUtilityStates(song) {
 /* ==================== 10-BAND EQUALIZER UI ==================== */
 function initEQUI() {
   const grid = document.getElementById("eqBandsGrid");
+  if (!grid) return;
   EQ_LABELS.forEach((lbl, idx) => {
     const col = document.createElement("div");
     col.className = "eq-band-col";
@@ -484,11 +495,10 @@ async function uploadNewSong() {
 
 async function loadAdminData() {
   try {
-    const res = await fetch(`${GAS_WEBAPP_URL}?action=getAdminData&email=${encodeURIComponent(state.user.email)}`);
-    const data = await res.json();
+    const url = `${GAS_WEBAPP_URL}?action=getAdminData&email=${encodeURIComponent(state.user.email)}`;
+    const data = await jsonpRequest(url);
     if (!data.ok) return;
 
-    // Pending songs
     document.getElementById("pendingCount").textContent = data.pendingSongs.length;
     const pList = document.getElementById("adminPendingList");
     pList.innerHTML = data.pendingSongs.map(s => `
@@ -501,7 +511,6 @@ async function loadAdminData() {
       </div>
     `).join("") || `<div class="muted">No pending songs</div>`;
 
-    // Access codes
     const cList = document.getElementById("adminCodesList");
     cList.innerHTML = data.codes.map(c => `
       <div class="admin-row">
@@ -510,7 +519,6 @@ async function loadAdminData() {
       </div>
     `).join("");
 
-    // Registered users (Block + Revoke)
     const uList = document.getElementById("adminUsersList");
     uList.innerHTML = data.users.map(u => `
       <div class="admin-row">
@@ -522,7 +530,7 @@ async function loadAdminData() {
           <button class="mini-btn" onclick="toggleBlockUser('${u.email}','${u.status === "BLOCKED" ? "ACTIVE" : "BLOCKED"}')">
             ${u.status === "BLOCKED" ? "Unblock" : "Block"}
           </button>
-          <button class="mini-btn" onclick="toggleBlockUser('${u.email}','BLOCKED')">Revoke</button>
+          <button class="mini-btn" onclick="toggleBlockUser('${u.email}','REVOKED')">Revoke</button>
         </div>
       </div>
     `).join("");
@@ -581,7 +589,6 @@ function bindEvents() {
   document.getElementById("searchInput").oninput = renderLibrary;
   document.getElementById("resyncQuickBtn").onclick = loadSongs;
 
-  // Play / Pause Logo Button
   document.getElementById("playPauseBtn").onclick = () => {
     if (state.currentIndex === -1 && state.songs.length) {
       playSongAtIndex(0);
@@ -597,6 +604,7 @@ function bindEvents() {
   };
 
   document.getElementById("prevBtn").onclick = () => {
+    if (!state.songs.length) return;
     const prev = (state.currentIndex - 1 + state.songs.length) % state.songs.length;
     playSongAtIndex(prev);
   };
@@ -605,15 +613,15 @@ function bindEvents() {
   document.getElementById("rew10Btn").onclick = () => { audio.currentTime = Math.max(0, audio.currentTime - 10); };
   document.getElementById("fwd10Btn").onclick = () => { audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10); };
 
-  document.getElementById("shuffleBtn").onclick = e => {
+  document.getElementById("shuffleBtn").onclick = () => {
     state.shuffle = !state.shuffle;
-    e.target.classList.toggle("active-state", state.shuffle);
+    document.getElementById("shuffleBtn").classList.toggle("active-state", state.shuffle);
   };
 
-  document.getElementById("loopBtn").onclick = e => {
+  document.getElementById("loopBtn").onclick = () => {
     state.loop = !state.loop;
     audio.loop = state.loop;
-    e.target.classList.toggle("active-state", state.loop);
+    document.getElementById("loopBtn").classList.toggle("active-state", state.loop);
   };
 
   document.getElementById("favBtn").onclick = () => {
@@ -623,7 +631,6 @@ function bindEvents() {
 
   document.getElementById("offlineBtn").onclick = saveCurrentOffline;
 
-  // Volume 0-100% -> Auto-Unlock 100%-200% Boost
   document.getElementById("volToggleBtn").onclick = () => {
     document.getElementById("volumeDrawer").classList.toggle("hidden");
   };
@@ -652,7 +659,6 @@ function bindEvents() {
     gainNode.gain.value = boost / 100;
   };
 
-  // Seek & Time Update + Smart 2s Silence Auto-Skip in last 10s
   const seekSlider = document.getElementById("seekSlider");
   seekSlider.oninput = () => {
     if (audio.duration) audio.currentTime = (seekSlider.value / 100) * audio.duration;
@@ -682,7 +688,6 @@ function bindEvents() {
 
   audio.onended = () => { if (!state.loop) playNextTrack(); };
 
-  // EQ Presets & FX
   document.querySelectorAll(".eq-preset-btn").forEach(btn => {
     btn.onclick = () => {
       initAudioGraph();
@@ -716,7 +721,6 @@ function bindEvents() {
     };
   });
 
-  // Settings & Admin Actions
   document.querySelectorAll(".dot").forEach(d => {
     d.onclick = () => setAccentColor(d.dataset.color);
   });
@@ -746,14 +750,40 @@ function bindEvents() {
   };
 
   document.getElementById("genCodeBtn").onclick = async () => {
-    const code = document.getElementById("newCodeInput").value.trim();
+    const btn = document.getElementById("genCodeBtn");
+    const input = document.getElementById("newCodeInput");
     const role = document.getElementById("newCodeRole").value;
-    await fetch(GAS_WEBAPP_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "manageCode", email: state.user.email, subAction: "CREATE", code, role, maxUses: 50 })
-    });
-    document.getElementById("newCodeInput").value = "";
-    loadAdminData();
+    const finalCode = (input.value.trim() || ("AD-" + Math.random().toString(36).substring(2, 8).toUpperCase())).toUpperCase();
+
+    btn.disabled = true;
+    btn.textContent = "Saving...";
+    showToast(`Generated: ${finalCode} (1 User Limit)`);
+
+    const cList = document.getElementById("adminCodesList");
+    cList.insertAdjacentHTML("afterbegin", `
+      <div class="admin-row">
+        <span><strong>${finalCode}</strong> (${role}) • 0/1 • ACTIVE</span>
+        <button class="mini-btn" onclick="revokeCode('${finalCode}')">Revoke</button>
+      </div>
+    `);
+    input.value = "";
+
+    try {
+      await fetch(GAS_WEBAPP_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "manageCode",
+          email: state.user.email,
+          subAction: "CREATE",
+          code: finalCode,
+          role,
+          maxUses: 1
+        })
+      });
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Generate";
+    }
   };
 }
 
