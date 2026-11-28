@@ -31,6 +31,11 @@
       <button class="nav-tab" data-tab="tracksTab">Tracks</button>
       <button class="nav-tab" data-tab="eqTab">EQ</button>
       <button class="nav-tab" data-tab="settingsTab">Settings</button>
+      <!-- Is existing line ke THEEK NEECHE paste karein: -->
+<button class="nav-pill" data-tab="settingsTab" onclick="switchTab('settingsTab')">Settings</button>
+
+<!-- NAYA CODE: -->
+<button class="nav-pill" data-tab="radioTab" onclick="switchTab('radioTab')">Radio</button>
     </header>
 
     <!-- ==================== 1. PLAYER TAB (ZERO-SCROLL 100dvh) ==================== -->
@@ -229,7 +234,26 @@
           <button id="signOutBtn" class="btn-danger">Sign Out</button>
         </div>
       </div>
+<!-- Is existing closing tag (settingsTab ke end) ke THEEK NEECHE paste karein: -->
+</section>
 
+<!-- NAYA CODE: -->
+<section id="radioTab" class="tab-view" style="display: none;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+    <h3 style="font-size:16px; color:#e2e8f0; margin:0;">Live FM Radio</h3>
+    <span style="font-size:11px; color:#a855f7; font-weight:600;">11 Stations</span>
+  </div>
+
+  <input
+    type="text"
+    id="radioSearchInput"
+    placeholder="Search FM station or language..."
+    oninput="renderRadioList()"
+    style="width:100%; padding:9px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.12); background:rgba(0,0,0,0.28); color:#fff; font-size:13px; margin-bottom:10px; box-sizing:border-box;"
+  />
+
+  <div id="radioListContainer" style="display:flex; flex-direction:column; gap:8px;"></div>
+</section>
       <!-- Playback Preferences -->
       <div class="card">
         <h3>Audio Engine</h3>
